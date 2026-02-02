@@ -1,0 +1,25 @@
+{
+  "name": "peter-curry-site",
+  "private": true,
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "harvest:apple-credits": "tsx scripts/harvestAppleCredits.ts"
+  },
+  "dependencies": {
+    "next": "^16.1.6",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "tsx": "^4.7.0"
+  }
+}
