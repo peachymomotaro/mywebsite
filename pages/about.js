@@ -1,4 +1,5 @@
 import Head from "next/head";
+import Link from "next/link";
 
 export const cvContent = {
   intro: {
@@ -263,6 +264,13 @@ export default function About() {
                     </li>
                   ))}
                 </ul>
+              ) : null}
+              {role.organisation === "Chatham House" ? (
+                <div className="button-row">
+                  <Link className="button button-small" href="/projects#chatham-house">
+                    View Chatham House projects
+                  </Link>
+                </div>
               ) : null}
             </article>
           ))}

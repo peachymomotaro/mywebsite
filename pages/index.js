@@ -15,6 +15,39 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
 const stripHtml = (value) =>
   value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 
+const extractFirstImage = (html) => {
+  if (!html) {
+    return "";
+  }
+  const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  return match ? match[1] : "";
+};
+
+const readUrl = (value) => {
+  if (!value) {
+    return "";
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  return value.url || value.href || value.src || value["$"]?.url || value["$"]?.href || "";
+};
+
+const getImageUrl = (item) => {
+  const candidates = [
+    readUrl(item.enclosure),
+    readUrl(item["media:thumbnail"]),
+    readUrl(item["media:content"]),
+    readUrl(item["itunes:image"]),
+    readUrl(item.image)
+  ];
+  const fromContent = extractFirstImage(
+    item["content:encoded"] || item.content || ""
+  );
+
+  return candidates.find(Boolean) || fromContent;
+};
+
 const toSnippet = (value) => {
   const text = stripHtml(value || "");
   if (!text) {
@@ -86,13 +119,31 @@ export default function Home({ latestPost }) {
 
       <section>
         <h2>Featured writing</h2>
-        <article className="card">
-          <div className="card-meta">{formatDate(featured.date)}</div>
-          <h3 className="card-title">{featured.title}</h3>
-          {featured.snippet ? <p>{featured.snippet}</p> : null}
-          <a href={featured.url} target="_blank" rel="noopener noreferrer">
-            Read the latest post
-          </a>
+        <article className="card post-card">
+          <div className="post-content">
+            <div className="card-meta">{formatDate(featured.date)}</div>
+            <h3 className="card-title">{featured.title}</h3>
+            {featured.snippet ? <p>{featured.snippet}</p> : null}
+            <a href={featured.url} target="_blank" rel="noopener noreferrer">
+              Read the latest post
+            </a>
+          </div>
+          {featured.image ? (
+            <a
+              className="post-image-link"
+              href={featured.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Open ${featured.title}`}
+            >
+              <img
+                className="post-image"
+                src={featured.image}
+                alt=""
+                loading="lazy"
+              />
+            </a>
+          ) : null}
         </article>
       </section>
     </>
@@ -104,7 +155,14 @@ export async function getStaticProps() {
     const { default: Parser } = await import("rss-parser");
     const parser = new Parser({
       customFields: {
-        item: ["content:encoded"]
+        item: [
+          "content:encoded",
+          "enclosure",
+          "media:thumbnail",
+          "media:content",
+          "itunes:image",
+          "image"
+        ]
       }
     });
     const feed = await parser.parseURL(FEED_URL);
@@ -129,7 +187,8 @@ export async function getStaticProps() {
       title: firstItem.title || featuredPost.title,
       date: firstItem.isoDate || firstItem.pubDate || featuredPost.date,
       snippet: firstItem.contentSnippet || featuredPost.snippet,
-      url: firstItem.link || SUBSTACK_URL
+      url: firstItem.link || SUBSTACK_URL,
+      image: getImageUrl(firstItem)
     };
 
     if (!latestPost.snippet && content) {

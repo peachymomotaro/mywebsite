@@ -115,7 +115,7 @@ export default function Projects() {
           content="AI scenario short stories created for a Chatham House project, plus a live sample generator."
         />
       </Head>
-      <section className="project-hero">
+      <section className="project-hero" id="chatham-house">
         <div className="project-hero-text">
           <h1>Projects</h1>
           <p className="lead">
