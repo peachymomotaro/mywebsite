@@ -72,15 +72,24 @@ export const cvContent = {
         "Built AI-enabled workflow improvements (Python automation for marketing/presentation creation), saving ~8 hours per report per writer.",
         "Designed and delivered AI training for 50+ colleagues; provided 1:1 support to embed tools in day-to-day workflows."
       ]
-    },
+        },
     {
       title: "Family Therapy Textbook",
       organisation: "Freelance (Ros Draper)",
       location: "London, UK",
       dates: "2022 - 2023",
       bullets: [
-        "Research, writing, and copyediting for a new edition of <a href="https://www.mheducation.co.uk/an-introduction-to-family-therapy-systemic-theory-and-practice-9780335251827-emea-group" target="_blank" rel="noopener noreferrer"> "An Introduction to Family Therapy" </a>, the definitive textbook in the field.",
-        "Produced postscripts on the history of key figures in family therapy, involving significant archival research."
+        {
+          type: "link",
+          prefix: "Research, writing, and copyediting for a new edition of ",
+          text: "“An Introduction to Family Therapy”",
+          href: "https://www.mheducation.co.uk/an-introduction-to-family-therapy-systemic-theory-and-practice-9780335251827-emea-group",
+          suffix: ", the definitive textbook in the field."
+        },
+        {
+          type: "text",
+          text: "Produced postscripts on the history of key figures in family therapy, involving significant archival research."
+        }
       ]
     },
     {
@@ -158,6 +167,47 @@ export const cvContent = {
 
 const formatMeta = (parts) => parts.filter(Boolean).join(" | ");
 
+const renderBullet = (bullet) => {
+  if (!bullet) {
+    return null;
+  }
+
+  if (typeof bullet === "string") {
+    return bullet;
+  }
+
+  if (typeof bullet !== "object") {
+    return String(bullet);
+  }
+
+  if (bullet.type === "text") {
+    return bullet.text || "";
+  }
+
+  if (bullet.type === "link") {
+    const prefix = bullet.prefix || "";
+    const suffix = bullet.suffix || "";
+    const href = bullet.href || "";
+    const text = bullet.text || href;
+
+    if (!href || !text) {
+      return `${prefix}${text}${suffix}`.trim();
+    }
+
+    return (
+      <>
+        {prefix}
+        <a href={href} target="_blank" rel="noopener noreferrer">
+          {text}
+        </a>
+        {suffix}
+      </>
+    );
+  }
+
+  return null;
+};
+
 export default function About() {
   const { intro, education, experience, skills } = cvContent;
   const ongoingEducation = education.filter((item) =>
@@ -208,7 +258,9 @@ export default function About() {
               {role.bullets && role.bullets.length > 0 ? (
                 <ul>
                   {role.bullets.map((bullet, bulletIndex) => (
-                    <li key={`ongoing-exp-${index}-${bulletIndex}`}>{bullet}</li>
+                    <li key={`ongoing-exp-${index}-${bulletIndex}`}>
+                      {renderBullet(bullet)}
+                    </li>
                   ))}
                 </ul>
               ) : null}
@@ -223,7 +275,9 @@ export default function About() {
               {item.details && item.details.length > 0 ? (
                 <ul>
                   {item.details.map((detail, detailIndex) => (
-                    <li key={`ongoing-edu-${index}-${detailIndex}`}>{detail}</li>
+                    <li key={`ongoing-edu-${index}-${detailIndex}`}>
+                      {renderBullet(detail)}
+                    </li>
                   ))}
                 </ul>
               ) : null}
@@ -244,7 +298,9 @@ export default function About() {
               {role.bullets && role.bullets.length > 0 ? (
                 <ul>
                   {role.bullets.map((bullet, bulletIndex) => (
-                    <li key={`exp-${index}-${bulletIndex}`}>{bullet}</li>
+                    <li key={`exp-${index}-${bulletIndex}`}>
+                      {renderBullet(bullet)}
+                    </li>
                   ))}
                 </ul>
               ) : null}
@@ -265,7 +321,9 @@ export default function About() {
               {item.details && item.details.length > 0 ? (
                 <ul>
                   {item.details.map((detail, detailIndex) => (
-                    <li key={`edu-${index}-${detailIndex}`}>{detail}</li>
+                    <li key={`edu-${index}-${detailIndex}`}>
+                      {renderBullet(detail)}
+                    </li>
                   ))}
                 </ul>
               ) : null}
@@ -282,7 +340,7 @@ export default function About() {
               <h3 className="card-title">{skillGroup.group}</h3>
               <ul>
                 {skillGroup.items.map((item, itemIndex) => (
-                  <li key={`skill-${index}-${itemIndex}`}>{item}</li>
+                  <li key={`skill-${index}-${itemIndex}`}>{renderBullet(item)}</li>
                 ))}
               </ul>
             </article>
