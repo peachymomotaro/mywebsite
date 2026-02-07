@@ -119,13 +119,32 @@ export default function Projects() {
         <div className="project-hero-text">
           <h1>Projects</h1>
           <p className="lead">
-            I am currently working for the Sustainability Accelerator at
-            Chatham House on a project to create positive and optimistic visions
-            of future worlds.
+            I am currently working with a group that includes the
+            Sustainability Accelerator at Chatham House on a project to create
+            positive visions of future worlds. If you'd like to read more about
+            the project, you can find write-ups from both Chatham House's
+            Sustainability Accelerator{" "}
+            <a
+              href="https://accelerator.chathamhouse.org/article/ghosts-of-christmas-future-seasonal-sketches-from-the-fizz"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              here
+            </a>{" "}
+            and from the futurist David Bent{" "}
+            <a
+              href="https://exploringwhatsnext.substack.com/p/atelier-update-7-dec-2025?open=false#%C2%A7the-fizz"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              here
+            </a>.
           </p>
           <p>
-            <Link href="/contact">Contact me</Link> if you are interested in a demo or a walkthrough of the
-            scenario-building workflow and supporting research, or read my blogs about future thinking both{" "}
+            <Link href="/contact">Contact me</Link>{" "}
+            if you are interested in a demo or a walkthrough of the
+            scenario-building workflow and supporting research, or read my blogs
+            about future thinking both{" "}
             <a
               href="https://kingcnut.substack.com/p/future-thinking-an-introduction"
               target="_blank"

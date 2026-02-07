@@ -83,14 +83,12 @@ export default function Home({ latestPost }) {
         />
       </Head>
       <section>
-        <h1>Hi, I’m Peter Curry.</h1>
+        <h1>I’m Peter Curry.</h1>
         <p className="lead">
-          I work at the intersection of research, podcast production, and AI
-          tools. I translate complex ideas into clear narratives and concrete tools. 
+          I currently work at the intersection of research and AI, translating complex ideas into clear narratives and concrete tools. Previously, I was a audiovisual producer and editor, creating podcasts and video content for a range of clients.
         </p>
         <p className="lead">
-          This site is a hub for my background, writing, audio projects,
-          and scenario experiments.
+          This site is a hub for my AI scenario work, writing, and audio projects.
         </p>
       </section>
 

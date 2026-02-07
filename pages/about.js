@@ -6,7 +6,7 @@ export const cvContent = {
     headline:
       "I'm a researcher and producer focused on clear communication, systems thinking, and human-centered AI tools.",
     paragraphs: [
-      "Researcher and AI implementation consultant. I make technical ideas accessible, and I work with organisations to actually get use out of AI tools, bridging cognitive principles with real workflows.",
+      "Researcher and AI implementation consultant: I make technical ideas accessible, and I work with organisations to actually get use out of AI tools, bridging cognitive principles with real workflows.",
       "Previously I was a senior researcher for Source Global Research, producing high-quality research and analysis for clients in a range of sectors.",
       "Before that, I was a podcast producer and researcher on the UK's largest history podcast, alongside producing and supporting a range of other shows."
     ],
@@ -29,16 +29,16 @@ export const cvContent = {
       ]
     },
     {
-      qualification: "MSc Cognitive Neuroscience (Distinction)",
+      qualification: "MSc Cognitive Neuroscience",
       institution: "Birkbeck, University of London",
       dates: "2022-2023",
       details: [
-        "Dissertation: Predictive Processing (experimental design + Bayesian statistical analysis using PsychoPy and SPSS).",
+        "Dissertation: Predictive Processing (experimental design + Bayesian statistical analysis using PsychoPy and SPSS). Received a high distinction.",
         "Studied how low-level perception and high-level inference combine in a Bayesian framework to generate perception."
       ]
     },
     {
-      qualification: "MA History (2.1)",
+      qualification: "MA History",
       institution: "University of Cambridge",
       dates: "2018",
       details: [
@@ -72,8 +72,9 @@ export const cvContent = {
         "Designed and executed mixed-methods research: large-scale surveys, senior executive interviews, thematic synthesis, and statistical analysis.",
         "Built AI-enabled workflow improvements (Python automation for marketing/presentation creation), saving ~8 hours per report per writer.",
         "Designed and delivered AI training for 50+ colleagues; provided 1:1 support to embed tools in day-to-day workflows."
-      ]
-        },
+      ],
+      note: "Contact me if you would like to see samples of my report writing."
+    },
     {
       title: "Family Therapy Textbook",
       organisation: "Freelance (Ros Draper)",
@@ -265,6 +266,7 @@ export default function About() {
                   ))}
                 </ul>
               ) : null}
+              {role.note ? <p className="small">{role.note}</p> : null}
               {role.organisation === "Chatham House" ? (
                 <div className="button-row">
                   <Link className="button button-small" href="/projects#chatham-house">
@@ -312,6 +314,7 @@ export default function About() {
                   ))}
                 </ul>
               ) : null}
+              {role.note ? <p className="small">{role.note}</p> : null}
             </article>
           ))}
         </div>
