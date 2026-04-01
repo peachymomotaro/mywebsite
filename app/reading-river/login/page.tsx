@@ -1,3 +1,6 @@
+import { AuthActions } from "@/components/reading-river/auth-actions";
+import { AuthField } from "@/components/reading-river/auth-field";
+import { AuthShell } from "@/components/reading-river/auth-shell";
 import { loginAction } from "./actions";
 
 type LoginPageProps = {
@@ -24,59 +27,45 @@ export default async function LoginPage({ searchParams }: LoginPageProps = {}) {
   const errorMessage = getErrorMessage(error);
 
   return (
-    <main className="min-h-screen bg-background px-6 py-16 text-foreground">
-      <div className="mx-auto flex min-h-screen max-w-md items-center">
-        <section className="w-full rounded-3xl border border-border bg-card/80 p-8 shadow-sm backdrop-blur">
-          <div className="space-y-3">
-            <p className="text-sm uppercase tracking-[0.24em] text-mutedForeground">
-              Reading River
-            </p>
-            <h1 className="text-3xl font-semibold tracking-tight">Enter the stream</h1>
-            <p className="text-sm leading-6 text-mutedForeground">
-              Use your invite email and password to continue.
-            </p>
-          </div>
-
-          {errorMessage ? (
-            <p
-              aria-live="polite"
-              role="alert"
-              className="mt-6 rounded-2xl border border-border bg-white/80 px-4 py-3 text-sm text-foreground"
-            >
-              {errorMessage}
-            </p>
-          ) : null}
-
-          <form action={loginAction} className="mt-8 space-y-4">
-            <label className="block space-y-2">
-              <span className="text-sm font-medium">Email address</span>
-              <input
-                autoComplete="email"
-                className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-base"
-                name="email"
-                required
-                type="email"
-              />
-            </label>
-            <label className="block space-y-2">
-              <span className="text-sm font-medium">Password</span>
-              <input
-                autoComplete="current-password"
-                className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-base"
-                name="password"
-                required
-                type="password"
-              />
-            </label>
-            <button
-              className="inline-flex w-full items-center justify-center rounded-2xl bg-foreground px-4 py-3 text-sm font-medium text-background"
-              type="submit"
-            >
-              Sign in
-            </button>
-          </form>
-        </section>
-      </div>
-    </main>
+    <AuthShell
+      frameClassName="max-w-md"
+      title="Enter the stream"
+      description={
+        <p className="auth-description">Use your invite email and password to continue.</p>
+      }
+      feedback={
+        errorMessage ? (
+          <p aria-live="polite" role="alert" className="auth-feedback-copy">
+            {errorMessage}
+          </p>
+        ) : null
+      }
+    >
+      <form action={loginAction} className="editorial-form auth-form">
+        <AuthField label="Email address">
+          <input
+            autoComplete="email"
+            className="intake-input auth-input"
+            name="email"
+            required
+            type="email"
+          />
+        </AuthField>
+        <AuthField label="Password">
+          <input
+            autoComplete="current-password"
+            className="intake-input auth-input"
+            name="password"
+            required
+            type="password"
+          />
+        </AuthField>
+        <AuthActions>
+          <button className="river-primary-action auth-action-full" type="submit">
+            Sign in
+          </button>
+        </AuthActions>
+      </form>
+    </AuthShell>
   );
 }

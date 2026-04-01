@@ -1,3 +1,4 @@
+import { AuthActions } from "@/components/reading-river/auth-actions";
 import { readingRiverPath } from "@/lib/reading-river/routes";
 
 export default function BetaPage() {
@@ -21,20 +22,20 @@ export default function BetaPage() {
             </p>
           </div>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <AuthActions className="mt-8 sm:flex-row">
             <a
               href={readingRiverPath("/login")}
-              className="inline-flex items-center justify-center rounded-2xl bg-foreground px-4 py-3 text-sm font-medium text-background"
+              className="river-primary-action"
             >
               Log in
             </a>
             <a
               href={readingRiverPath("/invite")}
-              className="inline-flex items-center justify-center rounded-2xl border border-border bg-white px-4 py-3 text-sm font-medium text-foreground"
+              className="river-primary-action river-primary-action-muted"
             >
               Redeem invite
             </a>
-          </div>
+          </AuthActions>
         </section>
       </div>
     </main>
