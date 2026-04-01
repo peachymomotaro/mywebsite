@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { ShellNav } from "@/components/reading-river/shell-nav";
+import { getCurrentUser } from "@/lib/reading-river/current-user";
 import { readingRiverPath } from "@/lib/reading-river/routes";
 import "./reading-river.css";
 
@@ -33,15 +34,19 @@ export function EditorialShell({
   );
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: ReactNode;
 }>) {
+  const currentUser = await getCurrentUser();
+
   return (
     <html lang="en">
       <body className="editorial-shell">
-        <EditorialShell>{children}</EditorialShell>
+        <EditorialShell isAdmin={currentUser?.isAdmin ?? false}>
+          {children}
+        </EditorialShell>
       </body>
     </html>
   );
