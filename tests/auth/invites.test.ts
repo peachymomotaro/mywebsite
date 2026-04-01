@@ -192,6 +192,23 @@ describe("invites", () => {
     expect(findUniqueArgs?.where?.tokenHash).not.toBe("raw-token");
   });
 
+  it("accepts prefixed invite URLs and paths", async () => {
+    const { goToInviteRedemptionAction } = await import("@/app/reading-river/invite/actions");
+    const pathFormData = new FormData();
+    pathFormData.set("invite", "/reading-river/invite/invite-token");
+
+    await expect(
+      goToInviteRedemptionAction(pathFormData),
+    ).rejects.toThrow("redirect:/reading-river/invite/invite-token");
+
+    const urlFormData = new FormData();
+    urlFormData.set("invite", "https://reading-river.test/reading-river/invite/invite-token");
+
+    await expect(
+      goToInviteRedemptionAction(urlFormData),
+    ).rejects.toThrow("redirect:/reading-river/invite/invite-token");
+  });
+
   it("rejects empty passwords without calling the invite flow", async () => {
     const { redeemInviteAction } = await import("@/app/reading-river/invite/[token]/actions");
     const formData = new FormData();

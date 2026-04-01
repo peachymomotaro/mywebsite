@@ -4,6 +4,21 @@ import { redirect } from "next/navigation";
 import { readingRiverPath } from "@/lib/reading-river/routes";
 
 function normalizeInviteInput(value: string) {
+  function normalizePath(path: string) {
+    let normalizedPath = path.trim().replace(/^https?:\/\/[^/]+/i, "");
+    normalizedPath = normalizedPath.replace(/^\/+|\/+$/g, "");
+
+    if (normalizedPath.startsWith("reading-river/")) {
+      normalizedPath = normalizedPath.slice("reading-river/".length);
+    }
+
+    if (normalizedPath.startsWith("invite/")) {
+      return normalizedPath.slice("invite/".length) || null;
+    }
+
+    return normalizedPath || null;
+  }
+
   const trimmedValue = value.trim();
 
   if (!trimmedValue) {
@@ -12,22 +27,12 @@ function normalizeInviteInput(value: string) {
 
   try {
     const url = new URL(trimmedValue);
-    const segments = url.pathname.split("/").filter(Boolean);
+    const token = normalizePath(url.pathname);
 
-    if (segments[0] === "invite" && segments[1]) {
-      return decodeURIComponent(segments[1]);
-    }
+    return token;
   } catch {
-    const normalizedPath = trimmedValue.replace(/^\/+|\/+$/g, "");
-
-    if (normalizedPath.startsWith("invite/")) {
-      return normalizedPath.slice("invite/".length) || null;
-    }
-
-    return normalizedPath;
+    return normalizePath(trimmedValue);
   }
-
-  return null;
 }
 
 export async function goToInviteRedemptionAction(formData: FormData) {
