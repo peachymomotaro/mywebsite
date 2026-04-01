@@ -5,11 +5,23 @@ import { getSessionCookieName } from "@/lib/reading-river/auth";
 import { getCurrentUserFromSessionToken } from "@/lib/reading-river/session";
 import { readingRiverPath } from "@/lib/reading-river/routes";
 
+const currentUserCache = new WeakMap<object, Promise<User | null>>();
+
 export async function getCurrentUser(): Promise<User | null> {
   const cookieStore = await cookies();
-  const sessionToken = cookieStore.get(getSessionCookieName())?.value;
+  const cachedCurrentUser = currentUserCache.get(cookieStore as object);
 
-  return getCurrentUserFromSessionToken(sessionToken);
+  if (cachedCurrentUser) {
+    return cachedCurrentUser;
+  }
+
+  const currentUserPromise = getCurrentUserFromSessionToken(
+    cookieStore.get(getSessionCookieName())?.value,
+  );
+
+  currentUserCache.set(cookieStore as object, currentUserPromise);
+
+  return currentUserPromise;
 }
 
 export async function requireCurrentUser() {

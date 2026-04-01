@@ -35,7 +35,7 @@ describe("EditorialShell", () => {
 });
 
 describe("RootLayout", () => {
-  async function renderShellForUser(user: Parameters<typeof mocks.getCurrentUserMock.mockResolvedValue>[0]) {
+  async function renderShellForUser(user: unknown) {
     mocks.getCurrentUserMock.mockResolvedValue(user);
 
     const page = await RootLayout({
@@ -83,6 +83,20 @@ describe("RootLayout", () => {
       createdAt: new Date("2026-04-01T12:00:00Z"),
       updatedAt: new Date("2026-04-01T12:00:00Z"),
     });
+
+    expect(screen.getByRole("link", { name: "Reading River" })).toHaveAttribute(
+      "href",
+      "/reading-river"
+    );
+    expect(screen.getByRole("link", { name: "Read history" })).toHaveAttribute(
+      "href",
+      "/reading-river/history"
+    );
+    expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
+  });
+
+  it("hides admin navigation for logged-out users", async () => {
+    await renderShellForUser(null);
 
     expect(screen.getByRole("link", { name: "Reading River" })).toHaveAttribute(
       "href",
