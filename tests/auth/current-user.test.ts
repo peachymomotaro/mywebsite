@@ -1,8 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  cacheMock: vi.fn((fn: (...args: unknown[]) => unknown) => {
+    const memo = new Map<string, unknown>();
+
+    return (...args: unknown[]) => {
+      const key = JSON.stringify(args);
+
+      if (memo.has(key)) {
+        return memo.get(key);
+      }
+
+      const result = fn(...args);
+      memo.set(key, result);
+      return result;
+    };
+  }),
   cookiesMock: vi.fn(),
   getCurrentUserFromSessionTokenMock: vi.fn(),
+}));
+
+vi.mock("react", () => ({
+  cache: mocks.cacheMock,
 }));
 
 vi.mock("next/headers", () => ({
@@ -21,12 +40,16 @@ import { getCurrentUser } from "@/lib/reading-river/current-user";
 
 describe("current user lookup", () => {
   beforeEach(() => {
+    mocks.cacheMock.mockClear();
     mocks.cookiesMock.mockReset();
     mocks.getCurrentUserFromSessionTokenMock.mockReset();
   });
 
   it("reuses the same session lookup within a request", async () => {
-    const cookieStore = {
+    const cookieStoreOne = {
+      get: vi.fn(() => ({ value: "session-token" })),
+    };
+    const cookieStoreTwo = {
       get: vi.fn(() => ({ value: "session-token" })),
     };
     const user = {
@@ -40,7 +63,9 @@ describe("current user lookup", () => {
       updatedAt: new Date("2026-04-01T12:00:00Z"),
     };
 
-    mocks.cookiesMock.mockResolvedValue(cookieStore);
+    mocks.cookiesMock
+      .mockResolvedValueOnce(cookieStoreOne)
+      .mockResolvedValueOnce(cookieStoreTwo);
     mocks.getCurrentUserFromSessionTokenMock.mockResolvedValue(user);
 
     const first = await getCurrentUser();
@@ -48,6 +73,9 @@ describe("current user lookup", () => {
 
     expect(first).toBe(user);
     expect(second).toBe(user);
+    expect(mocks.cookiesMock).toHaveBeenCalledTimes(1);
+    expect(cookieStoreOne.get).toHaveBeenCalledTimes(1);
+    expect(cookieStoreTwo.get).not.toHaveBeenCalled();
     expect(mocks.getCurrentUserFromSessionTokenMock).toHaveBeenCalledTimes(1);
     expect(mocks.getCurrentUserFromSessionTokenMock).toHaveBeenCalledWith("session-token");
   });

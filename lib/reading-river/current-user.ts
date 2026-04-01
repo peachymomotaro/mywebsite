@@ -1,28 +1,17 @@
 import { type User } from "@prisma/client";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionCookieName } from "@/lib/reading-river/auth";
 import { getCurrentUserFromSessionToken } from "@/lib/reading-river/session";
 import { readingRiverPath } from "@/lib/reading-river/routes";
 
-const currentUserCache = new WeakMap<object, Promise<User | null>>();
-
-export async function getCurrentUser(): Promise<User | null> {
+export const getCurrentUser = cache(async function getCurrentUser(): Promise<User | null> {
   const cookieStore = await cookies();
-  const cachedCurrentUser = currentUserCache.get(cookieStore as object);
+  const sessionToken = cookieStore.get(getSessionCookieName())?.value;
 
-  if (cachedCurrentUser) {
-    return cachedCurrentUser;
-  }
-
-  const currentUserPromise = getCurrentUserFromSessionToken(
-    cookieStore.get(getSessionCookieName())?.value,
-  );
-
-  currentUserCache.set(cookieStore as object, currentUserPromise);
-
-  return currentUserPromise;
-}
+  return getCurrentUserFromSessionToken(sessionToken);
+});
 
 export async function requireCurrentUser() {
   const user = await getCurrentUser();
