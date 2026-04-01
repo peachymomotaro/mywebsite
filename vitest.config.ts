@@ -4,10 +4,16 @@ import path from "node:path";
 
 export default defineConfig({
   plugins: [react()],
+  oxc: {
+    include: /.*\.[jt]sx?$/,
+    jsx: {
+      runtime: "automatic",
+    },
+  },
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: [],
+    setupFiles: ["tests/setup.ts"],
   },
   resolve: {
     alias: {

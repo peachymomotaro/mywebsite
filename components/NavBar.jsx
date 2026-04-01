@@ -12,6 +12,7 @@ export default function NavBar() {
         <Link href="/blog">Blog</Link>
         <Link href="/projects">Projects</Link>
         <Link href="/podcasts">Podcasts</Link>
+        <Link href="/reading-river">Reading River</Link>
         <Link href="/contact">Contact</Link>
         <ThemeToggle />
       </div>
