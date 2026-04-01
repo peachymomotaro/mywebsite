@@ -205,7 +205,7 @@ a {
   text-decoration: none;
 }
 
-.river-page {
+.river-home-page {
   display: grid;
   gap: clamp(1.8rem, 4vw, 3rem);
   padding: clamp(0.5rem, 1vw, 0.9rem) 0 clamp(3.5rem, 8vw, 5.75rem);
