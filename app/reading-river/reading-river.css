@@ -211,7 +211,7 @@ a {
   padding: clamp(0.5rem, 1vw, 0.9rem) 0 clamp(3.5rem, 8vw, 5.75rem);
 }
 
-.river-home-hero {
+.river-home-page .river-home-hero {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -219,18 +219,18 @@ a {
   gap: 1.25rem 1.5rem;
 }
 
-.river-home-hero-copy {
+.river-home-page .river-home-hero-copy {
   min-width: 0;
 }
 
-.river-home-title {
+.river-home-page .river-home-title {
   margin: 0;
   font-size: clamp(2.2rem, 5vw, 3.45rem);
   letter-spacing: -0.045em;
   line-height: 0.98;
 }
 
-.river-primary-action {
+.river-home-page .river-primary-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -253,16 +253,16 @@ a {
     box-shadow 160ms ease;
 }
 
-.river-primary-action:hover {
+.river-home-page .river-primary-action:hover {
   transform: translateY(-1px);
 }
 
-.river-spotlight-grid {
+.river-home-page .river-spotlight-grid {
   display: grid;
   gap: 1rem;
 }
 
-.river-spotlight-card {
+.river-home-page .river-spotlight-card {
   display: grid;
   gap: 1rem;
   min-height: 15rem;
@@ -275,7 +275,7 @@ a {
   box-shadow: 0 22px 54px rgba(70, 52, 34, 0.06);
 }
 
-.river-section-label {
+.river-home-page .river-section-label {
   margin: 0;
   font-family: var(--font-sans);
   font-size: 0.78rem;
@@ -285,14 +285,14 @@ a {
   color: hsl(var(--muted-foreground));
 }
 
-.river-spotlight-body {
+.river-home-page .river-spotlight-body {
   display: grid;
   gap: 0.9rem;
   align-content: start;
 }
 
-.river-spotlight-link,
-.river-spotlight-title {
+.river-home-page .river-spotlight-link,
+.river-home-page .river-spotlight-title {
   margin: 0;
   font-family: var(--font-serif);
   font-size: clamp(1.9rem, 3vw, 2.5rem);
@@ -301,16 +301,16 @@ a {
   line-height: 1.02;
 }
 
-.river-spotlight-link {
+.river-home-page .river-spotlight-link {
   transition: color 160ms ease;
 }
 
-.river-spotlight-link:hover {
+.river-home-page .river-spotlight-link:hover {
   color: hsl(var(--muted-foreground));
 }
 
-.river-spotlight-meta,
-.river-spotlight-empty {
+.river-home-page .river-spotlight-meta,
+.river-home-page .river-spotlight-empty {
   margin: 0;
   max-width: 40rem;
   font-family: var(--font-sans);
@@ -318,26 +318,26 @@ a {
   color: hsl(var(--muted-foreground));
 }
 
-.river-spotlight-meta {
+.river-home-page .river-spotlight-meta {
   font-size: 0.98rem;
 }
 
-.river-spotlight-empty {
+.river-home-page .river-spotlight-empty {
   font-size: 0.92rem;
 }
 
-.river-spotlight-actions {
+.river-home-page .river-spotlight-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
   padding-top: 0.2rem;
 }
 
-.river-spotlight-actions form {
+.river-home-page .river-spotlight-actions form {
   margin: 0;
 }
 
-.river-spotlight-action-button {
+.river-home-page .river-spotlight-action-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -357,30 +357,30 @@ a {
     transform 160ms ease;
 }
 
-.river-spotlight-action-button:hover {
+.river-home-page .river-spotlight-action-button:hover {
   transform: translateY(-1px);
 }
 
-.river-spotlight-action-primary {
+.river-home-page .river-spotlight-action-primary {
   border-color: transparent;
   background: hsl(var(--foreground));
   color: hsl(var(--background));
 }
 
-.river-time-picker {
+.river-home-page .river-time-picker {
   display: grid;
   gap: 0.9rem;
   padding-top: 0.75rem;
   border-top: 1px solid hsl(var(--border));
 }
 
-.river-time-picker-options {
+.river-home-page .river-time-picker-options {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
 }
 
-.river-time-pill {
+.river-home-page .river-time-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -398,11 +398,11 @@ a {
     transform 160ms ease;
 }
 
-.river-time-pill:hover {
+.river-home-page .river-time-pill:hover {
   transform: translateY(-1px);
 }
 
-.river-time-pill-active {
+.river-home-page .river-time-pill-active {
   border-color: transparent;
   background: hsl(var(--accent));
   color: hsl(var(--accent-foreground));
@@ -463,7 +463,7 @@ a {
 }
 
 @media (min-width: 48rem) {
-  .river-spotlight-grid {
+  .river-home-page .river-spotlight-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

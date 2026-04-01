@@ -33,4 +33,10 @@ describe("TimeBudgetPicker", () => {
     );
     expect(screen.getByRole("link", { name: "30 min" })).toHaveAttribute("aria-current", "page");
   });
+
+  it("marks Any time as active when no time budget is selected", () => {
+    render(<TimeBudgetPicker selectedMinutes={null} />);
+
+    expect(screen.getByRole("link", { name: "Any time" })).toHaveAttribute("aria-current", "page");
+  });
 });

@@ -20,7 +20,7 @@ export default async function ReadingRiverPage({ searchParams }: ReadingRiverPag
   });
 
   return (
-    <main className="river-page">
+    <main className="river-page river-home-page">
       <section className="river-home-hero">
         <div className="river-home-hero-copy">
           <h1 className="river-home-title">Pick your next read</h1>
