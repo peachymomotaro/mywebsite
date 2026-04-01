@@ -1,3 +1,4 @@
+import { isProbablyReaderable, Readability } from "@mozilla/readability";
 import { JSDOM } from "jsdom";
 import { estimateReadingTime } from "@/lib/reading-river/reading-time";
 import { countWords, normalizeText } from "@/lib/reading-river/word-count";
@@ -24,18 +25,13 @@ function getMetaContent(document: Document, ...selectors: string[]) {
   return null;
 }
 
-function extractTextFromElement(root: Element | null | undefined) {
-  if (!root) {
+function extractReadableText(contentHtml: string | null | undefined) {
+  if (!contentHtml) {
     return null;
   }
 
-  const clonedRoot = root.cloneNode(true) as Element;
-
-  clonedRoot
-    .querySelectorAll("script, style, noscript, nav, footer, aside, form, button, svg")
-    .forEach((node) => node.remove());
-
-  const blockNodes = clonedRoot.querySelectorAll(
+  const fragment = new JSDOM(`<body>${contentHtml}</body>`).window.document.body;
+  const blockNodes = fragment.querySelectorAll(
     "p, li, blockquote, pre, h1, h2, h3, h4, h5, h6",
   );
 
@@ -47,66 +43,7 @@ function extractTextFromElement(root: Element | null | undefined) {
     );
   }
 
-  return normalizeText(clonedRoot.textContent);
-}
-
-function getReadableRoot(document: Document) {
-  const candidates = [
-    document.querySelector("article"),
-    document.querySelector("main article"),
-    document.querySelector("main"),
-    document.querySelector('[role="main"]'),
-    document.body,
-  ];
-
-  let bestRoot: Element | HTMLBodyElement | null = null;
-  let bestWordCount = 0;
-
-  for (const candidate of candidates) {
-    if (!candidate) {
-      continue;
-    }
-
-    const extractedText = extractTextFromElement(candidate);
-    const wordCount = countWords(extractedText) ?? 0;
-
-    if (wordCount > bestWordCount) {
-      bestRoot = candidate;
-      bestWordCount = wordCount;
-    }
-
-    if (wordCount >= 80) {
-      return candidate;
-    }
-  }
-
-  return bestRoot;
-}
-
-function detectProbableArticle(
-  document: Document,
-  root: Element | HTMLBodyElement | null,
-  wordCount: number | null,
-) {
-  if (!root || wordCount === null || wordCount < 20) {
-    return false;
-  }
-
-  if (root.matches("article") || root.querySelector("article")) {
-    return true;
-  }
-
-  if (
-    document.querySelector(
-      'meta[property="og:type"][content*="article" i], meta[name="author"], meta[property="article:author"]',
-    )
-  ) {
-    return wordCount >= 80;
-  }
-
-  const paragraphCount = root.querySelectorAll("p").length;
-
-  return paragraphCount >= 2 && wordCount >= 80;
+  return normalizeText(fragment.textContent);
 }
 
 export function extractArticleFromHtml(
@@ -116,21 +53,26 @@ export function extractArticleFromHtml(
 ): ExtractedArticle {
   const dom = new JSDOM(html, { url });
   const document = dom.window.document;
-  const readableRoot = getReadableRoot(document);
-  const extractedText = extractTextFromElement(readableRoot);
+  const probablyArticle = isProbablyReaderable(document);
+  const parsed = new Readability(document).parse();
+  const extractedText =
+    extractReadableText(parsed?.content) ??
+    normalizeText(parsed?.textContent);
   const wordCount = countWords(extractedText);
   const hostname = new URL(url).hostname.replace(/^www\./, "");
-  const probablyArticle = detectProbableArticle(document, readableRoot, wordCount);
 
   return {
     title:
+      normalizeText(parsed?.title) ??
       getMetaContent(document, 'meta[property="og:title"]', 'meta[name="twitter:title"]') ??
       normalizeText(document.title) ??
       hostname,
     siteName:
+      normalizeText(parsed?.siteName) ??
       getMetaContent(document, 'meta[property="og:site_name"]', 'meta[name="application-name"]') ??
       hostname,
     author:
+      normalizeText(parsed?.byline) ??
       getMetaContent(document, 'meta[name="author"]', 'meta[property="article:author"]'),
     extractedText,
     wordCount,
@@ -140,6 +82,6 @@ export function extractArticleFromHtml(
         : wordsPerMinute === undefined
           ? estimateReadingTime(wordCount)
           : estimateReadingTime(wordCount, wordsPerMinute),
-    isProbablyArticle: probablyArticle,
+    isProbablyArticle: probablyArticle && Boolean(parsed?.content) && wordCount !== null,
   };
 }
