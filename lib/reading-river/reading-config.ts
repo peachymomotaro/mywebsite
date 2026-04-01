@@ -1,0 +1,1 @@
+export const DEFAULT_READING_SPEED_WPM = 200;
