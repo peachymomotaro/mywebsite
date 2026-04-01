@@ -257,13 +257,6 @@ a {
   transform: translateY(-1px);
 }
 
-.river-primary-action-muted {
-  background: rgba(255, 255, 255, 0.72);
-  color: hsl(var(--foreground));
-  border-color: hsl(var(--border));
-  box-shadow: none;
-}
-
 .river-spotlight-grid {
   display: grid;
   gap: 1rem;
@@ -317,7 +310,6 @@ a {
 }
 
 .river-spotlight-meta,
-.river-spotlight-tags,
 .river-spotlight-empty {
   margin: 0;
   max-width: 40rem;
@@ -330,7 +322,6 @@ a {
   font-size: 0.98rem;
 }
 
-.river-spotlight-tags,
 .river-spotlight-empty {
   font-size: 0.92rem;
 }
