@@ -1,0 +1,205 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+enum SourceType {
+  url
+  pdf
+  epub
+  text
+  manual
+  book_chapter
+}
+
+enum ReadingStatus {
+  unread
+  reading
+  done
+  not_now
+  archived
+}
+
+enum DisplayMode {
+  manual
+  suggested
+}
+
+enum LengthEstimationMethod {
+  schema_wordCount
+  schema_timeRequired
+  schema_articleBody
+  readability
+  trafilatura
+  manual
+  unknown
+}
+
+enum LengthEstimationConfidence {
+  high
+  medium
+  low
+  unknown
+}
+
+enum UserStatus {
+  active
+  deactivated
+}
+
+model User {
+  id              String       @id @default(cuid())
+  email           String       @unique
+  displayName     String?
+  passwordHash    String
+  status          UserStatus   @default(active)
+  isAdmin         Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  readingItems    ReadingItem[]
+  readEvents      ReadEvent[]
+  books           Book[]
+  tags            Tag[]
+  appSettings     AppSettings?
+  createdInvites  Invite[]     @relation("InviteCreatedBy")
+  redeemedInvites Invite[]     @relation("InviteRedeemedBy")
+  sessions        Session[]
+}
+
+model Invite {
+  id               String   @id @default(cuid())
+  email            String
+  tokenHash        String   @unique
+  expiresAt        DateTime
+  redeemedAt       DateTime?
+  revokedAt        DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  createdByUserId  String
+  redeemedByUserId  String?
+  createdByUser    User     @relation("InviteCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  redeemedByUser   User?    @relation("InviteRedeemedBy", fields: [redeemedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([expiresAt])
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  tokenHash  String   @unique
+  userId     String
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime?
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model ReadingItem {
+  id                         String                     @id @default(cuid())
+  title                      String
+  sourceType                 SourceType
+  sourceUrl                  String?
+  author                     String?
+  siteName                   String?
+  notes                      String?
+  extractedText              String?
+  wordCount                  Int?
+  estimatedMinutes           Int?
+  lengthEstimationMethod     LengthEstimationMethod?
+  lengthEstimationConfidence LengthEstimationConfidence?
+  priorityScore              Int                        @default(5)
+  status                     ReadingStatus              @default(unread)
+  manualRank                 Int?
+  suggestedRank              Int?
+  pinned                     Boolean                    @default(false)
+  userId                     String
+  bookId                     String?
+  chapterIndex               Int?
+  lastOpenedAt               DateTime?
+  createdAt                  DateTime                   @default(now())
+  updatedAt                  DateTime                   @updatedAt
+  user                       User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book                       Book?                      @relation(fields: [bookId], references: [id], onDelete: SetNull)
+  readEvent                  ReadEvent?
+  tags                       ReadingItemTag[]
+
+  @@index([userId])
+  @@unique([userId, id])
+  @@index([bookId])
+  @@index([status])
+}
+
+model ReadEvent {
+  id            String      @id @default(cuid())
+  readingItemId String      @unique
+  userId        String
+  readAt        DateTime    @default(now())
+  readingItem   ReadingItem @relation(fields: [userId, readingItemId], references: [userId, id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, readingItemId])
+  @@index([userId])
+  @@index([readAt])
+}
+
+model Book {
+  id        String        @id @default(cuid())
+  title     String
+  author    String?
+  coverUrl  String?
+  notes     String?
+  userId    String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     ReadingItem[]
+
+  @@index([userId])
+}
+
+model Tag {
+  id        String           @id @default(cuid())
+  name      String
+  userId    String
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     ReadingItemTag[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model ReadingItemTag {
+  readingItemId String
+  tagId         String
+  createdAt     DateTime    @default(now())
+  readingItem   ReadingItem @relation(fields: [readingItemId], references: [id], onDelete: Cascade)
+  tag           Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([readingItemId, tagId])
+  @@index([tagId])
+}
+
+/// Per-user application settings stored under the owning user id.
+model AppSettings {
+  id                        String      @id @default(cuid())
+  userId                    String      @unique
+  displayMode               DisplayMode @default(suggested)
+  manualOrderActive         Boolean     @default(false)
+  highPriorityThreshold     Int         @default(7)
+  shortReadThresholdMinutes Int         @default(25)
+  defaultReadingSpeedWpm    Int         @default(200)
+  createdAt                 DateTime    @default(now())
+  updatedAt                 DateTime    @updatedAt
+  user                      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
