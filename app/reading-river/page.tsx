@@ -1,43 +1,50 @@
+import { HomeReadCard } from "@/components/reading-river/home-read-card";
+import { TimeBudgetPicker, parseTimeBudgetSearchParam } from "@/components/reading-river/time-budget-picker";
+import { requireCurrentUser } from "@/lib/reading-river/current-user";
+import { getHomePageData } from "@/lib/reading-river/homepage-data";
 import { readingRiverPath } from "@/lib/reading-river/routes";
 
-export default function ReadingRiverPage() {
+export const dynamic = "force-dynamic";
+
+type ReadingRiverPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined>;
+};
+
+export default async function ReadingRiverPage({ searchParams }: ReadingRiverPageProps = {}) {
+  const currentUser = await requireCurrentUser();
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const selectedTimeBudgetMinutes = parseTimeBudgetSearchParam(resolvedSearchParams.time);
+  const data = await getHomePageData({
+    userId: currentUser.id,
+    timeBudgetMinutes: selectedTimeBudgetMinutes,
+  });
+
   return (
-    <main className="editorial-page">
-      <section className="editorial-page-surface">
-        <header className="editorial-page-masthead">
-          <div className="editorial-page-masthead-copy">
-            <p className="editorial-page-kicker">Reading River</p>
-            <h1 className="editorial-page-title">Pick your next read</h1>
-            <p className="editorial-page-intro">
-              A calm reading triage space for choosing the next worthwhile
-              thing to read.
-            </p>
-          </div>
-          <a href={readingRiverPath("/add")} className="river-shell-nav-link">
-            Add to stream
-          </a>
-        </header>
+    <main className="river-page">
+      <section className="river-home-hero">
+        <div className="river-home-hero-copy">
+          <h1 className="river-home-title">Pick your next read</h1>
+        </div>
 
-        <hr className="editorial-page-rule" />
-
-        <section className="editorial-page-content">
-          <article className="editorial-panel">
-            <h2 className="card-title">Next priority read</h2>
-            <p className="card-meta">
-              The fully personalized stream will appear here after the rest of
-              the app is ported.
-            </p>
-          </article>
-
-          <article className="editorial-panel-soft">
-            <h2 className="card-title">From the stream</h2>
-            <p className="card-meta">
-              This landing page is now inside the Reading River shell and route
-              scope.
-            </p>
-          </article>
-        </section>
+        <a href={readingRiverPath("/add")} className="river-primary-action">
+          Add to stream
+        </a>
       </section>
+
+      <section className="river-spotlight-grid">
+        <HomeReadCard
+          label="Next priority read"
+          item={data.priorityRead}
+          emptyMessage="Add something to the stream to get a recommendation."
+        />
+        <HomeReadCard
+          label="From the stream"
+          item={data.streamRead}
+          emptyMessage="Add another item to unlock a daily stream pick."
+        />
+      </section>
+
+      <TimeBudgetPicker selectedMinutes={data.selectedTimeBudgetMinutes} />
     </main>
   );
 }
