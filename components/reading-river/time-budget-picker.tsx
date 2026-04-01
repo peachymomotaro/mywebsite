@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { readingRiverPath } from "@/lib/reading-river/routes";
 
 export const TIME_BUDGET_OPTIONS = [5, 10, 15, 30, 45] as const;
 
@@ -16,7 +17,7 @@ export function parseTimeBudgetSearchParam(value?: string | string[]) {
 }
 
 function getHref(minutes: number | null) {
-  return minutes === null ? "/" : `/?time=${minutes}`;
+  return minutes === null ? readingRiverPath() : `${readingRiverPath()}?time=${minutes}`;
 }
 
 export function TimeBudgetPicker({ selectedMinutes }: TimeBudgetPickerProps) {
