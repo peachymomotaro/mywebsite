@@ -55,9 +55,7 @@ export function extractArticleFromHtml(
   const document = dom.window.document;
   const probablyArticle = isProbablyReaderable(document);
   const parsed = new Readability(document).parse();
-  const extractedText =
-    extractReadableText(parsed?.content) ??
-    normalizeText(parsed?.textContent);
+  const extractedText = extractReadableText(parsed?.content) ?? normalizeText(parsed?.textContent);
   const wordCount = countWords(extractedText);
   const hostname = new URL(url).hostname.replace(/^www\./, "");
 
