@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import { getPrismaClient } from "@/lib/reading-river/db";
 import { requireCurrentUser } from "@/lib/reading-river/current-user";
 import {
@@ -246,7 +247,6 @@ export async function submitUrlIntake(
   previousState: IntakeFormState,
   formData: FormData,
 ): Promise<IntakeFormState> {
-  const currentUser = await requireCurrentUser();
   const draftValues = buildDraftValues(formData);
   const normalizedUrl = normalizeSubmittedUrl(draftValues.url);
 
@@ -270,6 +270,8 @@ export async function submitUrlIntake(
   const fallbackTitle = titleOverride || url;
 
   try {
+    const currentUser = await requireCurrentUser();
+
     if (previousState.status === "fetch_failed_confirm") {
       if (estimatedMinutes === null) {
         return {
@@ -385,7 +387,14 @@ export async function submitUrlIntake(
       },
       submittedAt: Date.now(),
     };
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error);
+
+    console.error("Reading River URL intake failed.", {
+      url,
+      ...getFetchErrorDetails(error),
+    });
+
     return {
       status: "error",
       message: "Couldn't add that link. Try again.",

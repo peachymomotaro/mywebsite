@@ -6,9 +6,14 @@ const createMock = vi.fn();
 const findAppSettingsMock = vi.fn();
 const revalidatePathMock = vi.fn();
 const requireCurrentUserMock = vi.fn();
+const unstableRethrowMock = vi.fn();
 
 vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
+}));
+
+vi.mock("next/navigation", () => ({
+  unstable_rethrow: unstableRethrowMock,
 }));
 
 vi.mock("@/lib/reading-river/db", () => ({
@@ -61,6 +66,7 @@ describe("submitUrlIntake", () => {
     findAppSettingsMock.mockReset();
     findAppSettingsMock.mockResolvedValue(null);
     revalidatePathMock.mockReset();
+    unstableRethrowMock.mockReset();
     requireCurrentUserMock.mockReset();
     requireCurrentUserMock.mockResolvedValue(createCurrentUser());
     vi.restoreAllMocks();
@@ -126,6 +132,28 @@ describe("submitUrlIntake", () => {
       expect.objectContaining({
         url: "https://example.com/essay",
         errorMessage: "blocked",
+      }),
+    );
+  });
+
+  it("returns a handled error state when current-user resolution fails unexpectedly", async () => {
+    const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
+    const formData = buildUrlFormData();
+    const consoleErrorMock = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    requireCurrentUserMock.mockRejectedValueOnce(new Error("session lookup failed"));
+
+    await expect(submitUrlIntake(initialIntakeFormState, formData)).resolves.toEqual({
+      status: "error",
+      message: "Couldn't add that link. Try again.",
+      submittedAt: expect.any(Number),
+    });
+    expect(unstableRethrowMock).toHaveBeenCalledTimes(1);
+    expect(consoleErrorMock).toHaveBeenCalledWith(
+      "Reading River URL intake failed.",
+      expect.objectContaining({
+        errorMessage: "session lookup failed",
+        url: "https://example.com/essay",
       }),
     );
   });
