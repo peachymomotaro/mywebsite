@@ -8,7 +8,7 @@ export type UrlIntakeDraftValues = {
 };
 
 export type IntakeFormState = {
-  status: "idle" | "success" | "error" | "needs_estimate";
+  status: "idle" | "success" | "error" | "needs_estimate" | "fetch_failed_confirm";
   message?: string;
   savedTitle?: string;
   draftValues?: UrlIntakeDraftValues;

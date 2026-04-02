@@ -46,6 +46,7 @@ describe("AddPage", () => {
     expect(screen.queryByRole("heading", { name: "Bring something into the stream" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Estimated minutes")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Estimated minutes (optional)")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("URL")).toHaveAttribute("type", "text");
     expect(screen.getByLabelText("Notes")).toHaveAttribute("rows", "6");
 
     fireEvent.click(screen.getByRole("button", { name: "Manual item" }));
@@ -108,6 +109,39 @@ describe("AddPage", () => {
     expect(screen.getByLabelText("Notes")).toHaveValue("Why this belongs in the stream");
     expect(screen.getByLabelText("Priority")).toHaveValue(7);
     expect(screen.getByLabelText("Tags")).toHaveValue("work, essays");
+  });
+
+  it("shows a proceed-anyway state when the page cannot be fetched", () => {
+    useActionStateMock.mockImplementationOnce(() => [
+      {
+        status: "fetch_failed_confirm",
+        message:
+          "I couldn't fetch this page. It may not exist, or it may block automated access. You can still add it manually if you want to proceed.",
+        draftValues: {
+          url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2033231",
+          title: "Essay override",
+          notes: "Why this belongs in the stream",
+          priorityScore: "7",
+          estimatedMinutes: "",
+          tagNames: "work, essays",
+        },
+        submittedAt: 1,
+      },
+      vi.fn(),
+    ]);
+
+    render(<UrlIntakeForm />);
+
+    expect(
+      screen.getByText(
+        "I couldn't fetch this page. It may not exist, or it may block automated access. You can still add it manually if you want to proceed.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Proceed anyway" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Estimated minutes")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("URL")).toHaveValue(
+      "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2033231",
+    );
   });
 
   it("shows inline success feedback for the manual form", () => {

@@ -5,12 +5,18 @@ import { useFormStatus } from "react-dom";
 import { submitUrlIntake } from "@/app/reading-river/actions/ingest-url";
 import { initialIntakeFormState } from "@/lib/reading-river/intake-form-state";
 
-function SubmitButton() {
+function SubmitButton({
+  idleLabel,
+  pendingLabel,
+}: {
+  idleLabel: string;
+  pendingLabel: string;
+}) {
   const { pending } = useFormStatus();
 
   return (
     <button type="submit" className="intake-submit-button">
-      {pending ? "Estimating and saving..." : "Save article"}
+      {pending ? pendingLabel : idleLabel}
     </button>
   );
 }
@@ -19,6 +25,7 @@ export function UrlIntakeForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction] = useActionState(submitUrlIntake, initialIntakeFormState);
   const needsEstimate = state.status === "needs_estimate";
+  const needsProceedAnyway = state.status === "fetch_failed_confirm";
   const draftValues = state.draftValues ?? {
     url: "",
     title: "",
@@ -75,7 +82,10 @@ export function UrlIntakeForm() {
           <span>URL</span>
           <input
             name="url"
-            type="url"
+            type="text"
+            inputMode="url"
+            autoCapitalize="none"
+            spellCheck={false}
             required
             defaultValue={draftValues.url}
             placeholder="https://example.com/article"
@@ -141,7 +151,10 @@ export function UrlIntakeForm() {
           </label>
         </div>
         <div className="intake-submit-row">
-          <SubmitButton />
+          <SubmitButton
+            idleLabel={needsProceedAnyway ? "Proceed anyway" : "Save article"}
+            pendingLabel={needsProceedAnyway ? "Preparing manual save..." : "Estimating and saving..."}
+          />
         </div>
       </form>
     </section>

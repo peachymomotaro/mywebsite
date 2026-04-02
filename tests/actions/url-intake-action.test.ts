@@ -26,10 +26,10 @@ vi.mock("@/lib/reading-river/current-user", () => ({
   requireCurrentUser: requireCurrentUserMock,
 }));
 
-function buildUrlFormData() {
+function buildUrlFormData(url = "https://example.com/essay") {
   const formData = new FormData();
 
-  formData.set("url", "https://example.com/essay");
+  formData.set("url", url);
   formData.set("title", "Essay override");
   formData.set("notes", "Why this belongs in the stream");
   formData.set("priorityScore", "7");
@@ -67,7 +67,36 @@ describe("submitUrlIntake", () => {
     vi.resetModules();
   });
 
-  it("returns needs_estimate without saving when automatic reading-time extraction fails", async () => {
+  it("normalizes a pasted domain before fetching the page", async () => {
+    const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
+    const formData = buildUrlFormData("papers.ssrn.com/sol3/papers.cfm?abstract_id=2033231");
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        `<html><head><title>Essay</title><meta property="og:site_name" content="Example" /></head><body><article><h1>Essay</h1><p>${repeatWords(
+          220,
+        )}</p></article></body></html>`,
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+    createMock.mockResolvedValue({
+      id: "item-1",
+      title: "Essay override",
+    });
+
+    await submitUrlIntake(initialIntakeFormState, formData);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2033231",
+      expect.objectContaining({
+        headers: {
+          "User-Agent": "Reading River/0.1 (+https://reading-river.local)",
+        },
+      }),
+    );
+  });
+
+  it("returns a fetch confirmation state without saving when the page cannot be fetched", async () => {
     const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
     const formData = buildUrlFormData();
     const consoleWarnMock = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -77,9 +106,9 @@ describe("submitUrlIntake", () => {
     const result = await submitUrlIntake(initialIntakeFormState, formData);
 
     expect(result).toEqual({
-      status: "needs_estimate",
+      status: "fetch_failed_confirm",
       message:
-        "I couldn't estimate reading time confidently for that link. Add or adjust your best guess before saving it.",
+        "I couldn't fetch this page. It may not exist, or it may block automated access. You can still add it manually if you want to proceed.",
       draftValues: {
         url: "https://example.com/essay",
         title: "Essay override",
@@ -99,6 +128,100 @@ describe("submitUrlIntake", () => {
         errorMessage: "blocked",
       }),
     );
+  });
+
+  it("asks for a manual estimate after the user proceeds from a fetch failure", async () => {
+    const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
+    const formData = buildUrlFormData();
+    const fetchMock = vi.fn();
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await submitUrlIntake(
+      {
+        status: "fetch_failed_confirm",
+        message:
+          "I couldn't fetch this page. It may not exist, or it may block automated access. You can still add it manually if you want to proceed.",
+        draftValues: {
+          url: "https://example.com/essay",
+          title: "Essay override",
+          notes: "Why this belongs in the stream",
+          priorityScore: "7",
+          estimatedMinutes: "",
+          tagNames: "work, essays",
+        },
+        submittedAt: 1,
+      },
+      formData,
+    );
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(createMock).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      status: "needs_estimate",
+      message: "Add an estimated reading time before saving this link manually.",
+      draftValues: {
+        url: "https://example.com/essay",
+        title: "Essay override",
+        notes: "Why this belongs in the stream",
+        priorityScore: "7",
+        estimatedMinutes: "",
+        tagNames: "work, essays",
+      },
+      submittedAt: expect.any(Number),
+    });
+  });
+
+  it("saves with a manual estimate after the user proceeds from a fetch failure", async () => {
+    const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
+    const formData = buildUrlFormData();
+    const fetchMock = vi.fn();
+
+    formData.set("estimatedMinutes", "12");
+
+    vi.stubGlobal("fetch", fetchMock);
+    createMock.mockResolvedValue({
+      id: "item-2",
+      title: "Essay override",
+    });
+
+    const result = await submitUrlIntake(
+      {
+        status: "fetch_failed_confirm",
+        message:
+          "I couldn't fetch this page. It may not exist, or it may block automated access. You can still add it manually if you want to proceed.",
+        draftValues: {
+          url: "https://example.com/essay",
+          title: "Essay override",
+          notes: "Why this belongs in the stream",
+          priorityScore: "7",
+          estimatedMinutes: "",
+          tagNames: "work, essays",
+        },
+        submittedAt: 1,
+      },
+      formData,
+    );
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(createMock).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "user-1",
+        title: "Essay override",
+        sourceType: "url",
+        sourceUrl: "https://example.com/essay",
+        estimatedMinutes: 12,
+        priorityScore: 7,
+        lengthEstimationMethod: "manual",
+        lengthEstimationConfidence: "unknown",
+      }),
+    });
+    expect(result).toEqual({
+      status: "success",
+      message: 'Added "Essay override" to the stream.',
+      savedTitle: "Essay override",
+      submittedAt: expect.any(Number),
+    });
   });
 
   it("saves the item directly when automatic reading-time extraction succeeds", async () => {

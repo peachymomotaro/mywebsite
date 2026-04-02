@@ -16,6 +16,12 @@ import { readingRiverPath } from "@/lib/reading-river/routes";
 const STREAM_PATH = readingRiverPath();
 const URL_ESTIMATE_REQUIRED_MESSAGE =
   "I couldn't estimate reading time confidently for that link. Add or adjust your best guess before saving it.";
+const FETCH_FAILED_CONFIRM_MESSAGE =
+  "I couldn't fetch this page. It may not exist, or it may block automated access. You can still add it manually if you want to proceed.";
+const MANUAL_ESTIMATE_REQUIRED_MESSAGE =
+  "Add an estimated reading time before saving this link manually.";
+const INVALID_URL_MESSAGE = "Add a valid link before saving it.";
+const FETCH_TIMEOUT_MS = 10_000;
 
 type IngestUrlInput = {
   url: string;
@@ -96,6 +102,40 @@ function parseTagNames(value: string) {
     .filter(Boolean);
 }
 
+function hasUrlScheme(value: string) {
+  return /^[a-z][a-z\d+.-]*:\/\//i.test(value);
+}
+
+function looksLikeHostStyleUrl(value: string) {
+  return /^[^\s/]+\.[^\s]+(?:\/.*)?$/i.test(value);
+}
+
+function normalizeSubmittedUrl(value: string) {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const candidate = hasUrlScheme(trimmed)
+    ? trimmed
+    : looksLikeHostStyleUrl(trimmed)
+      ? `https://${trimmed}`
+      : trimmed;
+
+  try {
+    const normalized = new URL(candidate);
+
+    if (normalized.protocol !== "http:" && normalized.protocol !== "https:") {
+      return null;
+    }
+
+    return normalized.toString();
+  } catch {
+    return null;
+  }
+}
+
 function getFetchErrorDetails(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   const cause =
@@ -130,6 +170,7 @@ async function fetchExtractedArticle(url: string, userId: string) {
       headers: {
         "User-Agent": "Reading River/0.1 (+https://reading-river.local)",
       },
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
 
     if (!response.ok) {
@@ -207,7 +248,20 @@ export async function submitUrlIntake(
 ): Promise<IntakeFormState> {
   const currentUser = await requireCurrentUser();
   const draftValues = buildDraftValues(formData);
-  const url = draftValues.url;
+  const normalizedUrl = normalizeSubmittedUrl(draftValues.url);
+
+  if (!normalizedUrl) {
+    return {
+      status: "error",
+      message: INVALID_URL_MESSAGE,
+      draftValues,
+      submittedAt: Date.now(),
+    };
+  }
+
+  draftValues.url = normalizedUrl;
+
+  const url = normalizedUrl;
   const titleOverride = draftValues.title;
   const notes = draftValues.notes;
   const priorityScore = parsePriorityScore(draftValues.priorityScore, 5);
@@ -216,6 +270,38 @@ export async function submitUrlIntake(
   const fallbackTitle = titleOverride || url;
 
   try {
+    if (previousState.status === "fetch_failed_confirm") {
+      if (estimatedMinutes === null) {
+        return {
+          status: "needs_estimate",
+          message: MANUAL_ESTIMATE_REQUIRED_MESSAGE,
+          draftValues,
+          submittedAt: Date.now(),
+        };
+      }
+
+      const item = await ingestUrl(
+        {
+          url,
+          title: titleOverride,
+          notes,
+          priorityScore,
+          estimatedMinutes,
+          tagNames,
+          lengthEstimationMethod: "manual",
+          lengthEstimationConfidence: "unknown",
+        },
+        currentUser.id,
+      );
+
+      return {
+        status: "success",
+        message: `Added "${item.title || fallbackTitle}" to the stream.`,
+        savedTitle: item.title || fallbackTitle,
+        submittedAt: Date.now(),
+      };
+    }
+
     if (previousState.status === "needs_estimate") {
       if (estimatedMinutes === null) {
         return {
@@ -250,8 +336,16 @@ export async function submitUrlIntake(
 
     const estimation = await fetchExtractedArticle(url, currentUser.id);
 
+    if (estimation === null) {
+      return {
+        status: "fetch_failed_confirm",
+        message: FETCH_FAILED_CONFIRM_MESSAGE,
+        draftValues,
+        submittedAt: Date.now(),
+      };
+    }
+
     if (
-      estimation &&
       estimation.estimatedMinutes !== null &&
       estimation.estimatedMinutes !== undefined &&
       (estimation.confidence === "high" || estimation.confidence === "medium")
