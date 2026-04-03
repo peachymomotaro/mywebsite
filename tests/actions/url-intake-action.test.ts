@@ -69,6 +69,7 @@ describe("submitUrlIntake", () => {
     unstableRethrowMock.mockReset();
     requireCurrentUserMock.mockReset();
     requireCurrentUserMock.mockResolvedValue(createCurrentUser());
+    vi.doUnmock("jsdom");
     vi.restoreAllMocks();
     vi.resetModules();
   });

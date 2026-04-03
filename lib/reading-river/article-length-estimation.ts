@@ -1,5 +1,5 @@
-import { JSDOM } from "jsdom";
 import { extractArticleFromHtml, type ExtractedArticle } from "@/lib/reading-river/article-extraction";
+import { loadJSDOM } from "@/lib/reading-river/load-jsdom";
 import { estimateReadingTime } from "@/lib/reading-river/reading-time";
 import { countWords, normalizeText } from "@/lib/reading-river/word-count";
 
@@ -252,7 +252,13 @@ function classifyReadability(
   return isProbablyArticle ? "medium" : "low";
 }
 
-export function estimateArticleLengthFromHtml({
+function getErrorDetails(error: unknown) {
+  return {
+    errorMessage: error instanceof Error ? error.message : String(error),
+  };
+}
+
+export async function estimateArticleLengthFromHtml({
   url,
   html,
   wordsPerMinute,
@@ -260,10 +266,31 @@ export function estimateArticleLengthFromHtml({
   url: string;
   html: string;
   wordsPerMinute: number;
-}): ArticleLengthEstimate {
-  const dom = new JSDOM(html, { url });
-  const document = dom.window.document;
-  const readabilityResult = extractArticleFromHtml(url, html, wordsPerMinute);
+}): Promise<ArticleLengthEstimate> {
+  const readabilityResult = await extractArticleFromHtml(url, html, wordsPerMinute);
+
+  let document: Document;
+
+  try {
+    const JSDOM = await loadJSDOM();
+    const dom = new JSDOM(html, { url });
+
+    document = dom.window.document;
+  } catch (error) {
+    console.warn("Reading time estimation parsing failed.", {
+      url,
+      ...getErrorDetails(error),
+    });
+
+    return buildResult(readabilityResult, {
+      extractedText: null,
+      wordCount: null,
+      estimatedMinutes: null,
+      confidence: "unknown",
+      method: "unknown",
+    });
+  }
+
   const structuredWordCount = parseStructuredWordCount(document);
 
   if (structuredWordCount !== null) {

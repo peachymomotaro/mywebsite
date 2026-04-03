@@ -6,7 +6,7 @@ function repeatWords(count: number) {
 }
 
 describe("estimateArticleLengthFromHtml", () => {
-  it("uses structured wordCount when present", () => {
+  it("uses structured wordCount when present", async () => {
     const html = `
       <html>
         <head>
@@ -19,7 +19,7 @@ describe("estimateArticleLengthFromHtml", () => {
       </html>
     `;
 
-    const result = estimateArticleLengthFromHtml({
+    const result = await estimateArticleLengthFromHtml({
       url: "https://example.com/structured-count",
       html,
       wordsPerMinute: 200,
@@ -31,7 +31,7 @@ describe("estimateArticleLengthFromHtml", () => {
     expect(result.confidence).toBe("high");
   });
 
-  it("uses structured timeRequired when no usable wordCount exists", () => {
+  it("uses structured timeRequired when no usable wordCount exists", async () => {
     const html = `
       <html>
         <head>
@@ -44,7 +44,7 @@ describe("estimateArticleLengthFromHtml", () => {
       </html>
     `;
 
-    const result = estimateArticleLengthFromHtml({
+    const result = await estimateArticleLengthFromHtml({
       url: "https://example.com/structured-time",
       html,
       wordsPerMinute: 200,
@@ -56,7 +56,7 @@ describe("estimateArticleLengthFromHtml", () => {
     expect(result.confidence).toBe("high");
   });
 
-  it("uses structured articleBody when it is available", () => {
+  it("uses structured articleBody when it is available", async () => {
     const html = `
       <html>
         <head>
@@ -73,7 +73,7 @@ describe("estimateArticleLengthFromHtml", () => {
       </html>
     `;
 
-    const result = estimateArticleLengthFromHtml({
+    const result = await estimateArticleLengthFromHtml({
       url: "https://example.com/structured-body",
       html,
       wordsPerMinute: 200,
@@ -85,7 +85,7 @@ describe("estimateArticleLengthFromHtml", () => {
     expect(result.confidence).toBe("high");
   });
 
-  it("falls back to Readability for normal article pages", () => {
+  it("falls back to Readability for normal article pages", async () => {
     const html = `
       <html>
         <head><title>Readable page</title></head>
@@ -98,7 +98,7 @@ describe("estimateArticleLengthFromHtml", () => {
       </html>
     `;
 
-    const result = estimateArticleLengthFromHtml({
+    const result = await estimateArticleLengthFromHtml({
       url: "https://example.com/readable-page",
       html,
       wordsPerMinute: 200,
@@ -110,7 +110,7 @@ describe("estimateArticleLengthFromHtml", () => {
     expect(result.confidence).toBe("medium");
   });
 
-  it("returns unknown when the page does not look like an article", () => {
+  it("returns unknown when the page does not look like an article", async () => {
     const html = `
       <html>
         <head><title>Menu page</title></head>
@@ -121,7 +121,7 @@ describe("estimateArticleLengthFromHtml", () => {
       </html>
     `;
 
-    const result = estimateArticleLengthFromHtml({
+    const result = await estimateArticleLengthFromHtml({
       url: "https://example.com/menu-page",
       html,
       wordsPerMinute: 200,
@@ -133,7 +133,7 @@ describe("estimateArticleLengthFromHtml", () => {
     expect(result.confidence).toBe("unknown");
   });
 
-  it("ignores malformed metadata and falls back to extraction", () => {
+  it("ignores malformed metadata and falls back to extraction", async () => {
     const html = `
       <html>
         <head>
@@ -151,7 +151,7 @@ describe("estimateArticleLengthFromHtml", () => {
       </html>
     `;
 
-    const result = estimateArticleLengthFromHtml({
+    const result = await estimateArticleLengthFromHtml({
       url: "https://example.com/malformed-metadata",
       html,
       wordsPerMinute: 200,
@@ -163,7 +163,7 @@ describe("estimateArticleLengthFromHtml", () => {
     expect(result.confidence).toBe("medium");
   });
 
-  it("marks implausibly tiny results as low confidence", () => {
+  it("marks implausibly tiny results as low confidence", async () => {
     const html = `
       <html>
         <head>
@@ -180,7 +180,7 @@ describe("estimateArticleLengthFromHtml", () => {
       </html>
     `;
 
-    const result = estimateArticleLengthFromHtml({
+    const result = await estimateArticleLengthFromHtml({
       url: "https://example.com/tiny-article-body",
       html,
       wordsPerMinute: 200,
@@ -192,7 +192,7 @@ describe("estimateArticleLengthFromHtml", () => {
     expect(result.confidence).toBe("low");
   });
 
-  it("marks implausibly huge results as low confidence", () => {
+  it("marks implausibly huge results as low confidence", async () => {
     const html = `
       <html>
         <head>
@@ -209,7 +209,7 @@ describe("estimateArticleLengthFromHtml", () => {
       </html>
     `;
 
-    const result = estimateArticleLengthFromHtml({
+    const result = await estimateArticleLengthFromHtml({
       url: "https://example.com/huge-article-body",
       html,
       wordsPerMinute: 200,

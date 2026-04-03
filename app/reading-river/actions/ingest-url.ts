@@ -184,7 +184,7 @@ async function fetchExtractedArticle(url: string, userId: string) {
     }
 
     const html = await response.text();
-    const estimation = estimateArticleLengthFromHtml({
+    const estimation = await estimateArticleLengthFromHtml({
       url,
       html,
       wordsPerMinute,
