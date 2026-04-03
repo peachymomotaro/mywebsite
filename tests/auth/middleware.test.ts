@@ -38,6 +38,21 @@ describe("reading river middleware", () => {
     expect(getCurrentUserFromSessionToken).not.toHaveBeenCalled();
   });
 
+  it("skips auth middleware for server action requests", async () => {
+    getCurrentUserFromSessionToken.mockResolvedValue(null);
+
+    const response = await middleware(
+      new NextRequest("https://example.com/reading-river/add", {
+        headers: {
+          "next-action": "action-id",
+        },
+      }),
+    );
+
+    expect(getRedirectLocation(response)).toBeNull();
+    expect(getCurrentUserFromSessionToken).not.toHaveBeenCalled();
+  });
+
   it("redirects anonymous users on protected reading river routes", async () => {
     getCurrentUserFromSessionToken.mockResolvedValue(null);
 

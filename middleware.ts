@@ -20,6 +20,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (request.headers.has("next-action")) {
+    return NextResponse.next();
+  }
+
   if (isPublicReadingRiverPath(pathname)) {
     return NextResponse.next();
   }
