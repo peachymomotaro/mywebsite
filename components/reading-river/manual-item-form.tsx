@@ -88,32 +88,13 @@ export function ManualItemForm() {
             />
           </label>
         </div>
-        <div className="grid gap-8 sm:grid-cols-2">
-          <label className="grid gap-2 text-sm">
-            <span>Status</span>
-            <select name="status" defaultValue="unread" className="intake-input">
-              <option value="unread">Unread</option>
-              <option value="reading">Reading</option>
-              <option value="not_now">Not now</option>
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm">
-            <span>Tags</span>
-            <input
-              name="tagNames"
-              type="text"
-              placeholder="ideas, book, work"
-              className="intake-input"
-            />
-          </label>
-        </div>
         <label className="grid gap-2 text-sm">
-          <span>Notes</span>
-          <textarea
-            name="notes"
-            rows={6}
-            placeholder="Context, why it matters, or what you want from it"
-            className="intake-textarea"
+          <span>Tags</span>
+          <input
+            name="tagNames"
+            type="text"
+            placeholder="ideas, book, work"
+            className="intake-input"
           />
         </label>
         <div className="intake-submit-row">

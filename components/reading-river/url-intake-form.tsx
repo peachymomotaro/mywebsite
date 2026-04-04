@@ -117,16 +117,6 @@ export function UrlIntakeForm() {
             />
           </label>
         ) : null}
-        <label className="grid gap-2 text-sm">
-          <span>Notes</span>
-          <textarea
-            name="notes"
-            rows={6}
-            defaultValue={draftValues.notes}
-            placeholder="Why this belongs in the stream"
-            className="intake-textarea"
-          />
-        </label>
         <div className="grid gap-8 sm:grid-cols-2">
           <label className="grid gap-2 text-sm">
             <span>Priority</span>

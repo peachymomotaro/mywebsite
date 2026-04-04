@@ -404,6 +404,13 @@ a {
   box-shadow: 0 22px 54px rgba(70, 52, 34, 0.06);
 }
 
+.river-home-page .river-spotlight-card-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.85rem;
+}
+
 .river-section-label {
   margin: 0;
   font-family: var(--font-sans);
@@ -418,6 +425,7 @@ a {
   display: grid;
   gap: 0.9rem;
   align-content: start;
+  min-height: 100%;
 }
 
 .river-home-page .river-spotlight-link,
@@ -451,6 +459,35 @@ a {
   font-size: 0.98rem;
 }
 
+.river-home-page .river-spotlight-edit-link,
+.river-home-page .river-spotlight-tags,
+.river-home-page .river-spotlight-tags-toggle {
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: hsl(var(--muted-foreground));
+}
+
+.river-home-page .river-spotlight-edit-link {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 160ms ease;
+}
+
+.river-home-page .river-spotlight-edit-link:hover,
+.river-home-page .river-spotlight-tags-toggle:hover {
+  color: hsl(var(--foreground));
+}
+
+.river-home-page .river-spotlight-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.85rem 1rem;
+  margin-top: auto;
+}
+
 .river-home-page .river-spotlight-empty {
   font-size: 0.92rem;
 }
@@ -459,11 +496,24 @@ a {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
-  padding-top: 0.2rem;
 }
 
 .river-home-page .river-spotlight-actions form {
   margin: 0;
+}
+
+.river-home-page .river-spotlight-tags {
+  margin: 0;
+  max-width: min(100%, 15rem);
+  text-align: right;
+}
+
+.river-home-page .river-spotlight-tags-toggle {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: right;
 }
 
 .river-home-page .river-spotlight-action-button {

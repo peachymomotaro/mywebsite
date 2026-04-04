@@ -8,3 +8,7 @@ export function readingRiverPath(path = "") {
   const normalized = path.startsWith("/") ? path : `/${path}`;
   return `${READING_RIVER_BASE_PATH}${normalized}`;
 }
+
+export function readingRiverItemEditPath(id: string) {
+  return readingRiverPath(`/items/${encodeURIComponent(id)}/edit`);
+}

@@ -1,5 +1,8 @@
+import Link from "next/link";
 import { markAsRead, skipReadingItem } from "@/app/reading-river/actions/reading-items";
+import { HomeCardTags } from "@/components/reading-river/home-card-tags";
 import type { HomePageFeaturedItem } from "@/lib/reading-river/homepage-data";
+import { readingRiverItemEditPath } from "@/lib/reading-river/routes";
 
 type HomeReadCardProps = {
   label: string;
@@ -30,7 +33,18 @@ export function HomeReadCard({ label, item, emptyMessage }: HomeReadCardProps) {
 
   return (
     <section className="river-spotlight-card">
-      <p className="river-section-label">{label}</p>
+      <div className="river-spotlight-card-head">
+        <p className="river-section-label">{label}</p>
+        {item ? (
+          <Link
+            href={readingRiverItemEditPath(item.id)}
+            className="river-spotlight-edit-link"
+            aria-label={`Edit ${item.title}`}
+          >
+            Edit
+          </Link>
+        ) : null}
+      </div>
 
       {item ? (
         <div className="river-spotlight-body">
@@ -52,20 +66,24 @@ export function HomeReadCard({ label, item, emptyMessage }: HomeReadCardProps) {
             </p>
           ) : null}
 
-          <div className="river-spotlight-actions">
-            <form action={markAsReadAction}>
-              <button
-                type="submit"
-                className="river-spotlight-action-button river-spotlight-action-primary"
-              >
-                Mark as read
-              </button>
-            </form>
-            <form action={skipReadingItemAction}>
-              <button type="submit" className="river-spotlight-action-button">
-                Skip
-              </button>
-            </form>
+          <div className="river-spotlight-footer">
+            <div className="river-spotlight-actions">
+              <form action={markAsReadAction}>
+                <button
+                  type="submit"
+                  className="river-spotlight-action-button river-spotlight-action-primary"
+                >
+                  Mark as read
+                </button>
+              </form>
+              <form action={skipReadingItemAction}>
+                <button type="submit" className="river-spotlight-action-button">
+                  Skip
+                </button>
+              </form>
+            </div>
+
+            <HomeCardTags tags={item.tags} />
           </div>
         </div>
       ) : (

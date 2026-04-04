@@ -242,6 +242,15 @@ export async function getHomePageData(options: HomePageDataOptions) {
         status: true,
         pinned: true,
         createdAt: true,
+        tags: {
+          select: {
+            tag: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
       },
     }),
   ]);

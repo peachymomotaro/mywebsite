@@ -1,7 +1,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import * as cheerio from "cheerio";
+import {
+  extractBodyText,
+  extractCreditLine,
+  extractEpisodeLinks,
+  extractEpisodeMetadata,
+} from "@/lib/apple-credits-parser";
 
 const SHOWS = [
   {
@@ -12,12 +17,6 @@ const SHOWS = [
     slug: "killing-time",
     url: "https://podcasts.apple.com/gb/podcast/killing-time-with-rebecca-rideal/id1507389410"
   }
-];
-
-const CREDIT_PATTERNS = [
-  /Producer:\s*Peter\s*Curry/i,
-  /Producer\/editor:\s*Peter\s*Curry/i,
-  /@petedoeshistory/i
 ];
 
 const USER_AGENT =
@@ -40,132 +39,6 @@ const fetchHtml = async (url: string) => {
   return response.text();
 };
 
-const normalizeText = (value: string) =>
-  value.replace(/\s+/g, " ").replace(/\u00a0/g, " ").trim();
-
-const addEpisodeUrl = (set: Set<string>, url?: string) => {
-  if (!url) {
-    return;
-  }
-  if (!url.includes("/podcast/") || !url.includes("?i=")) {
-    return;
-  }
-  set.add(url.split("?").length > 1 ? url : `${url}?i=`);
-};
-
-const extractLinksFromJson = (json: unknown, links: Set<string>) => {
-  if (!json) {
-    return;
-  }
-
-  if (Array.isArray(json)) {
-    json.forEach((entry) => extractLinksFromJson(entry, links));
-    return;
-  }
-
-  if (typeof json !== "object") {
-    return;
-  }
-
-  const record = json as Record<string, unknown>;
-  const itemList = record.itemListElement;
-  if (Array.isArray(itemList)) {
-    itemList.forEach((item) => {
-      if (typeof item === "object" && item && "url" in item) {
-        addEpisodeUrl(links, String((item as Record<string, unknown>).url));
-      }
-      if (
-        typeof item === "object" &&
-        item &&
-        "item" in item &&
-        typeof (item as Record<string, unknown>).item === "object"
-      ) {
-        const nested = (item as Record<string, unknown>).item as Record<
-          string,
-          unknown
-        >;
-        addEpisodeUrl(links, String(nested.url || ""));
-      }
-    });
-  }
-
-  if (record.hasPart) {
-    extractLinksFromJson(record.hasPart, links);
-  }
-};
-
-const extractEpisodeLinks = (html: string) => {
-  const links = new Set<string>();
-  const $ = cheerio.load(html);
-
-  $("a[href*='/podcast/'][href*='?i=']").each((_, element) => {
-    addEpisodeUrl(links, $(element).attr("href"));
-  });
-
-  $("script[type='application/ld+json']").each((_, element) => {
-    const raw = $(element).text();
-    if (!raw) {
-      return;
-    }
-    try {
-      const json = JSON.parse(raw);
-      extractLinksFromJson(json, links);
-    } catch {
-      // ignore malformed JSON
-    }
-  });
-
-  return Array.from(links);
-};
-
-const extractEpisodeMetadata = (html: string) => {
-  const $ = cheerio.load(html);
-  const title =
-    $("meta[property='og:title']").attr("content") ||
-    $("title").first().text().trim();
-
-  let date = "";
-  let jsonDate = "";
-
-  $("script[type='application/ld+json']").each((_, element) => {
-    if (jsonDate) {
-      return;
-    }
-    const raw = $(element).text();
-    if (!raw) {
-      return;
-    }
-    try {
-      const parsed = JSON.parse(raw);
-      const candidates = Array.isArray(parsed) ? parsed : [parsed];
-      for (const item of candidates) {
-        if (item && typeof item === "object" && "datePublished" in item) {
-          jsonDate = String((item as Record<string, unknown>).datePublished);
-          break;
-        }
-      }
-    } catch {
-      // ignore
-    }
-  });
-
-  if (jsonDate) {
-    date = jsonDate;
-  }
-
-  return { title, date };
-};
-
-const extractCreditLine = (text: string) => {
-  for (const pattern of CREDIT_PATTERNS) {
-    const match = text.match(pattern);
-    if (match) {
-      return match[0];
-    }
-  }
-  return "";
-};
-
 const harvestShow = async (show: (typeof SHOWS)[number]) => {
   const showHtml = await fetchHtml(show.url);
   const episodeLinks = extractEpisodeLinks(showHtml);
@@ -175,8 +48,8 @@ const harvestShow = async (show: (typeof SHOWS)[number]) => {
     await sleep(450);
     try {
       const episodeHtml = await fetchHtml(episodeUrl);
-      const text = normalizeText(cheerio.load(episodeHtml)("body").text());
-      if (!CREDIT_PATTERNS.some((pattern) => pattern.test(text))) {
+      const text = extractBodyText(episodeHtml);
+      if (!extractCreditLine(text)) {
         continue;
       }
 

@@ -7,7 +7,7 @@
 - Public site: `pages/`
 - Reading River app: `app/reading-river/`
 
-Reading River is intentionally isolated under `/reading-river/*`, including auth, sessions, Prisma access, and middleware.
+Reading River is intentionally isolated under `/reading-river/*`, including auth, sessions, Prisma access, and proxy routing.
 
 ## Environment
 
@@ -49,5 +49,5 @@ npm run dev
 ## Notes
 
 - The public website should remain unaffected outside `/reading-river/*`.
-- `middleware.ts` only protects the Reading River subtree.
+- `proxy.ts` only protects the Reading River subtree.
 - `npm run lint` is still a known repo issue and does not currently run a meaningful lint pass under this Next.js version.

@@ -84,6 +84,15 @@ describe("getHomePageData", () => {
         status: true,
         pinned: true,
         createdAt: true,
+        tags: {
+          select: {
+            tag: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
       },
     });
   });

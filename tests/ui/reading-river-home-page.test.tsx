@@ -85,8 +85,16 @@ describe("ReadingRiverHomePage", () => {
     );
     expect(screen.getByText("Next priority read")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Live stream article" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Edit Live stream article" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("focus")).toBeInTheDocument();
     expect(screen.getByText("From the stream")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Daily stream pick" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Edit Daily stream pick" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("ideas")).toBeInTheDocument();
     expect(screen.getByText("Choose a time")).toBeInTheDocument();
     expect(mocks.getHomePageDataMock).toHaveBeenCalledWith({
       userId: "user-1",

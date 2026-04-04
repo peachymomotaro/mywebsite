@@ -12,7 +12,7 @@ function isPublicReadingRiverPath(pathname: string) {
   );
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (!pathname.startsWith(READING_RIVER_BASE_PATH)) {
@@ -37,6 +37,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  runtime: "nodejs",
   matcher: ["/reading-river/:path*"],
 };

@@ -23,8 +23,10 @@ describe("AddPage", () => {
     useActionStateMock.mockImplementation((_action, initialState) => [initialState, vi.fn()]);
   });
 
-  it("shows the updated add-page copy and only one selected form at a time", () => {
-    render(<AddPage />);
+  it("shows the updated add-page copy and only one selected form at a time", async () => {
+    const page = await AddPage();
+
+    render(page);
 
     expect(screen.getByRole("heading", { name: "Add to stream" })).toBeInTheDocument();
     expect(
@@ -47,7 +49,7 @@ describe("AddPage", () => {
     expect(screen.queryByLabelText("Estimated minutes")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Estimated minutes (optional)")).not.toBeInTheDocument();
     expect(screen.getByLabelText("URL")).toHaveAttribute("type", "text");
-    expect(screen.getByLabelText("Notes")).toHaveAttribute("rows", "6");
+    expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Manual item" }));
 
@@ -57,6 +59,8 @@ describe("AddPage", () => {
     );
     expect(screen.getByRole("heading", { name: "Write it down" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Paste a link" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Status")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
   });
 
   it("shows inline success feedback for the URL form", () => {
@@ -106,7 +110,7 @@ describe("AddPage", () => {
     expect(screen.getByLabelText("Estimated minutes")).toHaveValue(4);
     expect(screen.getByLabelText("URL")).toHaveValue("https://example.com/essay");
     expect(screen.getByLabelText("Title override")).toHaveValue("Essay override");
-    expect(screen.getByLabelText("Notes")).toHaveValue("Why this belongs in the stream");
+    expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Priority")).toHaveValue(7);
     expect(screen.getByLabelText("Tags")).toHaveValue("work, essays");
   });
@@ -142,6 +146,7 @@ describe("AddPage", () => {
     expect(screen.getByLabelText("URL")).toHaveValue(
       "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2033231",
     );
+    expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
   });
 
   it("shows inline success feedback for the manual form", () => {
@@ -158,6 +163,8 @@ describe("AddPage", () => {
     render(<ManualItemForm />);
 
     expect(screen.getByLabelText("Estimated minutes")).toBeRequired();
+    expect(screen.queryByLabelText("Status")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
     expect(screen.getByText('Added "Reading notebook entry" to the stream.')).toBeInTheDocument();
     expect(screen.getByText("Reading notebook entry")).toBeInTheDocument();
   });
