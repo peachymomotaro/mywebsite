@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { ShellNav } from "@/components/reading-river/shell-nav";
 import { getCurrentUser } from "@/lib/reading-river/current-user";
 import { readingRiverPath } from "@/lib/reading-river/routes";
+import { measureReadingRiverTiming } from "@/lib/reading-river/timing";
 import "./reading-river.css";
 
 export const metadata: Metadata = {
@@ -14,6 +16,8 @@ export const metadata: Metadata = {
   applicationName: "Reading River",
 };
 
+export const preferredRegion = "lhr1";
+
 export function EditorialShell({
   children,
   isAdmin = false,
@@ -24,9 +28,9 @@ export function EditorialShell({
   return (
     <div className="editorial-shell-frame">
       <header className="river-shell-header">
-        <a href={readingRiverPath()} className="river-shell-brand">
+        <Link href={readingRiverPath()} className="river-shell-brand">
           Reading River
-        </a>
+        </Link>
         <ShellNav isAdmin={isAdmin} />
       </header>
       {children}
@@ -39,15 +43,17 @@ export default async function RootLayout({
 }: Readonly<{
   children: ReactNode;
 }>) {
-  const currentUser = await getCurrentUser();
+  return measureReadingRiverTiming("layout.reading-river.render", async () => {
+    const currentUser = await getCurrentUser();
 
-  return (
-    <html lang="en">
-      <body className="editorial-shell">
-        <EditorialShell isAdmin={currentUser?.isAdmin ?? false}>
-          {children}
-        </EditorialShell>
-      </body>
-    </html>
-  );
+    return (
+      <html lang="en">
+        <body className="editorial-shell">
+          <EditorialShell isAdmin={currentUser?.isAdmin ?? false}>
+            {children}
+          </EditorialShell>
+        </body>
+      </html>
+    );
+  });
 }

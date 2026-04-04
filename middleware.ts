@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookieName } from "@/lib/reading-river/auth";
 import { readingRiverPath, READING_RIVER_BASE_PATH } from "@/lib/reading-river/routes";
-import { getCurrentUserFromSessionToken } from "@/lib/reading-river/session";
 
 function isPublicReadingRiverPath(pathname: string) {
   return (
@@ -28,14 +27,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get(getSessionCookieName())?.value;
-  const user = await getCurrentUserFromSessionToken(token);
+  const hasSessionCookie = Boolean(request.cookies.get(getSessionCookieName())?.value);
 
-  if (!user) {
-    return NextResponse.redirect(new URL(readingRiverPath("/login"), request.url));
-  }
-
-  if (pathname.startsWith(readingRiverPath("/admin")) && !user.isAdmin) {
+  if (!hasSessionCookie) {
     return NextResponse.redirect(new URL(readingRiverPath("/login"), request.url));
   }
 

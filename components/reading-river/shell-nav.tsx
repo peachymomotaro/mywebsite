@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { readingRiverPath } from "@/lib/reading-river/routes";
 
@@ -16,13 +17,13 @@ export function ShellNav({ isAdmin = false }: ShellNavProps) {
 
   return (
     <nav className="river-shell-nav" aria-label="Primary">
-      <a href={readingRiverPath("/history")} className="river-shell-nav-link">
+      <Link href={readingRiverPath("/history")} className="river-shell-nav-link">
         Read history
-      </a>
+      </Link>
       {isAdmin ? (
-        <a href={readingRiverPath("/admin")} className="river-shell-nav-link">
+        <Link href={readingRiverPath("/admin")} className="river-shell-nav-link">
           Admin
-        </a>
+        </Link>
       ) : null}
     </nav>
   );

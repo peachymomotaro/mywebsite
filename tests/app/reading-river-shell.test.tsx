@@ -1,7 +1,22 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
-import RootLayout, { EditorialShell } from "@/app/reading-river/layout";
+import RootLayout, { EditorialShell, preferredRegion } from "@/app/reading-river/layout";
+
+vi.mock("next/link", () => ({
+  default: ({
+    children,
+    href,
+    ...props
+  }: {
+    children: React.ReactNode;
+    href: string;
+  }) => (
+    <a data-next-link="true" href={href} {...props}>
+      {children}
+    </a>
+  ),
+}));
 
 const mocks = vi.hoisted(() => ({
   getCurrentUserMock: vi.fn(),
@@ -12,6 +27,10 @@ vi.mock("@/lib/reading-river/current-user", () => ({
 }));
 
 describe("EditorialShell", () => {
+  it("pins the Reading River subtree to the London function region", () => {
+    expect(preferredRegion).toBe("lhr1");
+  });
+
   it("keeps Reading River navigation inside the prefixed route space", () => {
     render(
       <EditorialShell isAdmin={true}>
@@ -23,13 +42,25 @@ describe("EditorialShell", () => {
       "href",
       "/reading-river"
     );
+    expect(screen.getByRole("link", { name: "Reading River" })).toHaveAttribute(
+      "data-next-link",
+      "true"
+    );
     expect(screen.getByRole("link", { name: "Read history" })).toHaveAttribute(
       "href",
       "/reading-river/history"
     );
+    expect(screen.getByRole("link", { name: "Read history" })).toHaveAttribute(
+      "data-next-link",
+      "true"
+    );
     expect(screen.getByRole("link", { name: "Admin" })).toHaveAttribute(
       "href",
       "/reading-river/admin"
+    );
+    expect(screen.getByRole("link", { name: "Admin" })).toHaveAttribute(
+      "data-next-link",
+      "true"
     );
   });
 });
@@ -62,13 +93,25 @@ describe("RootLayout", () => {
       "href",
       "/reading-river"
     );
+    expect(screen.getByRole("link", { name: "Reading River" })).toHaveAttribute(
+      "data-next-link",
+      "true"
+    );
     expect(screen.getByRole("link", { name: "Read history" })).toHaveAttribute(
       "href",
       "/reading-river/history"
     );
+    expect(screen.getByRole("link", { name: "Read history" })).toHaveAttribute(
+      "data-next-link",
+      "true"
+    );
     expect(screen.getByRole("link", { name: "Admin" })).toHaveAttribute(
       "href",
       "/reading-river/admin"
+    );
+    expect(screen.getByRole("link", { name: "Admin" })).toHaveAttribute(
+      "data-next-link",
+      "true"
     );
   });
 
@@ -88,9 +131,17 @@ describe("RootLayout", () => {
       "href",
       "/reading-river"
     );
+    expect(screen.getByRole("link", { name: "Reading River" })).toHaveAttribute(
+      "data-next-link",
+      "true"
+    );
     expect(screen.getByRole("link", { name: "Read history" })).toHaveAttribute(
       "href",
       "/reading-river/history"
+    );
+    expect(screen.getByRole("link", { name: "Read history" })).toHaveAttribute(
+      "data-next-link",
+      "true"
     );
     expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
   });
@@ -102,9 +153,17 @@ describe("RootLayout", () => {
       "href",
       "/reading-river"
     );
+    expect(screen.getByRole("link", { name: "Reading River" })).toHaveAttribute(
+      "data-next-link",
+      "true"
+    );
     expect(screen.getByRole("link", { name: "Read history" })).toHaveAttribute(
       "href",
       "/reading-river/history"
+    );
+    expect(screen.getByRole("link", { name: "Read history" })).toHaveAttribute(
+      "data-next-link",
+      "true"
     );
     expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
   });

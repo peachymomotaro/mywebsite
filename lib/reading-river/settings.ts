@@ -2,6 +2,18 @@ import { DisplayMode, type AppSettings } from "@prisma/client";
 import { DEFAULT_READING_SPEED_WPM } from "@/lib/reading-river/reading-config";
 import { getPrismaClient } from "@/lib/reading-river/db";
 
+function isUniqueConstraintError(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const candidate = error as {
+    code?: unknown;
+  };
+
+  return candidate.code === "P2002";
+}
+
 export function getAppSettingsDefaults(userId: string): Pick<
   AppSettings,
   | "displayMode"
@@ -22,9 +34,32 @@ export function getAppSettingsDefaults(userId: string): Pick<
 }
 
 export async function getOrCreateAppSettings(userId: string) {
-  return getPrismaClient().appSettings.upsert({
+  const prisma = getPrismaClient();
+  const existingSettings = await prisma.appSettings.findUnique({
     where: { userId },
-    update: {},
-    create: getAppSettingsDefaults(userId),
   });
+
+  if (existingSettings) {
+    return existingSettings;
+  }
+
+  try {
+    return await prisma.appSettings.create({
+      data: getAppSettingsDefaults(userId),
+    });
+  } catch (error) {
+    if (!isUniqueConstraintError(error)) {
+      throw error;
+    }
+
+    const concurrentSettings = await prisma.appSettings.findUnique({
+      where: { userId },
+    });
+
+    if (concurrentSettings) {
+      return concurrentSettings;
+    }
+
+    throw error;
+  }
 }

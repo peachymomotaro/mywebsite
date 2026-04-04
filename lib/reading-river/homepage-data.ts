@@ -18,7 +18,7 @@ type HomepageSourceItem = {
   readEvent?: {
     readAt: Date;
   } | null;
-  tags: Array<{
+  tags?: Array<{
     tag: {
       name: string;
     };
@@ -83,7 +83,7 @@ function toFeaturedItem(item: HomepageSourceItem): HomePageFeaturedItem {
     priorityScore: item.priorityScore,
     status: item.status,
     pinned: item.pinned,
-    tags: item.tags.map(({ tag }) => tag.name),
+    tags: item.tags?.map(({ tag }) => tag.name) ?? [],
   };
 }
 
@@ -225,14 +225,23 @@ export async function getHomePageData(options: HomePageDataOptions) {
     prisma.readingItem.findMany({
       where: {
         userId: options.userId,
-      },
-      include: {
-        readEvent: true,
-        tags: {
-          include: {
-            tag: true,
-          },
+        status: {
+          in: ["unread", "reading"],
         },
+        readEvent: {
+          is: null,
+        },
+      },
+      select: {
+        id: true,
+        title: true,
+        sourceUrl: true,
+        siteName: true,
+        estimatedMinutes: true,
+        priorityScore: true,
+        status: true,
+        pinned: true,
+        createdAt: true,
       },
     }),
   ]);

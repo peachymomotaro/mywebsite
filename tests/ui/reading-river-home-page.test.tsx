@@ -51,7 +51,7 @@ vi.mock("next/link", () => ({
     children: React.ReactNode;
     href: string;
   }) => (
-    <a href={href} {...props}>
+    <a data-next-link="true" href={href} {...props}>
       {children}
     </a>
   ),
@@ -79,6 +79,10 @@ describe("ReadingRiverHomePage", () => {
 
     expect(screen.getByRole("heading", { name: "Pick your next read" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Add to stream" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Add to stream" })).toHaveAttribute(
+      "data-next-link",
+      "true"
+    );
     expect(screen.getByText("Next priority read")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Live stream article" })).toBeInTheDocument();
     expect(screen.getByText("From the stream")).toBeInTheDocument();
