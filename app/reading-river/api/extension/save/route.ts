@@ -17,7 +17,7 @@ function getBearerToken(authorization: string | null) {
     return null;
   }
 
-  return match[1] || null;
+  return match[1]?.trim() || null;
 }
 
 function unauthorized() {

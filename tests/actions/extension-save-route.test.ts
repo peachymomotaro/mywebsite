@@ -172,6 +172,40 @@ describe("reading river extension save route", () => {
     expect(routeMocks.getCurrentUserFromExtensionToken).toHaveBeenCalledWith("invalid-token");
   });
 
+  it("trims trailing whitespace from the bearer token", async () => {
+    const create = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
+      id: "item-1",
+      ...data,
+    }));
+
+    routeMocks.setPrismaMock({
+      readingItem: {
+        create,
+      },
+    });
+    routeMocks.getCurrentUserFromExtensionToken.mockImplementation(async (token) =>
+      token === "extension-token" ? createUser() : null,
+    );
+
+    const request = new Request("https://example.com/reading-river/api/extension/save", {
+      method: "POST",
+      headers: {
+        authorization: "Bearer extension-token   ",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        url: "https://example.com/article",
+        title: "Read later",
+        priorityScore: 5,
+      }),
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(201);
+    expect(routeMocks.getCurrentUserFromExtensionToken).toHaveBeenCalledWith("extension-token");
+  });
+
   it("rejects requests without a priority score", async () => {
     routeMocks.getCurrentUserFromExtensionToken.mockResolvedValue(createUser());
 
