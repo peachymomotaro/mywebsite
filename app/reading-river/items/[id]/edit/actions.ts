@@ -37,12 +37,12 @@ function normalizeSubmittedUrl(value: string) {
   }
 }
 
-function redirectToEdit(id: string, error: string) {
+function redirectToEdit(id: string, error: string): never {
   if (!id) {
-    redirect(readingRiverPath());
+    return redirect(readingRiverPath());
   }
 
-  redirect(`${readingRiverItemEditPath(id)}?error=${encodeURIComponent(error)}`);
+  return redirect(`${readingRiverItemEditPath(id)}?error=${encodeURIComponent(error)}`);
 }
 
 export async function saveReadingItemEditAction(formData: FormData) {
