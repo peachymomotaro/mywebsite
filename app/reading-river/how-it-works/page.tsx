@@ -22,7 +22,7 @@ const influences = [
     href: "https://notes.andymatuschak.org/Spaced_repetition_systems_can_be_used_to_program_attention",
     label: "Andy Matuschak, Spaced repetition systems can be used to program attention",
     description:
-      "The Reading River can also be thought of a way of saying that you will attend to something in the future, just not right now.",
+      "The Reading River can also be thought of a way of saying that you will attend to something in the future, just not right now. Or, 'I will pay attention this later.'",
   },
 ] as const;
 
@@ -37,10 +37,6 @@ export default function HowItWorksPage() {
             <p className="editorial-page-intro">
               Reading River is a way to lower the pressure to read everything and make
               calmer choices about what to read next.
-            </p>
-            <p className="editorial-page-intro">
-              If you want the deeper philosophy behind it, the influences are linked at
-              the bottom.
             </p>
           </div>
         </header>
@@ -57,6 +53,8 @@ export default function HowItWorksPage() {
             </p>
             <p>
               When you want to read something, return to the river and go fishing.
+            </p>
+            <p>
               The left option is the &apos;most important&apos; option based on the
               priority setting and the amount of time you have. The right button is a
               randomly selected piece of reading.
@@ -64,6 +62,25 @@ export default function HowItWorksPage() {
             <p>
               The Reading River is meant to be highly personal. Anything you upload
               will never be looked at except for necessary maintenance and upkeep.
+            </p>
+          </section>
+
+          <section className="editorial-panel-soft river-how-section">
+            <h2>Philosophy and More on How It Works</h2>
+            <p>
+              The core idea is that your reading list should be more like a river
+              than a bucket. You wade in at a spot, grab something you want to read,
+              and then sit by the banks.
+            </p>
+            <p>
+              The Reading River is about escaping from the urgency of the headline.
+              Things often seem much more important than they are when we see them
+              for the first time. Add anything you don&apos;t need to read this
+              second to the river, and let it sit for some time. It will become
+              clear whether it was worth reading.
+            </p>
+            <p>
+              This is a calmer way to sort through what you want to read.
             </p>
             <p>
               If you&apos;re interested, the priority algorithm for Reading River is
@@ -80,24 +97,6 @@ export default function HowItWorksPage() {
               then high-priority long reads, then lower-priority short reads, and then 
               everything else.
             </p>
-          </section>
-
-          <section className="editorial-panel-soft river-how-section">
-            <h2>Philosophy and influences</h2>
-            <p>
-              The core idea is that your reading list should be more like a river
-              than a bucket. You wade in at a spot, grab something you want to read,
-              and then sit by the banks.
-            </p>
-            <p>
-              The Reading River is about escaping from the urgency of the headline.
-              Things often seem much more important than they are when we see them
-              for the first time. Add anything you don&apos;t need to read this
-              second to the river, and let it sit for some time. It will become
-              clear whether it was worth reading.
-            </p>
-            <p>This is a calmer way to sort through what you want to read.</p>
-
             <ul className="river-how-source-list">
               {influences.map((influence) => (
                 <li key={influence.href} className="river-how-source-item">
