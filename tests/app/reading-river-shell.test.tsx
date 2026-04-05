@@ -54,6 +54,14 @@ describe("EditorialShell", () => {
       "data-next-link",
       "true"
     );
+    expect(screen.getByRole("link", { name: "How It Works" })).toHaveAttribute(
+      "href",
+      "/reading-river/how-it-works"
+    );
+    expect(screen.getByRole("link", { name: "How It Works" })).toHaveAttribute(
+      "data-next-link",
+      "true"
+    );
     expect(screen.getByRole("link", { name: "Admin" })).toHaveAttribute(
       "href",
       "/reading-river/admin"
@@ -105,6 +113,14 @@ describe("RootLayout", () => {
       "data-next-link",
       "true"
     );
+    expect(screen.getByRole("link", { name: "How It Works" })).toHaveAttribute(
+      "href",
+      "/reading-river/how-it-works"
+    );
+    expect(screen.getByRole("link", { name: "How It Works" })).toHaveAttribute(
+      "data-next-link",
+      "true"
+    );
     expect(screen.getByRole("link", { name: "Admin" })).toHaveAttribute(
       "href",
       "/reading-river/admin"
@@ -143,6 +159,14 @@ describe("RootLayout", () => {
       "data-next-link",
       "true"
     );
+    expect(screen.getByRole("link", { name: "How It Works" })).toHaveAttribute(
+      "href",
+      "/reading-river/how-it-works"
+    );
+    expect(screen.getByRole("link", { name: "How It Works" })).toHaveAttribute(
+      "data-next-link",
+      "true"
+    );
     expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
   });
 
@@ -162,6 +186,14 @@ describe("RootLayout", () => {
       "/reading-river/history"
     );
     expect(screen.getByRole("link", { name: "Read history" })).toHaveAttribute(
+      "data-next-link",
+      "true"
+    );
+    expect(screen.getByRole("link", { name: "How It Works" })).toHaveAttribute(
+      "href",
+      "/reading-river/how-it-works"
+    );
+    expect(screen.getByRole("link", { name: "How It Works" })).toHaveAttribute(
       "data-next-link",
       "true"
     );

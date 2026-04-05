@@ -37,7 +37,7 @@ function normalizeSubmittedUrl(value: string) {
   }
 }
 
-function redirectToEdit(id: string, error: string) {
+function redirectToEdit(id: string, error: string): never {
   if (!id) {
     redirect(readingRiverPath());
   }
@@ -64,6 +64,9 @@ export async function saveReadingItemEditAction(formData: FormData) {
     redirectToEdit(id, "invalid_input");
   }
 
+  const validatedEstimatedMinutes = estimatedMinutes;
+  const validatedPriorityScore = priorityScore;
+
   const updateInput: {
     id: string;
     title: string;
@@ -74,8 +77,8 @@ export async function saveReadingItemEditAction(formData: FormData) {
   } = {
     id,
     title,
-    estimatedMinutes,
-    priorityScore,
+    estimatedMinutes: validatedEstimatedMinutes,
+    priorityScore: validatedPriorityScore,
     tagNames: parseTagNames(String(formData.get("tagNames") ?? "")),
   };
 

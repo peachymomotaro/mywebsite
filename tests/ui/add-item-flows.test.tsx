@@ -31,12 +31,12 @@ describe("AddPage", () => {
     expect(screen.getByRole("heading", { name: "Add to stream" })).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Save a link or jot down something to read. Both forms add straight into the same stream.",
+        "Save a link or jot down something to read. Links fetch details first so you can review them before they enter the stream.",
       ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "It may take a sec to add a link, as the server estimates the length of the read. This affects how it is pulled out of the river later.",
+        "Reading River can usually suggest the title and reading time, and you can edit either before saving.",
       ),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Paste a link" })).toHaveAttribute("aria-pressed", "true");
@@ -44,6 +44,7 @@ describe("AddPage", () => {
     expect(screen.getByRole("button", { name: "Manual item" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "Manual item" })).toHaveClass("river-primary-action");
     expect(screen.getByRole("heading", { name: "Paste a link" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Fetch details" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Write it down" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Bring something into the stream" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Estimated minutes")).not.toBeInTheDocument();
@@ -80,19 +81,29 @@ describe("AddPage", () => {
     expect(screen.getByText("Saved essay")).toBeInTheDocument();
   });
 
-  it("shows the retry state for the URL form when a manual estimate is needed", () => {
+  it("shows the review state for the URL form when details were fetched", () => {
     useActionStateMock.mockImplementationOnce(() => [
       {
-        status: "needs_estimate",
-        message:
-          "I couldn't estimate reading time confidently for that link. Add or adjust your best guess before saving it.",
+        status: "review",
+        message: "Fetched article details. Review the title and reading time, then save it.",
         draftValues: {
           url: "https://example.com/essay",
-          title: "Essay override",
+          title: "Essay",
           notes: "Why this belongs in the stream",
           priorityScore: "7",
           estimatedMinutes: "4",
           tagNames: "work, essays",
+        },
+        reviewMetadata: {
+          fetchSucceeded: true,
+          estimatedMinutesRequired: false,
+          extractedTitle: "Essay",
+          siteName: "Example",
+          author: null,
+          wordCount: 400,
+          estimatedMinutes: 4,
+          lengthEstimationMethod: "readability",
+          lengthEstimationConfidence: "medium",
         },
         submittedAt: 1,
       },
@@ -101,26 +112,23 @@ describe("AddPage", () => {
 
     render(<UrlIntakeForm />);
 
-    expect(
-      screen.getByText(
-        "I couldn't estimate reading time confidently for that link. Add or adjust your best guess before saving it.",
-      ),
-    ).toBeInTheDocument();
-    expect(screen.getByLabelText("Estimated minutes")).toBeRequired();
+    expect(screen.getByText("Fetched article details. Review the title and reading time, then save it.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Estimated minutes")).not.toBeRequired();
     expect(screen.getByLabelText("Estimated minutes")).toHaveValue(4);
     expect(screen.getByLabelText("URL")).toHaveValue("https://example.com/essay");
-    expect(screen.getByLabelText("Title override")).toHaveValue("Essay override");
+    expect(screen.getByLabelText("Title")).toHaveValue("Essay");
     expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Priority")).toHaveValue(7);
     expect(screen.getByLabelText("Tags")).toHaveValue("work, essays");
+    expect(screen.getByRole("button", { name: "Save article" })).toBeInTheDocument();
   });
 
-  it("shows a proceed-anyway state when the page cannot be fetched", () => {
+  it("shows a manual review state when the page cannot be fetched", () => {
     useActionStateMock.mockImplementationOnce(() => [
       {
-        status: "fetch_failed_confirm",
+        status: "review",
         message:
-          "I couldn't fetch this page. It may not exist, or it may block automated access. You can still add it manually if you want to proceed.",
+          "I couldn't fetch this page. Review the title and add a reading time before saving it manually.",
         draftValues: {
           url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2033231",
           title: "Essay override",
@@ -129,6 +137,17 @@ describe("AddPage", () => {
           estimatedMinutes: "",
           tagNames: "work, essays",
         },
+        reviewMetadata: {
+          fetchSucceeded: false,
+          estimatedMinutesRequired: true,
+          extractedTitle: null,
+          siteName: null,
+          author: null,
+          wordCount: null,
+          estimatedMinutes: null,
+          lengthEstimationMethod: "unknown",
+          lengthEstimationConfidence: "unknown",
+        },
         submittedAt: 1,
       },
       vi.fn(),
@@ -138,14 +157,15 @@ describe("AddPage", () => {
 
     expect(
       screen.getByText(
-        "I couldn't fetch this page. It may not exist, or it may block automated access. You can still add it manually if you want to proceed.",
+        "I couldn't fetch this page. Review the title and add a reading time before saving it manually.",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Proceed anyway" })).toBeInTheDocument();
-    expect(screen.queryByLabelText("Estimated minutes")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save article" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Estimated minutes")).toBeRequired();
     expect(screen.getByLabelText("URL")).toHaveValue(
       "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2033231",
     );
+    expect(screen.getByLabelText("Title")).toHaveValue("Essay override");
     expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
   });
 

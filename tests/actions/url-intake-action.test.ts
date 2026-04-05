@@ -31,20 +31,125 @@ vi.mock("@/lib/reading-river/current-user", () => ({
   requireCurrentUser: requireCurrentUserMock,
 }));
 
-function buildUrlFormData(url = "https://example.com/essay") {
+function buildUrlFormData(
+  url = "https://example.com/essay",
+  {
+    title = "Essay override",
+    notes = "Why this belongs in the stream",
+    priorityScore = "7",
+    estimatedMinutes = "",
+    tagNames = "work, essays",
+  }: {
+    title?: string;
+    notes?: string;
+    priorityScore?: string;
+    estimatedMinutes?: string;
+    tagNames?: string;
+  } = {},
+) {
   const formData = new FormData();
 
   formData.set("url", url);
-  formData.set("title", "Essay override");
-  formData.set("notes", "Why this belongs in the stream");
-  formData.set("priorityScore", "7");
-  formData.set("tagNames", "work, essays");
+  formData.set("title", title);
+  formData.set("notes", notes);
+  formData.set("priorityScore", priorityScore);
+  formData.set("estimatedMinutes", estimatedMinutes);
+  formData.set("tagNames", tagNames);
 
   return formData;
 }
 
+function buildReviewState({
+  message = "Review the fetched details and save the article when it looks right.",
+  draftValues,
+  reviewMetadata,
+}: {
+  message?: string;
+  draftValues?: {
+    url?: string;
+    title?: string;
+    notes?: string;
+    priorityScore?: string;
+    estimatedMinutes?: string;
+    tagNames?: string;
+  };
+  reviewMetadata?: {
+    fetchSucceeded?: boolean;
+    estimatedMinutesRequired?: boolean;
+    extractedTitle?: string | null;
+    extractedText?: string | null;
+    titleWasPrefilled?: boolean;
+    siteName?: string | null;
+    author?: string | null;
+    wordCount?: number | null;
+    estimatedMinutes?: number | null;
+    lengthEstimationMethod?:
+      | "schema_wordCount"
+      | "schema_timeRequired"
+      | "schema_articleBody"
+      | "readability"
+      | "trafilatura"
+      | "manual"
+      | "unknown";
+    lengthEstimationConfidence?: "high" | "medium" | "low" | "unknown";
+  } | null;
+} = {}) {
+  return {
+    status: "review" as const,
+    message,
+    draftValues: {
+      url: "https://example.com/essay",
+      title: "Essay",
+      notes: "Why this belongs in the stream",
+      priorityScore: "7",
+      estimatedMinutes: "2",
+      tagNames: "work, essays",
+      ...draftValues,
+    },
+    reviewMetadata: {
+      fetchSucceeded: true,
+      estimatedMinutesRequired: false,
+      extractedTitle: "Essay",
+      extractedText: repeatWords(220),
+      titleWasPrefilled: true,
+      siteName: "Example",
+      author: null,
+      wordCount: 220,
+      estimatedMinutes: 2,
+      lengthEstimationMethod: "readability" as const,
+      lengthEstimationConfidence: "medium" as const,
+      ...reviewMetadata,
+    },
+    submittedAt: 1,
+  };
+}
+
 function repeatWords(count: number) {
   return "word ".repeat(count).trim();
+}
+
+function buildSubstackFeed({
+  title = "How To Improve Your Information Diet",
+  description = "Like any diet, it's about choosing what not to consume",
+  author = "David Epstein",
+  url = "https://davidepstein.substack.com/p/how-to-improve-your-information-diet",
+  contentHtml = `<article><p>${repeatWords(220)}</p></article>`,
+} = {}) {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0">
+  <channel>
+    <title><![CDATA[Range Widely]]></title>
+    <link>https://davidepstein.substack.com</link>
+    <item>
+      <title><![CDATA[${title}]]></title>
+      <description><![CDATA[${description}]]></description>
+      <link>${url}</link>
+      <guid isPermaLink="false">${url}</guid>
+      <dc:creator><![CDATA[${author}]]></dc:creator>
+      <content:encoded><![CDATA[${contentHtml}]]></content:encoded>
+    </item>
+  </channel>
+</rss>`;
 }
 
 function createCurrentUser() {
@@ -86,10 +191,6 @@ describe("submitUrlIntake", () => {
     });
 
     vi.stubGlobal("fetch", fetchMock);
-    createMock.mockResolvedValue({
-      id: "item-1",
-      title: "Essay override",
-    });
 
     await submitUrlIntake(initialIntakeFormState, formData);
 
@@ -103,7 +204,7 @@ describe("submitUrlIntake", () => {
     );
   });
 
-  it("returns a fetch confirmation state without saving when the page cannot be fetched", async () => {
+  it("returns a review state without saving when the page cannot be fetched", async () => {
     const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
     const formData = buildUrlFormData();
     const consoleWarnMock = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -113,9 +214,9 @@ describe("submitUrlIntake", () => {
     const result = await submitUrlIntake(initialIntakeFormState, formData);
 
     expect(result).toEqual({
-      status: "fetch_failed_confirm",
+      status: "review",
       message:
-        "I couldn't fetch this page. It may not exist, or it may block automated access. You can still add it manually if you want to proceed.",
+        "I couldn't fetch this page. Review the title and add a reading time before saving it manually.",
       draftValues: {
         url: "https://example.com/essay",
         title: "Essay override",
@@ -123,6 +224,19 @@ describe("submitUrlIntake", () => {
         priorityScore: "7",
         estimatedMinutes: "",
         tagNames: "work, essays",
+      },
+      reviewMetadata: {
+        fetchSucceeded: false,
+        estimatedMinutesRequired: true,
+        extractedTitle: null,
+        extractedText: null,
+        titleWasPrefilled: false,
+        siteName: null,
+        author: null,
+        wordCount: null,
+        estimatedMinutes: null,
+        lengthEstimationMethod: "unknown",
+        lengthEstimationConfidence: "unknown",
       },
       submittedAt: expect.any(Number),
     });
@@ -159,7 +273,7 @@ describe("submitUrlIntake", () => {
     );
   });
 
-  it("asks for a manual estimate after the user proceeds from a fetch failure", async () => {
+  it("requires an estimated reading time before saving a manual review", async () => {
     const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
     const formData = buildUrlFormData();
     const fetchMock = vi.fn();
@@ -167,28 +281,35 @@ describe("submitUrlIntake", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await submitUrlIntake(
-      {
-        status: "fetch_failed_confirm",
+      buildReviewState({
         message:
-          "I couldn't fetch this page. It may not exist, or it may block automated access. You can still add it manually if you want to proceed.",
+          "I couldn't fetch this page. Review the title and add a reading time before saving it manually.",
         draftValues: {
-          url: "https://example.com/essay",
           title: "Essay override",
-          notes: "Why this belongs in the stream",
-          priorityScore: "7",
           estimatedMinutes: "",
-          tagNames: "work, essays",
         },
-        submittedAt: 1,
-      },
+        reviewMetadata: {
+          fetchSucceeded: false,
+          estimatedMinutesRequired: true,
+          extractedTitle: null,
+          extractedText: null,
+          titleWasPrefilled: false,
+          siteName: null,
+          author: null,
+          wordCount: null,
+          estimatedMinutes: null,
+          lengthEstimationMethod: "unknown",
+          lengthEstimationConfidence: "unknown",
+        },
+      }),
       formData,
     );
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(createMock).not.toHaveBeenCalled();
     expect(result).toEqual({
-      status: "needs_estimate",
-      message: "Add an estimated reading time before saving this link manually.",
+      status: "review",
+      message: "Add an estimated reading time before saving this article.",
       draftValues: {
         url: "https://example.com/essay",
         title: "Essay override",
@@ -197,16 +318,27 @@ describe("submitUrlIntake", () => {
         estimatedMinutes: "",
         tagNames: "work, essays",
       },
+      reviewMetadata: {
+        fetchSucceeded: false,
+        estimatedMinutesRequired: true,
+        extractedTitle: null,
+        extractedText: null,
+        titleWasPrefilled: false,
+        siteName: null,
+        author: null,
+        wordCount: null,
+        estimatedMinutes: null,
+        lengthEstimationMethod: "unknown",
+        lengthEstimationConfidence: "unknown",
+      },
       submittedAt: expect.any(Number),
     });
   });
 
-  it("saves with a manual estimate after the user proceeds from a fetch failure", async () => {
+  it("saves with a manual estimate after a fetch failure review", async () => {
     const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
-    const formData = buildUrlFormData();
+    const formData = buildUrlFormData(undefined, { estimatedMinutes: "12" });
     const fetchMock = vi.fn();
-
-    formData.set("estimatedMinutes", "12");
 
     vi.stubGlobal("fetch", fetchMock);
     createMock.mockResolvedValue({
@@ -215,20 +347,27 @@ describe("submitUrlIntake", () => {
     });
 
     const result = await submitUrlIntake(
-      {
-        status: "fetch_failed_confirm",
+      buildReviewState({
         message:
-          "I couldn't fetch this page. It may not exist, or it may block automated access. You can still add it manually if you want to proceed.",
+          "I couldn't fetch this page. Review the title and add a reading time before saving it manually.",
         draftValues: {
-          url: "https://example.com/essay",
           title: "Essay override",
-          notes: "Why this belongs in the stream",
-          priorityScore: "7",
           estimatedMinutes: "",
-          tagNames: "work, essays",
         },
-        submittedAt: 1,
-      },
+        reviewMetadata: {
+          fetchSucceeded: false,
+          estimatedMinutesRequired: true,
+          extractedTitle: null,
+          extractedText: null,
+          titleWasPrefilled: false,
+          siteName: null,
+          author: null,
+          wordCount: null,
+          estimatedMinutes: null,
+          lengthEstimationMethod: "unknown",
+          lengthEstimationConfidence: "unknown",
+        },
+      }),
       formData,
     );
 
@@ -243,6 +382,9 @@ describe("submitUrlIntake", () => {
         priorityScore: 7,
         lengthEstimationMethod: "manual",
         lengthEstimationConfidence: "unknown",
+        siteName: null,
+        author: null,
+        wordCount: null,
       }),
     });
     expect(result).toEqual({
@@ -253,9 +395,9 @@ describe("submitUrlIntake", () => {
     });
   });
 
-  it("saves the item directly when automatic reading-time extraction succeeds", async () => {
+  it("returns a review state with the fetched title and estimate instead of saving immediately", async () => {
     const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
-    const formData = buildUrlFormData();
+    const formData = buildUrlFormData(undefined, { title: "" });
 
     vi.stubGlobal(
       "fetch",
@@ -267,24 +409,68 @@ describe("submitUrlIntake", () => {
           )}</p></article></body></html>`,
       }),
     );
-    createMock.mockResolvedValue({
-      id: "item-1",
-      title: "Essay override",
-    });
 
     const result = await submitUrlIntake(initialIntakeFormState, formData);
 
+    expect(createMock).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      status: "review",
+      message: "Fetched article details. Review the title and reading time, then save it.",
+      draftValues: {
+        url: "https://example.com/essay",
+        title: "Essay",
+        notes: "Why this belongs in the stream",
+        priorityScore: "7",
+        estimatedMinutes: "2",
+        tagNames: "work, essays",
+      },
+      reviewMetadata: {
+        fetchSucceeded: true,
+        estimatedMinutesRequired: false,
+        extractedTitle: "Essay",
+        extractedText: expect.any(String),
+        titleWasPrefilled: true,
+        siteName: "Example",
+        author: null,
+        wordCount: 220,
+        estimatedMinutes: 2,
+        lengthEstimationMethod: "readability",
+        lengthEstimationConfidence: "medium",
+      },
+      submittedAt: expect.any(Number),
+    });
+    expect(revalidatePathMock).not.toHaveBeenCalled();
+  });
+
+  it("saves the reviewed article without fetching again and preserves extracted metadata", async () => {
+    const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
+    const formData = buildUrlFormData(undefined, {
+      title: "",
+      estimatedMinutes: "2",
+    });
+    const fetchMock = vi.fn();
+
+    vi.stubGlobal("fetch", fetchMock);
+    createMock.mockResolvedValue({
+      id: "item-1",
+      title: "Essay",
+    });
+
+    const result = await submitUrlIntake(buildReviewState({ draftValues: { title: "" } }), formData);
+
+    expect(fetchMock).not.toHaveBeenCalled();
     expect(createMock).toHaveBeenCalledWith({
       data: expect.objectContaining({
         userId: "user-1",
-        title: "Essay override",
+        title: "Essay",
         sourceType: "url",
         sourceUrl: "https://example.com/essay",
         notes: "Why this belongs in the stream",
         priorityScore: 7,
         estimatedMinutes: 2,
         siteName: "Example",
-        wordCount: expect.any(Number),
+        extractedText: expect.any(String),
+        wordCount: 220,
         lengthEstimationMethod: "readability",
         lengthEstimationConfidence: "medium",
       }),
@@ -325,16 +511,71 @@ describe("submitUrlIntake", () => {
     ]);
     expect(result).toEqual({
       status: "success",
-      message: 'Added "Essay override" to the stream.',
-      savedTitle: "Essay override",
+      message: 'Added "Essay" to the stream.',
+      savedTitle: "Essay",
       submittedAt: expect.any(Number),
     });
     expect(revalidatePathMock).toHaveBeenCalledWith(readingRiverPath());
   });
 
-  it("returns needs_estimate with a rough suggestion when the estimate is low confidence", async () => {
+  it("refetches article details when the URL changes during review instead of saving stale metadata", async () => {
     const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
-    const formData = buildUrlFormData();
+    const formData = buildUrlFormData("https://example.com/updated", {
+      title: "Essay",
+      estimatedMinutes: "2",
+    });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        `<html><head><title>Updated essay</title><meta property="og:site_name" content="Example" /></head><body><article><h1>Updated essay</h1><p>${repeatWords(
+          220,
+        )}</p></article></body></html>`,
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await submitUrlIntake(buildReviewState(), formData);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://example.com/updated",
+      expect.objectContaining({
+        headers: {
+          "User-Agent": "Reading River/0.1 (+https://reading-river.local)",
+        },
+      }),
+    );
+    expect(createMock).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      status: "review",
+      message: "Fetched article details. Review the title and reading time, then save it.",
+      draftValues: {
+        url: "https://example.com/updated",
+        title: "Updated essay",
+        notes: "Why this belongs in the stream",
+        priorityScore: "7",
+        estimatedMinutes: "2",
+        tagNames: "work, essays",
+      },
+      reviewMetadata: {
+        fetchSucceeded: true,
+        estimatedMinutesRequired: false,
+        extractedTitle: "Updated essay",
+        extractedText: expect.any(String),
+        titleWasPrefilled: true,
+        siteName: "Example",
+        author: null,
+        wordCount: 220,
+        estimatedMinutes: 2,
+        lengthEstimationMethod: "readability",
+        lengthEstimationConfidence: "medium",
+      },
+      submittedAt: expect.any(Number),
+    });
+  });
+
+  it("returns a review state with a rough suggestion when the estimate is low confidence", async () => {
+    const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
+    const formData = buildUrlFormData(undefined, { title: "" });
 
     vi.stubGlobal(
       "fetch",
@@ -354,70 +595,91 @@ describe("submitUrlIntake", () => {
     const result = await submitUrlIntake(initialIntakeFormState, formData);
 
     expect(result).toEqual({
-      status: "needs_estimate",
+      status: "review",
       message:
-        "I couldn't estimate reading time confidently for that link. Add or adjust your best guess before saving it.",
+        "I found the article, but the reading time still needs your confirmation before saving.",
       draftValues: {
         url: "https://example.com/essay",
-        title: "Essay override",
+        title: "Short note",
         notes: "Why this belongs in the stream",
         priorityScore: "7",
         estimatedMinutes: "1",
         tagNames: "work, essays",
+      },
+      reviewMetadata: {
+        fetchSucceeded: true,
+        estimatedMinutesRequired: true,
+        extractedTitle: "Short note",
+        extractedText: expect.any(String),
+        titleWasPrefilled: true,
+        siteName: "example.com",
+        author: null,
+        wordCount: 20,
+        estimatedMinutes: 1,
+        lengthEstimationMethod: "schema_articleBody",
+        lengthEstimationConfidence: "low",
       },
       submittedAt: expect.any(Number),
     });
     expect(createMock).not.toHaveBeenCalled();
   });
 
-  it("saves with a manual estimate when retrying after a failed auto-estimate", async () => {
+  it("saves a low-confidence review with a manual estimate while keeping extracted metadata", async () => {
     const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
-    const formData = buildUrlFormData();
-
-    formData.set("estimatedMinutes", "12");
-
+    const formData = buildUrlFormData(undefined, {
+      title: "Short note",
+      estimatedMinutes: "12",
+    });
     const fetchMock = vi.fn();
 
     vi.stubGlobal("fetch", fetchMock);
     createMock.mockResolvedValue({
       id: "item-2",
-      title: "Essay override",
+      title: "Short note",
     });
 
     const result = await submitUrlIntake(
-      {
-        status: "needs_estimate",
-        message: "retry",
+      buildReviewState({
+        message:
+          "I found the article, but the reading time still needs your confirmation before saving.",
         draftValues: {
-          url: "https://example.com/essay",
-          title: "Essay override",
-          notes: "Why this belongs in the stream",
-          priorityScore: "7",
+          title: "Short note",
           estimatedMinutes: "1",
-          tagNames: "work, essays",
         },
-        submittedAt: 1,
-      },
+        reviewMetadata: {
+          fetchSucceeded: true,
+          estimatedMinutesRequired: true,
+          extractedTitle: "Short note",
+          extractedText: expect.any(String),
+          titleWasPrefilled: false,
+          siteName: "example.com",
+          author: null,
+          wordCount: 20,
+          estimatedMinutes: 1,
+          lengthEstimationMethod: "schema_articleBody",
+          lengthEstimationConfidence: "low",
+        },
+      }),
       formData,
     );
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(createMock).toHaveBeenCalledWith({
       data: expect.objectContaining({
-        userId: "user-1",
-        title: "Essay override",
-        sourceType: "url",
-        sourceUrl: "https://example.com/essay",
+        title: "Short note",
         estimatedMinutes: 12,
-        priorityScore: 7,
+        siteName: "example.com",
+        author: null,
+        extractedText: expect.any(String),
+        wordCount: 20,
         lengthEstimationMethod: "manual",
         lengthEstimationConfidence: "unknown",
       }),
     });
     expect(result).toEqual({
       status: "success",
-      message: 'Added "Essay override" to the stream.',
-      savedTitle: "Essay override",
+      message: 'Added "Short note" to the stream.',
+      savedTitle: "Short note",
       submittedAt: expect.any(Number),
     });
   });
@@ -437,7 +699,8 @@ describe("submitUrlIntake", () => {
 
     const result = await submitUrlIntake(initialIntakeFormState, formData);
 
-    expect(result.status).toBe("needs_estimate");
+    expect(result.status).toBe("review");
+    expect(result.reviewMetadata?.estimatedMinutesRequired).toBe(true);
     expect(createMock).not.toHaveBeenCalled();
     expect(consoleWarnMock).toHaveBeenCalledWith(
       "Reading time estimation needs manual confirmation.",
@@ -447,5 +710,181 @@ describe("submitUrlIntake", () => {
         method: "unknown",
       }),
     );
+  });
+
+  it("falls back to the Substack publication feed after a page-fetch failure and prefills the title", async () => {
+    const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
+    const formData = buildUrlFormData(
+      "https://davidepstein.substack.com/p/how-to-improve-your-information-diet",
+      { title: "" },
+    );
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("blocked"))
+      .mockResolvedValueOnce({
+        ok: true,
+        text: async () => buildSubstackFeed(),
+      });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await submitUrlIntake(initialIntakeFormState, formData);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "https://davidepstein.substack.com/feed",
+      expect.objectContaining({
+        headers: {
+          "User-Agent": "Reading River/0.1 (+https://reading-river.local)",
+        },
+      }),
+    );
+    expect(createMock).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      status: "review",
+      message: "Fetched article details. Review the title and reading time, then save it.",
+      draftValues: {
+        url: "https://davidepstein.substack.com/p/how-to-improve-your-information-diet",
+        title: "How To Improve Your Information Diet",
+        notes: "Why this belongs in the stream",
+        priorityScore: "7",
+        estimatedMinutes: "2",
+        tagNames: "work, essays",
+      },
+      reviewMetadata: {
+        fetchSucceeded: true,
+        estimatedMinutesRequired: false,
+        extractedTitle: "How To Improve Your Information Diet",
+        extractedText: expect.any(String),
+        titleWasPrefilled: true,
+        siteName: "Range Widely",
+        author: "David Epstein",
+        wordCount: 220,
+        estimatedMinutes: 2,
+        lengthEstimationMethod: "readability",
+        lengthEstimationConfidence: "medium",
+      },
+      submittedAt: expect.any(Number),
+    });
+  });
+
+  it("tries the Substack feed when direct extraction is low confidence", async () => {
+    const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
+    const formData = buildUrlFormData(
+      "https://davidepstein.substack.com/p/how-to-improve-your-information-diet",
+      { title: "" },
+    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        text: async () =>
+          `<html><head><title>Short note</title></head><body><article><p>${repeatWords(
+            20,
+          )}</p></article></body></html>`,
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        text: async () => buildSubstackFeed(),
+      });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await submitUrlIntake(initialIntakeFormState, formData);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "https://davidepstein.substack.com/feed",
+      expect.anything(),
+    );
+    expect(createMock).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      status: "review",
+      message: "Fetched article details. Review the title and reading time, then save it.",
+      draftValues: {
+        url: "https://davidepstein.substack.com/p/how-to-improve-your-information-diet",
+        title: "How To Improve Your Information Diet",
+        notes: "Why this belongs in the stream",
+        priorityScore: "7",
+        estimatedMinutes: "2",
+        tagNames: "work, essays",
+      },
+      reviewMetadata: {
+        fetchSucceeded: true,
+        estimatedMinutesRequired: false,
+        extractedTitle: "How To Improve Your Information Diet",
+        extractedText: expect.any(String),
+        titleWasPrefilled: true,
+        siteName: "Range Widely",
+        author: "David Epstein",
+        wordCount: 220,
+        estimatedMinutes: 2,
+        lengthEstimationMethod: "readability",
+        lengthEstimationConfidence: "medium",
+      },
+      submittedAt: expect.any(Number),
+    });
+  });
+
+  it("keeps the review flow when the Substack feed is also low confidence", async () => {
+    const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
+    const formData = buildUrlFormData(
+      "https://davidepstein.substack.com/p/how-to-improve-your-information-diet",
+      { title: "" },
+    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        text: async () =>
+          `<html><head><title>Short note</title><script type="application/ld+json">${JSON.stringify(
+            {
+              "@context": "https://schema.org",
+              "@type": "Article",
+              articleBody: repeatWords(20),
+            },
+          )}</script></head><body></body></html>`,
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        text: async () =>
+          buildSubstackFeed({
+            contentHtml: `<div itemprop="articleBody">${repeatWords(20)}</div>`,
+          }),
+      });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await submitUrlIntake(initialIntakeFormState, formData);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(createMock).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      status: "review",
+      message:
+        "I found the article, but the reading time still needs your confirmation before saving.",
+      draftValues: {
+        url: "https://davidepstein.substack.com/p/how-to-improve-your-information-diet",
+        title: "How To Improve Your Information Diet",
+        notes: "Why this belongs in the stream",
+        priorityScore: "7",
+        estimatedMinutes: "1",
+        tagNames: "work, essays",
+      },
+      reviewMetadata: {
+        fetchSucceeded: true,
+        estimatedMinutesRequired: true,
+        extractedTitle: "How To Improve Your Information Diet",
+        extractedText: expect.any(String),
+        titleWasPrefilled: true,
+        siteName: "Range Widely",
+        author: "David Epstein",
+        wordCount: 20,
+        estimatedMinutes: 1,
+        lengthEstimationMethod: "schema_articleBody",
+        lengthEstimationConfidence: "low",
+      },
+      submittedAt: expect.any(Number),
+    });
   });
 });

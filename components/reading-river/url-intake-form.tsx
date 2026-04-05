@@ -24,8 +24,8 @@ function SubmitButton({
 export function UrlIntakeForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction] = useActionState(submitUrlIntake, initialIntakeFormState);
-  const needsEstimate = state.status === "needs_estimate";
-  const needsProceedAnyway = state.status === "fetch_failed_confirm";
+  const isReview = state.status === "review";
+  const estimatedMinutesRequired = state.reviewMetadata?.estimatedMinutesRequired ?? false;
   const draftValues = state.draftValues ?? {
     url: "",
     title: "",
@@ -50,11 +50,11 @@ export function UrlIntakeForm() {
         <p className="river-section-label">Article link</p>
         <h3 className="text-[1.9rem] font-semibold tracking-tight">Paste a link</h3>
         <p className="max-w-2xl text-sm leading-7 text-[hsl(var(--muted-foreground))]">
-          Drop in the URL first. You can tune the details after it lands in the stream.
+          Drop in the URL first. We&apos;ll fetch what we can, then you can review it before saving.
         </p>
         <p className="max-w-2xl text-sm leading-7 text-[hsl(var(--muted-foreground))]">
-          It may take a sec to add a link, as the server estimates the length of the read. This
-          affects how it is pulled out of the river later.
+          Reading River can usually suggest the title and reading time, and you can edit either
+          before saving.
         </p>
       </div>
 
@@ -64,6 +64,8 @@ export function UrlIntakeForm() {
           className={
             state.status === "success"
               ? "intake-feedback intake-feedback-success"
+              : state.status === "review"
+                ? "intake-feedback intake-feedback-review"
               : "intake-feedback intake-feedback-error"
           }
         >
@@ -93,7 +95,7 @@ export function UrlIntakeForm() {
           />
         </label>
         <label className="grid gap-2 text-sm">
-          <span>Title override</span>
+          <span>Title</span>
           <input
             name="title"
             type="text"
@@ -102,15 +104,15 @@ export function UrlIntakeForm() {
             className="intake-input"
           />
         </label>
-        {needsEstimate ? (
+        {isReview ? (
           <label className="grid gap-2 text-sm">
             <span>Estimated minutes</span>
             <input
               name="estimatedMinutes"
               type="number"
               min="1"
-              required
-              autoFocus
+              required={estimatedMinutesRequired}
+              autoFocus={estimatedMinutesRequired}
               defaultValue={draftValues.estimatedMinutes}
               placeholder="12"
               className="intake-input"
@@ -142,8 +144,8 @@ export function UrlIntakeForm() {
         </div>
         <div className="intake-submit-row">
           <SubmitButton
-            idleLabel={needsProceedAnyway ? "Proceed anyway" : "Save article"}
-            pendingLabel={needsProceedAnyway ? "Preparing manual save..." : "Estimating and saving..."}
+            idleLabel={isReview ? "Save article" : "Fetch details"}
+            pendingLabel={isReview ? "Saving article..." : "Fetching details..."}
           />
         </div>
       </form>
