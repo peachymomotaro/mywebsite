@@ -14,18 +14,9 @@ function getBearerToken(authorization: string | null) {
 export async function POST(request: Request) {
   const token = getBearerToken(request.headers.get("authorization"));
 
-  if (!token) {
-    return NextResponse.json(
-      {
-        error: "invalid_token",
-      },
-      {
-        status: 401,
-      },
-    );
+  if (token) {
+    await revokeExtensionToken(token);
   }
-
-  await revokeExtensionToken(token);
 
   return new NextResponse(null, {
     status: 204,

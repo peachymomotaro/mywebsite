@@ -20,6 +20,7 @@ vi.mock("@/lib/reading-river/db", () => ({
 }));
 
 vi.mock("@/lib/reading-river/auth", () => ({
+  getSessionCookieName: () => "reading-river-session",
   verifyPassword: routeMocks.verifyPassword,
 }));
 
@@ -181,11 +182,46 @@ describe("reading river extension api auth", () => {
     expect(routeMocks.revokeExtensionToken).toHaveBeenCalledWith("extension-token");
   });
 
+  it("treats a missing bearer token as a no-op logout", async () => {
+    const request = new Request("https://example.com/reading-river/api/extension/logout", {
+      method: "POST",
+    });
+
+    const response = await logout(request);
+
+    expect(response.status).toBe(204);
+    expect(await response.text()).toBe("");
+    expect(routeMocks.revokeExtensionToken).not.toHaveBeenCalled();
+  });
+
+  it("treats a malformed bearer token as a no-op logout", async () => {
+    const request = new Request("https://example.com/reading-river/api/extension/logout", {
+      method: "POST",
+      headers: {
+        authorization: "Basic abc123",
+      },
+    });
+
+    const response = await logout(request);
+
+    expect(response.status).toBe(204);
+    expect(await response.text()).toBe("");
+    expect(routeMocks.revokeExtensionToken).not.toHaveBeenCalled();
+  });
+
   it("does not redirect the extension login route through proxy middleware", async () => {
     const response = await proxy(
       new NextRequest("https://example.com/reading-river/api/extension/login"),
     );
 
     expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("still redirects similar non-extension routes through proxy middleware", async () => {
+    const response = await proxy(
+      new NextRequest("https://example.com/reading-river/api/extensionx/login"),
+    );
+
+    expect(response.headers.get("location")).toBe("https://example.com/reading-river/login");
   });
 });
