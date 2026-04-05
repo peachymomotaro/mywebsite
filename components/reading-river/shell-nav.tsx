@@ -17,6 +17,9 @@ export function ShellNav({ isAdmin = false }: ShellNavProps) {
 
   return (
     <nav className="river-shell-nav" aria-label="Primary">
+      <Link href={readingRiverPath("/how-it-works")} className="river-shell-nav-link">
+        How It Works
+      </Link>
       <Link href={readingRiverPath("/history")} className="river-shell-nav-link">
         Read history
       </Link>

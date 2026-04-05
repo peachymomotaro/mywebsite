@@ -641,6 +641,48 @@ a {
   padding-top: 0.45rem;
 }
 
+.river-how-page-content {
+  gap: clamp(1.5rem, 2.8vw, 2.2rem);
+}
+
+.river-how-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.river-how-section p,
+.river-how-source-item p {
+  margin: 0;
+}
+
+.river-how-source-list {
+  display: grid;
+  gap: 1rem;
+  padding: 0;
+  margin: 0.4rem 0 0;
+  list-style: none;
+}
+
+.river-how-source-item {
+  display: grid;
+  gap: 0.35rem;
+  padding-top: 1rem;
+  border-top: 1px solid hsl(var(--border));
+}
+
+.river-how-source-link {
+  font-family: var(--font-sans);
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.river-how-source-link:hover {
+  color: hsl(var(--accent-foreground));
+}
+
 .add-mode-switch {
   padding-top: 0.35rem;
 }

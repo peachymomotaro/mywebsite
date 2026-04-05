@@ -1,0 +1,115 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "How It Works",
+  description: "How to use Reading River and where its philosophy comes from.",
+};
+
+const influences = [
+  {
+    href: "https://www.oliverburkeman.com/river",
+    label: "Oliver Burkeman on the river",
+    description:
+      "The primary inspiration for the philosophy of this site.",
+  },
+  {
+    href: "https://davidepstein.substack.com/p/how-to-improve-your-information-diet",
+    label: "David Epstein, How To Improve Your Information Diet",
+    description:
+      "The Reading River offers another way of improving your information diet, by reducing the amount of reading you have to attend to. There's too much out there, and the Reading River washes most of it away into the future.",
+  },
+  {
+    href: "https://notes.andymatuschak.org/Spaced_repetition_systems_can_be_used_to_program_attention",
+    label: "Andy Matuschak, Spaced repetition systems can be used to program attention",
+    description:
+      "The Reading River can also be thought of a way of saying that you will attend to something in the future, just no",
+  },
+] as const;
+
+export default function HowItWorksPage() {
+  return (
+    <main className="editorial-page">
+      <div className="editorial-page-surface">
+        <header className="editorial-page-masthead">
+          <div className="editorial-page-masthead-copy">
+            <p className="editorial-page-kicker">Reading River</p>
+            <h1 className="editorial-page-title">How It Works</h1>
+            <p className="editorial-page-intro">
+              Reading River is a way to lower the pressure to read everything and make
+              calmer choices about what to read next.
+            </p>
+            <p className="editorial-page-intro">
+              If you want the deeper philosophy behind it, the influences are linked at
+              the bottom.
+            </p>
+          </div>
+        </header>
+
+        <hr className="editorial-page-rule" />
+
+        <section className="editorial-page-content river-how-page-content">
+          <section className="editorial-panel-soft river-how-section">
+            <h2>How it works</h2>
+            <p>Find things that you think are worth reading.</p>
+            <p>
+              Put the things you think are worthwhile into the river, and set how
+              important something is to you by using the priority setting.
+            </p>
+            <p>
+              When you want to read something, return to the river and go fishing.
+              The left option is the &apos;most important&apos; option based on the
+              priority setting and the amount of time you have. The right button is a
+              randomly selected piece of reading.
+            </p>
+            <p>
+              If you&apos;re interested, the priority algorithm for Reading River is
+              as follows: if you choose a time budget, it first looks for unread or
+              in-progress pieces that fit that budget, falling back to shorter
+              options if needed, then sorts by priority, pinned status, reading
+              time, and age. If you do not choose a time budget, it prefers pinned
+              items, then high-priority short reads, then high-priority long reads,
+              then lower-priority short reads, then everything else.
+            </p>
+            <p>
+              The Reading River is meant to be highly personal. Anything you upload
+              will never be looked at except for necessary maintenance and upkeep.
+            </p>
+          </section>
+
+          <section className="editorial-panel-soft river-how-section">
+            <h2>Philosophy and influences</h2>
+            <p>
+              The core idea is that your reading list should be more like a river
+              than a bucket. You wade in at a spot, grab something you want to read,
+              and then sit by the banks.
+            </p>
+            <p>
+              The Reading River is about escaping from the urgency of the headline.
+              Things often seem much more important than they are when we see them
+              for the first time. Add anything you don&apos;t need to read this
+              second to the river, and let it sit for some time. It will become
+              clear whether it was worth reading.
+            </p>
+            <p>This is a calmer way to sort through what you want to read.</p>
+
+            <ul className="river-how-source-list">
+              {influences.map((influence) => (
+                <li key={influence.href} className="river-how-source-item">
+                  <a
+                    href={influence.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="river-how-source-link"
+                  >
+                    {influence.label}
+                  </a>
+                  <p>{influence.description}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </section>
+      </div>
+    </main>
+  );
+}
