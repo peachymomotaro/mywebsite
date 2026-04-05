@@ -7,7 +7,7 @@ const saveExtensionItemSchema = z.object({
   url: z.string().trim().url(),
   title: z.string().optional().nullable(),
   priorityScore: z.number().int().min(0).max(10),
-  estimatedMinutes: z.number().int().nonnegative().optional().nullable(),
+  estimatedMinutes: z.number().int().positive().optional().nullable(),
 });
 
 function getBearerToken(authorization: string | null) {
@@ -42,6 +42,17 @@ function invalidPayload() {
   );
 }
 
+function saveFailed() {
+  return NextResponse.json(
+    {
+      error: "save_failed",
+    },
+    {
+      status: 500,
+    },
+  );
+}
+
 export async function POST(request: Request) {
   const token = getBearerToken(request.headers.get("authorization"));
 
@@ -63,22 +74,26 @@ export async function POST(request: Request) {
   }
 
   const title = String(parsedBody.data.title ?? "").trim() || parsedBody.data.url;
-  const item = await createReadingItemForUser(currentUser.id, {
-    title,
-    sourceType: "url",
-    sourceUrl: parsedBody.data.url,
-    priorityScore: parsedBody.data.priorityScore,
-    status: "unread",
-    estimatedMinutes: parsedBody.data.estimatedMinutes ?? null,
-  });
+  try {
+    const item = await createReadingItemForUser(currentUser.id, {
+      title,
+      sourceType: "url",
+      sourceUrl: parsedBody.data.url,
+      priorityScore: parsedBody.data.priorityScore,
+      status: "unread",
+      estimatedMinutes: parsedBody.data.estimatedMinutes ?? null,
+    });
 
-  return NextResponse.json(
-    {
-      id: item.id,
-      title: item.title,
-    },
-    {
-      status: 201,
-    },
-  );
+    return NextResponse.json(
+      {
+        id: item.id,
+        title: item.title,
+      },
+      {
+        status: 201,
+      },
+    );
+  } catch {
+    return saveFailed();
+  }
 }

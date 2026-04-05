@@ -106,6 +106,31 @@ describe("reading river extension save route", () => {
     expect(routeMocks.revalidatePath).toHaveBeenCalled();
   });
 
+  it("rejects nonpositive estimated minutes", async () => {
+    routeMocks.getCurrentUserFromExtensionToken.mockResolvedValue(createUser());
+
+    const request = new Request("https://example.com/reading-river/api/extension/save", {
+      method: "POST",
+      headers: {
+        authorization: "Bearer extension-token",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        url: "https://example.com/article",
+        title: "Read later",
+        priorityScore: 5,
+        estimatedMinutes: 0,
+      }),
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: "invalid_payload",
+    });
+  });
+
   it("rejects requests without a bearer token", async () => {
     const request = new Request("https://example.com/reading-river/api/extension/save", {
       method: "POST",
@@ -186,5 +211,58 @@ describe("reading river extension save route", () => {
     const response = await POST(request);
 
     expect(response.status).toBe(400);
+  });
+
+  it("returns a controlled error response when persistence fails", async () => {
+    const create = vi.fn(async () => {
+      throw new Error("database unavailable");
+    });
+
+    routeMocks.setPrismaMock({
+      readingItem: {
+        create,
+      },
+    });
+    routeMocks.getCurrentUserFromExtensionToken.mockResolvedValue(createUser());
+
+    const request = new Request("https://example.com/reading-river/api/extension/save", {
+      method: "POST",
+      headers: {
+        authorization: "Bearer extension-token",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        url: "https://example.com/article",
+        title: "Read later",
+        priorityScore: 5,
+      }),
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      error: "save_failed",
+    });
+  });
+
+  it("rejects malformed JSON bodies as invalid payload", async () => {
+    routeMocks.getCurrentUserFromExtensionToken.mockResolvedValue(createUser());
+
+    const request = new Request("https://example.com/reading-river/api/extension/save", {
+      method: "POST",
+      headers: {
+        authorization: "Bearer extension-token",
+        "content-type": "application/json",
+      },
+      body: "{not json",
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: "invalid_payload",
+    });
   });
 });
