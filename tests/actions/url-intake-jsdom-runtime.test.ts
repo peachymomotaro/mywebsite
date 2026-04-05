@@ -73,8 +73,10 @@ describe("submitUrlIntake jsdom runtime failures", () => {
     vi.resetModules();
   });
 
-  it("falls back to manual estimate when jsdom cannot load in the runtime", async () => {
-    const formData = buildUrlFormData();
+  it("falls back to a review state when jsdom cannot load in the runtime", async () => {
+    const formData = buildUrlFormData("https://example.com/runtime-failure");
+
+    formData.set("title", "");
 
     vi.doMock("jsdom", () => {
       throw new Error("Failed to load external module jsdom-runtime");
@@ -93,16 +95,29 @@ describe("submitUrlIntake jsdom runtime failures", () => {
     const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
 
     await expect(submitUrlIntake(initialIntakeFormState, formData)).resolves.toEqual({
-      status: "needs_estimate",
+      status: "review",
       message:
-        "I couldn't estimate reading time confidently for that link. Add or adjust your best guess before saving it.",
+        "I found the article, but the reading time still needs your confirmation before saving.",
       draftValues: {
         url: "https://example.com/runtime-failure",
-        title: "Essay override",
+        title: "Runtime failure",
         notes: "Why this belongs in the stream",
         priorityScore: "7",
         estimatedMinutes: "",
         tagNames: "work, essays",
+      },
+      reviewMetadata: {
+        fetchSucceeded: true,
+        estimatedMinutesRequired: true,
+        extractedTitle: "Runtime failure",
+        extractedText: null,
+        titleWasPrefilled: true,
+        siteName: "example.com",
+        author: null,
+        wordCount: null,
+        estimatedMinutes: null,
+        lengthEstimationMethod: "unknown",
+        lengthEstimationConfidence: "unknown",
       },
       submittedAt: expect.any(Number),
     });

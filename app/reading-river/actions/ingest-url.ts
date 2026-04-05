@@ -11,16 +11,27 @@ import {
   type LengthEstimationMethod,
 } from "@/lib/reading-river/article-length-estimation";
 import { DEFAULT_READING_SPEED_WPM } from "@/lib/reading-river/reading-config";
-import type { IntakeFormState, UrlIntakeDraftValues } from "@/lib/reading-river/intake-form-state";
+import type {
+  IntakeFormState,
+  UrlIntakeDraftValues,
+  UrlIntakeReviewMetadata,
+} from "@/lib/reading-river/intake-form-state";
 import { readingRiverPath } from "@/lib/reading-river/routes";
+import {
+  findMatchingSubstackFeedItem,
+  getSubstackFeedUrl,
+  isSubstackPostUrl,
+  parseSubstackFeed,
+} from "@/lib/reading-river/substack-feed";
 
 const STREAM_PATH = readingRiverPath();
-const URL_ESTIMATE_REQUIRED_MESSAGE =
-  "I couldn't estimate reading time confidently for that link. Add or adjust your best guess before saving it.";
-const FETCH_FAILED_CONFIRM_MESSAGE =
-  "I couldn't fetch this page. It may not exist, or it may block automated access. You can still add it manually if you want to proceed.";
-const MANUAL_ESTIMATE_REQUIRED_MESSAGE =
-  "Add an estimated reading time before saving this link manually.";
+const FETCHED_DETAILS_REVIEW_MESSAGE =
+  "Fetched article details. Review the title and reading time, then save it.";
+const REVIEW_ESTIMATE_CONFIRMATION_MESSAGE =
+  "I found the article, but the reading time still needs your confirmation before saving.";
+const FETCH_FAILED_REVIEW_MESSAGE =
+  "I couldn't fetch this page. Review the title and add a reading time before saving it manually.";
+const REVIEW_ESTIMATE_REQUIRED_MESSAGE = "Add an estimated reading time before saving this article.";
 const INVALID_URL_MESSAGE = "Add a valid link before saving it.";
 const FETCH_TIMEOUT_MS = 10_000;
 
@@ -96,6 +107,75 @@ function buildDraftValues(formData: FormData): UrlIntakeDraftValues {
   };
 }
 
+function buildReviewMetadata(
+  estimation: ArticleLengthEstimate | null,
+  {
+    fetchSucceeded,
+    estimatedMinutesRequired,
+    titleWasPrefilled,
+  }: {
+    fetchSucceeded: boolean;
+    estimatedMinutesRequired: boolean;
+    titleWasPrefilled: boolean;
+  },
+): UrlIntakeReviewMetadata {
+  return {
+    fetchSucceeded,
+    estimatedMinutesRequired,
+    extractedTitle: estimation?.title ?? null,
+    extractedText: estimation?.extractedText ?? null,
+    titleWasPrefilled,
+    siteName: estimation?.siteName ?? null,
+    author: estimation?.author ?? null,
+    wordCount: estimation?.wordCount ?? null,
+    estimatedMinutes: estimation?.estimatedMinutes ?? null,
+    lengthEstimationMethod: estimation?.method ?? "unknown",
+    lengthEstimationConfidence: estimation?.confidence ?? "unknown",
+  };
+}
+
+function buildReviewState({
+  draftValues,
+  message,
+  estimation,
+  fetchSucceeded,
+  estimatedMinutesRequired,
+  previousReviewMetadata,
+}: {
+  draftValues: UrlIntakeDraftValues;
+  message: string;
+  estimation: ArticleLengthEstimate | null;
+  fetchSucceeded: boolean;
+  estimatedMinutesRequired: boolean;
+  previousReviewMetadata?: UrlIntakeReviewMetadata;
+}): IntakeFormState {
+  const shouldReplaceAutoFilledTitle =
+    Boolean(previousReviewMetadata?.titleWasPrefilled) &&
+    draftValues.title === (previousReviewMetadata?.extractedTitle ?? "");
+  const shouldUseExtractedTitle = !draftValues.title || shouldReplaceAutoFilledTitle;
+  const titleWasPrefilled = Boolean(estimation?.title) && shouldUseExtractedTitle;
+  const resolvedTitle = shouldUseExtractedTitle ? estimation?.title ?? "" : draftValues.title;
+
+  return {
+    status: "review",
+    message,
+    draftValues: {
+      ...draftValues,
+      title: resolvedTitle,
+      estimatedMinutes:
+        estimation?.estimatedMinutes !== null && estimation?.estimatedMinutes !== undefined
+          ? String(estimation.estimatedMinutes)
+          : draftValues.estimatedMinutes,
+    },
+    reviewMetadata: buildReviewMetadata(estimation, {
+      fetchSucceeded,
+      estimatedMinutesRequired,
+      titleWasPrefilled,
+    }),
+    submittedAt: Date.now(),
+  };
+}
+
 function parseTagNames(value: string) {
   return value
     .split(",")
@@ -137,6 +217,24 @@ function normalizeSubmittedUrl(value: string) {
   }
 }
 
+function buildEstimationFromReviewMetadata(reviewMetadata: UrlIntakeReviewMetadata | undefined) {
+  if (!reviewMetadata?.fetchSucceeded) {
+    return null;
+  }
+
+  return {
+    title: reviewMetadata.extractedTitle,
+    siteName: reviewMetadata.siteName,
+    author: reviewMetadata.author,
+    extractedText: reviewMetadata.extractedText,
+    wordCount: reviewMetadata.wordCount,
+    estimatedMinutes: reviewMetadata.estimatedMinutes,
+    isProbablyArticle: reviewMetadata.lengthEstimationConfidence !== "unknown",
+    confidence: reviewMetadata.lengthEstimationConfidence,
+    method: reviewMetadata.lengthEstimationMethod,
+  } satisfies ArticleLengthEstimate;
+}
+
 function getFetchErrorDetails(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   const cause =
@@ -155,24 +253,52 @@ function getFetchErrorDetails(error: unknown) {
   };
 }
 
-async function fetchExtractedArticle(url: string, userId: string) {
-  const prisma = getPrismaClient();
-  const settings = await prisma.appSettings.findUnique({
-    where: { userId },
-    select: { defaultReadingSpeedWpm: true },
-  });
-  const wordsPerMinute =
-    settings?.defaultReadingSpeedWpm && settings.defaultReadingSpeedWpm > 0
-      ? settings.defaultReadingSpeedWpm
-      : DEFAULT_READING_SPEED_WPM;
+function buildFetchOptions() {
+  return {
+    headers: {
+      "User-Agent": "Reading River/0.1 (+https://reading-river.local)",
+    },
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+  } as const;
+}
 
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function buildSubstackFeedArticleHtml({
+  siteName,
+  title,
+  author,
+  description,
+  contentHtml,
+}: {
+  siteName: string | null;
+  title: string | null;
+  author: string | null;
+  description: string | null;
+  contentHtml: string;
+}) {
+  const headTags = [
+    title ? `<title>${escapeHtml(title)}</title>` : null,
+    siteName ? `<meta property="og:site_name" content="${escapeHtml(siteName)}" />` : null,
+    author ? `<meta name="author" content="${escapeHtml(author)}" />` : null,
+    description ? `<meta name="description" content="${escapeHtml(description)}" />` : null,
+  ]
+    .filter(Boolean)
+    .join("");
+
+  return `<!DOCTYPE html><html><head>${headTags}</head><body>${contentHtml}</body></html>`;
+}
+
+async function fetchEstimatedArticleFromUrl(url: string, wordsPerMinute: number) {
   try {
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "Reading River/0.1 (+https://reading-river.local)",
-      },
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-    });
+    const response = await fetch(url, buildFetchOptions());
 
     if (!response.ok) {
       console.warn("Reading time estimation fetch returned a non-OK response.", {
@@ -210,6 +336,91 @@ async function fetchExtractedArticle(url: string, userId: string) {
   }
 }
 
+async function fetchEstimatedArticleFromSubstackFeed(url: string, wordsPerMinute: number) {
+  const feedUrl = getSubstackFeedUrl(url);
+
+  if (!feedUrl) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(feedUrl, buildFetchOptions());
+
+    if (!response.ok) {
+      console.warn("Reading time estimation Substack feed returned a non-OK response.", {
+        feedUrl,
+        status: response.status,
+        statusText: response.statusText,
+      });
+      return null;
+    }
+
+    const xml = await response.text();
+    const feed = await parseSubstackFeed(xml);
+    const item = findMatchingSubstackFeedItem(feed, url);
+
+    if (!item?.contentHtml) {
+      return null;
+    }
+
+    const html = buildSubstackFeedArticleHtml({
+      siteName: feed.siteName,
+      title: item.title,
+      author: item.author,
+      description: item.description,
+      contentHtml: item.contentHtml,
+    });
+    const estimation = await estimateArticleLengthFromHtml({
+      url: item.url,
+      html,
+      wordsPerMinute,
+    });
+
+    return {
+      ...estimation,
+      title: item.title ?? estimation.title,
+      siteName: feed.siteName ?? estimation.siteName,
+      author: item.author ?? estimation.author,
+    };
+  } catch (error) {
+    console.warn("Reading time estimation Substack feed failed.", {
+      feedUrl,
+      ...getFetchErrorDetails(error),
+    });
+    return null;
+  }
+}
+
+async function fetchExtractedArticle(url: string, userId: string) {
+  const prisma = getPrismaClient();
+  const settings = await prisma.appSettings.findUnique({
+    where: { userId },
+    select: { defaultReadingSpeedWpm: true },
+  });
+  const wordsPerMinute =
+    settings?.defaultReadingSpeedWpm && settings.defaultReadingSpeedWpm > 0
+      ? settings.defaultReadingSpeedWpm
+      : DEFAULT_READING_SPEED_WPM;
+  const directEstimation = await fetchEstimatedArticleFromUrl(url, wordsPerMinute);
+
+  if (!isSubstackPostUrl(url)) {
+    return directEstimation;
+  }
+
+  if (directEstimation === null) {
+    return fetchEstimatedArticleFromSubstackFeed(url, wordsPerMinute);
+  }
+
+  if (
+    directEstimation.confidence === "high" ||
+    directEstimation.confidence === "medium"
+  ) {
+    return directEstimation;
+  }
+
+  return (await fetchEstimatedArticleFromSubstackFeed(url, wordsPerMinute)) ?? directEstimation;
+}
+
 export async function ingestUrl(input: IngestUrlInput, userId?: string) {
   const prisma = getPrismaClient();
   const currentUserId = userId ?? (await requireCurrentUser()).id;
@@ -227,11 +438,10 @@ export async function ingestUrl(input: IngestUrlInput, userId?: string) {
       estimatedMinutes: input.estimatedMinutes,
       priorityScore: input.priorityScore ?? 5,
       status: "unread",
-      siteName: input.lengthEstimationMethod === "manual" ? null : estimation?.siteName ?? null,
-      author: input.lengthEstimationMethod === "manual" ? null : estimation?.author ?? null,
-      extractedText:
-        input.lengthEstimationMethod === "manual" ? null : estimation?.extractedText ?? null,
-      wordCount: input.lengthEstimationMethod === "manual" ? null : estimation?.wordCount ?? null,
+      siteName: estimation?.siteName ?? null,
+      author: estimation?.author ?? null,
+      extractedText: estimation?.extractedText ?? null,
+      wordCount: estimation?.wordCount ?? null,
       lengthEstimationMethod: input.lengthEstimationMethod,
       lengthEstimationConfidence: input.lengthEstimationConfidence,
       tags: buildTagWrite(currentUserId, input.tagNames ?? []),
@@ -272,58 +482,58 @@ export async function submitUrlIntake(
   try {
     const currentUser = await requireCurrentUser();
 
-    if (previousState.status === "fetch_failed_confirm") {
-      if (estimatedMinutes === null) {
-        return {
-          status: "needs_estimate",
-          message: MANUAL_ESTIMATE_REQUIRED_MESSAGE,
+    const isSubmittingSameReviewedUrl =
+      previousState.status === "review" && previousState.draftValues?.url === url;
+
+    if (isSubmittingSameReviewedUrl) {
+      const reviewMetadata = previousState.reviewMetadata;
+      const estimation = buildEstimationFromReviewMetadata(reviewMetadata);
+      const extractedEstimatedMinutes = reviewMetadata?.estimatedMinutes ?? null;
+      const effectiveEstimatedMinutes = estimatedMinutes ?? extractedEstimatedMinutes;
+
+      if ((reviewMetadata?.estimatedMinutesRequired ?? true) && estimatedMinutes === null) {
+        return buildReviewState({
           draftValues,
-          submittedAt: Date.now(),
-        };
+          message: REVIEW_ESTIMATE_REQUIRED_MESSAGE,
+          estimation,
+          fetchSucceeded: reviewMetadata?.fetchSucceeded ?? false,
+          estimatedMinutesRequired: reviewMetadata?.estimatedMinutesRequired ?? true,
+          previousReviewMetadata: reviewMetadata,
+        });
       }
 
+      if (effectiveEstimatedMinutes === null) {
+        return buildReviewState({
+          draftValues,
+          message: REVIEW_ESTIMATE_REQUIRED_MESSAGE,
+          estimation,
+          fetchSucceeded: reviewMetadata?.fetchSucceeded ?? false,
+          estimatedMinutesRequired: true,
+          previousReviewMetadata: reviewMetadata,
+        });
+      }
+
+      const estimateWasEdited =
+        estimatedMinutes !== null &&
+        extractedEstimatedMinutes !== null &&
+        estimatedMinutes !== extractedEstimatedMinutes;
+      const shouldSaveAsManual =
+        !reviewMetadata?.fetchSucceeded ||
+        reviewMetadata?.estimatedMinutesRequired ||
+        estimation === null ||
+        extractedEstimatedMinutes === null ||
+        estimateWasEdited;
       const item = await ingestUrl(
         {
           url,
           title: titleOverride,
           notes,
           priorityScore,
-          estimatedMinutes,
+          estimatedMinutes: effectiveEstimatedMinutes,
           tagNames,
-          lengthEstimationMethod: "manual",
-          lengthEstimationConfidence: "unknown",
-        },
-        currentUser.id,
-      );
-
-      return {
-        status: "success",
-        message: `Added "${item.title || fallbackTitle}" to the stream.`,
-        savedTitle: item.title || fallbackTitle,
-        submittedAt: Date.now(),
-      };
-    }
-
-    if (previousState.status === "needs_estimate") {
-      if (estimatedMinutes === null) {
-        return {
-          status: "needs_estimate",
-          message: URL_ESTIMATE_REQUIRED_MESSAGE,
-          draftValues,
-          submittedAt: Date.now(),
-        };
-      }
-
-      const item = await ingestUrl(
-        {
-          url,
-          title: titleOverride,
-          notes,
-          priorityScore,
-          estimatedMinutes,
-          tagNames,
-          lengthEstimationMethod: "manual",
-          lengthEstimationConfidence: "unknown",
+          estimation,
+          lengthEstimationMethod: shouldSaveAsManual ? "manual" : estimation.method,
+          lengthEstimationConfidence: shouldSaveAsManual ? "unknown" : estimation.confidence,
         },
         currentUser.id,
       );
@@ -339,54 +549,34 @@ export async function submitUrlIntake(
     const estimation = await fetchExtractedArticle(url, currentUser.id);
 
     if (estimation === null) {
-      return {
-        status: "fetch_failed_confirm",
-        message: FETCH_FAILED_CONFIRM_MESSAGE,
+      return buildReviewState({
         draftValues,
-        submittedAt: Date.now(),
-      };
+        message: FETCH_FAILED_REVIEW_MESSAGE,
+        estimation: null,
+        fetchSucceeded: false,
+        estimatedMinutesRequired: true,
+        previousReviewMetadata:
+          previousState.status === "review" ? previousState.reviewMetadata : undefined,
+      });
     }
 
-    if (
-      estimation.estimatedMinutes !== null &&
-      estimation.estimatedMinutes !== undefined &&
-      (estimation.confidence === "high" || estimation.confidence === "medium")
-    ) {
-      const item = await ingestUrl(
-        {
-          url,
-          title: titleOverride,
-          notes,
-          priorityScore,
-          estimatedMinutes: estimation.estimatedMinutes,
-          tagNames,
-          estimation,
-          lengthEstimationMethod: estimation.method,
-          lengthEstimationConfidence: estimation.confidence,
-        },
-        currentUser.id,
-      );
+    const estimatedMinutesNeedsConfirmation =
+      estimation.estimatedMinutes === null ||
+      estimation.estimatedMinutes === undefined ||
+      estimation.confidence === "low" ||
+      estimation.confidence === "unknown";
 
-      return {
-        status: "success",
-        message: `Added "${item.title || fallbackTitle}" to the stream.`,
-        savedTitle: item.title || fallbackTitle,
-        submittedAt: Date.now(),
-      };
-    }
-
-    return {
-      status: "needs_estimate",
-      message: URL_ESTIMATE_REQUIRED_MESSAGE,
-      draftValues: {
-        ...draftValues,
-        estimatedMinutes:
-          estimation?.estimatedMinutes !== null && estimation?.estimatedMinutes !== undefined
-            ? String(estimation.estimatedMinutes)
-            : draftValues.estimatedMinutes,
-      },
-      submittedAt: Date.now(),
-    };
+    return buildReviewState({
+      draftValues,
+      message: estimatedMinutesNeedsConfirmation
+        ? REVIEW_ESTIMATE_CONFIRMATION_MESSAGE
+        : FETCHED_DETAILS_REVIEW_MESSAGE,
+      estimation,
+      fetchSucceeded: true,
+      estimatedMinutesRequired: estimatedMinutesNeedsConfirmation,
+      previousReviewMetadata:
+        previousState.status === "review" ? previousState.reviewMetadata : undefined,
+    });
   } catch (error) {
     unstable_rethrow(error);
 

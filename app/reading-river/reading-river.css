@@ -799,6 +799,11 @@ a {
   border-color: rgba(126, 154, 107, 0.45);
 }
 
+.intake-feedback-review {
+  background: rgba(246, 243, 234, 0.94);
+  border-color: rgba(173, 145, 88, 0.35);
+}
+
 .intake-feedback-error {
   background: rgba(248, 239, 237, 0.92);
   border-color: rgba(174, 116, 97, 0.4);

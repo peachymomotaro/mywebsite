@@ -9,7 +9,8 @@ export default async function AddPage() {
       <section className="max-w-4xl space-y-4">
         <h1 className="river-home-title">Add to stream</h1>
         <p className="editorial-page-intro">
-          Save a link or jot down something to read. Both forms add straight into the same stream.
+          Save a link or jot down something to read. Links fetch details first so you can review
+          them before they enter the stream.
         </p>
       </section>
 

@@ -10,19 +10,19 @@ const influences = [
     href: "https://www.oliverburkeman.com/river",
     label: "Oliver Burkeman on the river",
     description:
-      "The primary inspiration for the philosophy of this site.",
+      "An influence on treating reading as a stream you choose from, not a backlog you must clear.",
   },
   {
     href: "https://davidepstein.substack.com/p/how-to-improve-your-information-diet",
     label: "David Epstein, How To Improve Your Information Diet",
     description:
-      "The Reading River offers another way of improving your information diet, by reducing the amount of reading you have to attend to. There's too much out there, and the Reading River washes most of it away into the future.",
+      "An influence on subtraction audits, pruning inputs, and delaying urgent-feeling reads.",
   },
   {
     href: "https://notes.andymatuschak.org/Spaced_repetition_systems_can_be_used_to_program_attention",
     label: "Andy Matuschak, Spaced repetition systems can be used to program attention",
     description:
-      "The Reading River can also be thought of a way of saying that you will attend to something in the future, just no",
+      "An influence on thinking clearly about systems that direct attention, and on what Reading River is not.",
   },
 ] as const;
 
@@ -50,47 +50,50 @@ export default function HowItWorksPage() {
         <section className="editorial-page-content river-how-page-content">
           <section className="editorial-panel-soft river-how-section">
             <h2>How it works</h2>
-            <p>Find things that you think are worth reading.</p>
             <p>
-              Put the things you think are worthwhile into the river, and set how
-              important something is to you by using the priority setting.
+              Add things that look worth reading without treating them as immediate
+              obligations.
             </p>
             <p>
-              When you want to read something, return to the river and go fishing.
-              The left option is the &apos;most important&apos; option based on the
-              priority setting and the amount of time you have. The right button is a
-              randomly selected piece of reading.
+              Let the stream hold possibilities for you, so you do not have to keep a
+              growing reading burden in your head.
             </p>
             <p>
-              If you&apos;re interested, the priority algorithm for Reading River is
-              as follows: if you choose a time budget, it first looks for unread or
-              in-progress pieces that fit that budget, falling back to shorter
-              options if needed, then sorts by priority, pinned status, reading
-              time, and age. If you do not choose a time budget, it prefers pinned
-              items, then high-priority short reads, then high-priority long reads,
-              then lower-priority short reads, then everything else.
+              Use the time budget and your own priorities to shape what feels worth
+              reading now.
             </p>
             <p>
-              The Reading River is meant to be highly personal. Anything you upload
-              will never be looked at except for necessary maintenance and upkeep.
+              Edit, skip, and prune regularly. The point is not to keep everything. The
+              point is to keep the stream useful to you.
+            </p>
+            <p>
+              Reading River is meant to be highly personal. You can tune it around your
+              interests, your available time, and the kind of reading life you actually
+              want.
             </p>
           </section>
 
           <section className="editorial-panel-soft river-how-section">
             <h2>Philosophy and influences</h2>
             <p>
-              The core idea is that your reading list should be more like a river
-              than a bucket. You wade in at a spot, grab something you want to read,
-              and then sit by the banks.
+              The core idea is that worthwhile reading behaves more like a river than a
+              pile you will someday finish. You choose from the flow; you do not clear it.
             </p>
             <p>
-              The Reading River is about escaping from the urgency of the headline.
-              Things often seem much more important than they are when we see them
-              for the first time. Add anything you don&apos;t need to read this
-              second to the river, and let it sit for some time. It will become
-              clear whether it was worth reading.
+              Reading River also borrows from the idea of doing regular subtraction
+              audits: removing sources, trimming obligations, and noticing which reads are
+              actually worth bringing back.
             </p>
-            <p>This is a calmer way to sort through what you want to read.</p>
+            <p>
+              It also takes seriously the value of delay. If something only feels urgent
+              because of a headline, letting it sit for a few hours or a day can be a
+              useful filter.
+            </p>
+            <p>
+              This is not a form of spaced attention. It is not trying to schedule your
+              mind with an expanding algorithm. It is a calmer way to collect options,
+              reduce pressure, and choose deliberately.
+            </p>
 
             <ul className="river-how-source-list">
               {influences.map((influence) => (

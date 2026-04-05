@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 describe("ReadingRiverHowItWorksPage", () => {
-  it("renders the practical guide and explains the ranking logic", async () => {
+  it("renders the practical guide before the philosophy section", async () => {
     const { default: HowItWorksPage } = await import("@/app/reading-river/how-it-works/page");
     const page = await HowItWorksPage();
 
@@ -27,25 +27,14 @@ describe("ReadingRiverHowItWorksPage", () => {
     ).toBeTruthy();
 
     expect(
-      screen.getByText(/Find things that you think are worth reading\./i),
+      screen.getByText(/Add things that look worth reading without treating them as immediate obligations\./i),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(
-        /Put the things you think are worthwhile into the river, and set how important something is to you by using the priority setting\./i,
-      ),
+      screen.getByText(/Use the time budget and your own priorities to shape what feels worth reading now\./i),
     ).toBeInTheDocument();
-
-    const randomPickExplanation = screen.getByText(
-      /When you want to read something, return to the river and go fishing\. The left option is the 'most important' option based on the priority setting and the amount of time you have\. The right button is a randomly selected piece of reading\./i,
-    );
-    const algorithmExplanation = screen.getByText(
-      /If you're interested, the priority algorithm for Reading River is as follows: if you choose a time budget, it first looks for unread or in-progress pieces that fit that budget, falling back to shorter options if needed, then sorts by priority, pinned status, reading time, and age\. If you do not choose a time budget, it prefers pinned items, then high-priority short reads, then high-priority long reads, then lower-priority short reads, then everything else\./i,
-    );
-
     expect(
-      randomPickExplanation.compareDocumentPosition(algorithmExplanation) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
+      screen.getByText(/This is not a form of spaced attention\./i),
+    ).toBeInTheDocument();
   });
 
   it("links to the cited influences explicitly", async () => {
