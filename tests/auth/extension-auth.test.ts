@@ -21,6 +21,7 @@ import {
   getExtensionTokenByRawToken,
   revokeExtensionToken,
 } from "@/lib/reading-river/extension-auth";
+import * as extensionAuth from "@/lib/reading-river/extension-auth";
 
 function createPrismaMock() {
   const create = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
@@ -80,6 +81,43 @@ describe("extension auth token store", () => {
 
     expect(findUniqueArgs?.where?.tokenHash).toMatch(/^[a-f0-9]{64}$/);
     expect(findUniqueArgs?.where?.tokenHash).not.toBe("raw-token");
+  });
+
+  it("includes the user when loading the current extension user", async () => {
+    const context = createPrismaMock();
+    mocks.setPrismaMock(context.prismaMock);
+    const now = new Date("2026-04-01T12:00:00Z");
+
+    context.findUnique.mockResolvedValue({
+      id: "extension-token-1",
+      tokenHash: "hashed-token",
+      userId: "user-1",
+      expiresAt: new Date("2026-05-01T12:00:00Z"),
+      revokedAt: null,
+      createdAt: now,
+      lastUsedAt: now,
+      user: {
+        id: "user-1",
+        email: "reader@example.com",
+        displayName: "River Reader",
+        passwordHash: "password-hash",
+        status: "active",
+        isAdmin: false,
+        createdAt: now,
+        updatedAt: now,
+      },
+    });
+
+    await getCurrentUserFromExtensionToken("raw-token", now);
+
+    expect(context.findUnique).toHaveBeenCalledWith({
+      where: {
+        tokenHash: expect.any(String),
+      },
+      include: {
+        user: true,
+      },
+    });
   });
 
   it("returns the active user for a valid extension token", async () => {
@@ -176,6 +214,27 @@ describe("extension auth token store", () => {
     });
 
     await expect(getExtensionTokenByRawToken("raw-token", now)).resolves.toBeNull();
+  });
+
+  it("treats a missing ExtensionToken table as an anonymous request", async () => {
+    const context = createPrismaMock();
+    mocks.setPrismaMock(context.prismaMock);
+    const now = new Date("2026-04-01T12:00:00Z");
+    const missingTableError = Object.assign(new Error("The table `public.ExtensionToken` does not exist."), {
+      code: "P2021",
+      meta: {
+        modelName: "ExtensionToken",
+      },
+    });
+
+    context.findUnique.mockRejectedValue(missingTableError);
+
+    await expect(getExtensionTokenByRawToken("raw-token", now)).resolves.toBeNull();
+    await expect(getCurrentUserFromExtensionToken("raw-token", now)).resolves.toBeNull();
+  });
+
+  it("does not export the legacy extension token alias", () => {
+    expect(extensionAuth.getExtensionTokenByToken).toBeUndefined();
   });
 
   it("revokes an extension token by hashed token", async () => {

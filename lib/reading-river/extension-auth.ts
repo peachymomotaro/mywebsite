@@ -89,8 +89,6 @@ export async function getExtensionTokenByRawToken(token: string | undefined, now
   return extensionToken;
 }
 
-export const getExtensionTokenByToken = getExtensionTokenByRawToken;
-
 export async function getCurrentUserFromExtensionToken(token: string | undefined, now = new Date()) {
   const extensionToken = await getExtensionTokenByRawToken(token, now);
 
