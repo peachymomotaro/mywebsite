@@ -90,7 +90,6 @@ describe("reading river extension api auth", () => {
         id: "user-1",
         email: "reader@example.com",
         displayName: "River Reader",
-        isAdmin: false,
       },
     });
     expect(userFindUnique).toHaveBeenCalledWith({
@@ -130,6 +129,88 @@ describe("reading river extension api auth", () => {
     expect(response.status).toBe(401);
     expect(await response.json()).toEqual({
       error: "invalid_credentials",
+    });
+    expect(routeMocks.createExtensionToken).not.toHaveBeenCalled();
+  });
+
+  it("rejects malformed JSON extension login requests", async () => {
+    routeMocks.setPrismaMock({
+      user: {
+        findUnique: vi.fn(),
+      },
+    });
+
+    const request = new Request("https://example.com/reading-river/api/extension/login", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: "{not json",
+    });
+
+    const response = await login(request);
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({
+      error: "invalid_credentials",
+    });
+  });
+
+  it("rejects empty extension login credentials", async () => {
+    routeMocks.setPrismaMock({
+      user: {
+        findUnique: vi.fn(),
+      },
+    });
+
+    const request = new Request("https://example.com/reading-river/api/extension/login", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        email: "   ",
+        password: "",
+      }),
+    });
+
+    const response = await login(request);
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({
+      error: "invalid_credentials",
+    });
+  });
+
+  it("rejects unknown extension login users", async () => {
+    const userFindUnique = vi.fn(async () => null);
+    routeMocks.setPrismaMock({
+      user: {
+        findUnique: userFindUnique,
+      },
+    });
+
+    const request = new Request("https://example.com/reading-river/api/extension/login", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        email: "missing@example.com",
+        password: "reader-password",
+      }),
+    });
+
+    const response = await login(request);
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({
+      error: "invalid_credentials",
+    });
+    expect(userFindUnique).toHaveBeenCalledWith({
+      where: {
+        email: "missing@example.com",
+      },
     });
     expect(routeMocks.createExtensionToken).not.toHaveBeenCalled();
   });
