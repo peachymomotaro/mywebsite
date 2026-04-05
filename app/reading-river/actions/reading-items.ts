@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getPrismaClient } from "@/lib/reading-river/db";
 import { requireCurrentUser } from "@/lib/reading-river/current-user";
 import type { IntakeFormState } from "@/lib/reading-river/intake-form-state";
+import { createReadingItemForUser } from "@/lib/reading-river/extension-items";
 import { readingRiverPath } from "@/lib/reading-river/routes";
 import {
   readingItemIdSchema,
@@ -17,31 +18,6 @@ import {
 
 const STREAM_PATH = readingRiverPath();
 const HISTORY_PATH = readingRiverPath("/history");
-
-function normalizeTagNames(tagNames: string[]) {
-  return [...new Set(tagNames.map((tagName) => tagName.trim()).filter(Boolean))];
-}
-
-function buildTagWrite(userId: string, tagNames: string[]) {
-  return {
-    create: normalizeTagNames(tagNames).map((name) => ({
-      tag: {
-        connectOrCreate: {
-          where: {
-            userId_name: {
-              userId,
-              name,
-            },
-          },
-          create: {
-            userId,
-            name,
-          },
-        },
-      },
-    })),
-  };
-}
 
 function parseOptionalInteger(value: FormDataEntryValue | null) {
   const raw = String(value ?? "").trim();
@@ -73,29 +49,14 @@ async function requireOwnedReadingItem(prisma: ReturnType<typeof getPrismaClient
 }
 
 export async function createReadingItem(input: unknown) {
-  const prisma = getPrismaClient();
   const currentUser = await requireCurrentUser();
   const parsed = readingItemSchema.parse(input);
   const { tagNames, ...data } = parsed;
 
-  const item = await prisma.readingItem.create({
-    data: {
-      userId: currentUser.id,
-      ...data,
-      tags: buildTagWrite(currentUser.id, tagNames),
-    },
-    include: {
-      tags: {
-        include: {
-          tag: true,
-        },
-      },
-    },
+  return createReadingItemForUser(currentUser.id, {
+    ...data,
+    tagNames,
   });
-
-  revalidatePath(STREAM_PATH);
-
-  return item;
 }
 
 export async function submitManualReadingItem(
