@@ -32,7 +32,7 @@ vi.mock("@/lib/reading-river/current-user", () => ({
   requireCurrentUser: actionMocks.requireCurrentUser,
 }));
 
-import { createReadingItem } from "@/app/reading-river/actions/reading-items";
+import { createReadingItem, updateReadingItem } from "@/app/reading-river/actions/reading-items";
 
 describe("reading item validation", () => {
   beforeEach(() => {
@@ -170,6 +170,111 @@ describe("reading item validation", () => {
           tag: {
             id: "tag-1",
             name: "keep",
+          },
+        },
+      ],
+    });
+  });
+
+  it("updates a reading item and rewrites tags", async () => {
+    const deleteMany = vi.fn(async () => ({ count: 1 }));
+    const update = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
+      id: "item-1",
+      ...data,
+      tags: [
+        {
+          tag: {
+            id: "tag-2",
+            name: "next",
+          },
+        },
+      ],
+    }));
+    const transaction = vi.fn(async (callback: (tx: any) => Promise<unknown>) =>
+      callback({
+        readingItemTag: {
+          deleteMany,
+        },
+        readingItem: {
+          update,
+        },
+      }),
+    );
+
+    actionMocks.setPrismaMock({
+      readingItem: {
+        findUnique: vi.fn(async () => ({
+          id: "item-1",
+        })),
+        update,
+      },
+      readingItemTag: {
+        deleteMany,
+      },
+      $transaction: transaction,
+    });
+    actionMocks.requireCurrentUser.mockResolvedValue({
+      id: "user-1",
+    });
+
+    const item = await updateReadingItem({
+      id: "item-1",
+      title: "Updated title",
+      tagNames: ["next", " next "],
+    });
+
+    expect(deleteMany).toHaveBeenCalledWith({
+      where: {
+        readingItemId: "item-1",
+      },
+    });
+    expect(update).toHaveBeenCalledWith({
+      where: {
+        userId_id: {
+          userId: "user-1",
+          id: "item-1",
+        },
+      },
+      data: {
+        userId: "user-1",
+        title: "Updated title",
+        tags: {
+          create: [
+            {
+              tag: {
+                connectOrCreate: {
+                  where: {
+                    userId_name: {
+                      userId: "user-1",
+                      name: "next",
+                    },
+                  },
+                  create: {
+                    userId: "user-1",
+                    name: "next",
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
+      include: {
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+      },
+    });
+    expect(item).toMatchObject({
+      id: "item-1",
+      title: "Updated title",
+      tags: [
+        {
+          tag: {
+            id: "tag-2",
+            name: "next",
           },
         },
       ],

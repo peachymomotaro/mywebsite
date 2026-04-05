@@ -8,7 +8,7 @@ function normalizeTagNames(tagNames: string[]) {
   return [...new Set(tagNames.map((tagName) => tagName.trim()).filter(Boolean))];
 }
 
-function buildTagWrite(userId: string, tagNames: string[]) {
+export function buildTagWrite(userId: string, tagNames: string[]) {
   return {
     create: normalizeTagNames(tagNames).map((name) => ({
       tag: {

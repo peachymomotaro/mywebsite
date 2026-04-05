@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getPrismaClient } from "@/lib/reading-river/db";
 import { requireCurrentUser } from "@/lib/reading-river/current-user";
 import type { IntakeFormState } from "@/lib/reading-river/intake-form-state";
-import { createReadingItemForUser } from "@/lib/reading-river/extension-items";
+import { buildTagWrite, createReadingItemForUser } from "@/lib/reading-river/extension-items";
 import { readingRiverPath } from "@/lib/reading-river/routes";
 import {
   readingItemIdSchema,
