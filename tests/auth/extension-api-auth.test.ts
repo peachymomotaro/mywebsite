@@ -263,6 +263,21 @@ describe("reading river extension api auth", () => {
     expect(routeMocks.revokeExtensionToken).toHaveBeenCalledWith("extension-token");
   });
 
+  it("accepts mixed-case bearer schemes on extension logout", async () => {
+    const request = new Request("https://example.com/reading-river/api/extension/logout", {
+      method: "POST",
+      headers: {
+        authorization: "bEaReR extension-token",
+      },
+    });
+
+    const response = await logout(request);
+
+    expect(response.status).toBe(204);
+    expect(await response.text()).toBe("");
+    expect(routeMocks.revokeExtensionToken).toHaveBeenCalledWith("extension-token");
+  });
+
   it("treats a missing bearer token as a no-op logout", async () => {
     const request = new Request("https://example.com/reading-river/api/extension/logout", {
       method: "POST",

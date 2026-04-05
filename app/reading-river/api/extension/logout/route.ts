@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import { revokeExtensionToken } from "@/lib/reading-river/extension-auth";
 
 function getBearerToken(authorization: string | null) {
-  if (!authorization?.startsWith("Bearer ")) {
+  const match = authorization?.match(/^\s*bearer\s+(.+)\s*$/i);
+
+  if (!match) {
     return null;
   }
 
-  const token = authorization.slice("Bearer ".length).trim();
-
-  return token || null;
+  return match[1] || null;
 }
 
 export async function POST(request: Request) {
