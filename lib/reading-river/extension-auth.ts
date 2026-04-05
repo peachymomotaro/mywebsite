@@ -1,12 +1,15 @@
 import { createHash, randomBytes } from "node:crypto";
+import { Prisma, UserStatus } from "@prisma/client";
 import { getSessionCookieOptions } from "@/lib/reading-river/auth";
 import { getPrismaClient } from "@/lib/reading-river/db";
 
 const EXTENSION_TOKEN_BYTES = 32;
 
-type StoredExtensionToken = Awaited<
-  ReturnType<ReturnType<typeof getPrismaClient>["extensionToken"]["findUnique"]>
->;
+type StoredExtensionToken = Prisma.ExtensionTokenGetPayload<{
+  include: {
+    user: true;
+  };
+}>;
 
 function isMissingExtensionTokenTableError(error: unknown) {
   if (!error || typeof error !== "object") {
@@ -49,19 +52,22 @@ export async function createExtensionToken(userId: string, options: { now?: Date
   return { token, extensionToken };
 }
 
-export async function getExtensionTokenByToken(token: string | undefined, now = new Date()) {
+export async function getExtensionTokenByRawToken(token: string | undefined, now = new Date()) {
   if (!token) {
     return null;
   }
 
   const prisma = getPrismaClient();
 
-  let extensionToken: StoredExtensionToken;
+  let extensionToken: StoredExtensionToken | null;
 
   try {
     extensionToken = await prisma.extensionToken.findUnique({
       where: {
         tokenHash: hashToken(token),
+      },
+      include: {
+        user: true,
       },
     });
   } catch (error) {
@@ -81,6 +87,18 @@ export async function getExtensionTokenByToken(token: string | undefined, now = 
   }
 
   return extensionToken;
+}
+
+export const getExtensionTokenByToken = getExtensionTokenByRawToken;
+
+export async function getCurrentUserFromExtensionToken(token: string | undefined, now = new Date()) {
+  const extensionToken = await getExtensionTokenByRawToken(token, now);
+
+  if (!extensionToken?.user || extensionToken.user.status !== UserStatus.active) {
+    return null;
+  }
+
+  return extensionToken.user;
 }
 
 export async function revokeExtensionToken(token: string, now = new Date()) {

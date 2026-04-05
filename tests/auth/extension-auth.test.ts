@@ -17,7 +17,8 @@ vi.mock("@/lib/reading-river/db", () => ({
 
 import {
   createExtensionToken,
-  getExtensionTokenByToken,
+  getCurrentUserFromExtensionToken,
+  getExtensionTokenByRawToken,
   revokeExtensionToken,
 } from "@/lib/reading-river/extension-auth";
 
@@ -73,12 +74,72 @@ describe("extension auth token store", () => {
     const context = createPrismaMock();
     mocks.setPrismaMock(context.prismaMock);
 
-    await getExtensionTokenByToken("raw-token", new Date("2026-04-01T12:00:00Z"));
+    await getExtensionTokenByRawToken("raw-token", new Date("2026-04-01T12:00:00Z"));
 
     const findUniqueArgs = context.findUnique.mock.calls[0]?.[0];
 
     expect(findUniqueArgs?.where?.tokenHash).toMatch(/^[a-f0-9]{64}$/);
     expect(findUniqueArgs?.where?.tokenHash).not.toBe("raw-token");
+  });
+
+  it("returns the active user for a valid extension token", async () => {
+    const context = createPrismaMock();
+    mocks.setPrismaMock(context.prismaMock);
+    const now = new Date("2026-04-01T12:00:00Z");
+
+    context.findUnique.mockResolvedValue({
+      id: "extension-token-1",
+      tokenHash: "hashed-token",
+      userId: "user-1",
+      expiresAt: new Date("2026-05-01T12:00:00Z"),
+      revokedAt: null,
+      createdAt: now,
+      lastUsedAt: now,
+      user: {
+        id: "user-1",
+        email: "reader@example.com",
+        displayName: "River Reader",
+        passwordHash: "password-hash",
+        status: "active",
+        isAdmin: false,
+        createdAt: now,
+        updatedAt: now,
+      },
+    });
+
+    await expect(getCurrentUserFromExtensionToken("raw-token", now)).resolves.toMatchObject({
+      id: "user-1",
+      email: "reader@example.com",
+      displayName: "River Reader",
+    });
+  });
+
+  it("rejects deactivated extension users when loading the current user", async () => {
+    const context = createPrismaMock();
+    mocks.setPrismaMock(context.prismaMock);
+    const now = new Date("2026-04-01T12:00:00Z");
+
+    context.findUnique.mockResolvedValue({
+      id: "extension-token-1",
+      tokenHash: "hashed-token",
+      userId: "user-1",
+      expiresAt: new Date("2026-05-01T12:00:00Z"),
+      revokedAt: null,
+      createdAt: now,
+      lastUsedAt: now,
+      user: {
+        id: "user-1",
+        email: "reader@example.com",
+        displayName: "River Reader",
+        passwordHash: "password-hash",
+        status: "deactivated",
+        isAdmin: false,
+        createdAt: now,
+        updatedAt: now,
+      },
+    });
+
+    await expect(getCurrentUserFromExtensionToken("raw-token", now)).resolves.toBeNull();
   });
 
   it("rejects expired tokens when loading by raw token", async () => {
@@ -96,7 +157,7 @@ describe("extension auth token store", () => {
       lastUsedAt: now,
     });
 
-    await expect(getExtensionTokenByToken("raw-token", now)).resolves.toBeNull();
+    await expect(getExtensionTokenByRawToken("raw-token", now)).resolves.toBeNull();
   });
 
   it("rejects revoked tokens when loading by raw token", async () => {
@@ -114,7 +175,7 @@ describe("extension auth token store", () => {
       lastUsedAt: now,
     });
 
-    await expect(getExtensionTokenByToken("raw-token", now)).resolves.toBeNull();
+    await expect(getExtensionTokenByRawToken("raw-token", now)).resolves.toBeNull();
   });
 
   it("revokes an extension token by hashed token", async () => {
