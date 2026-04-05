@@ -40,6 +40,7 @@ const mocks = vi.hoisted(() => ({
   })),
   markAsReadMock: vi.fn(async () => {}),
   skipReadingItemMock: vi.fn(async () => {}),
+  deleteReadingItemMock: vi.fn(async () => {}),
 }));
 
 vi.mock("next/link", () => ({
@@ -68,6 +69,7 @@ vi.mock("@/lib/reading-river/homepage-data", () => ({
 vi.mock("@/app/reading-river/actions/reading-items", () => ({
   markAsRead: mocks.markAsReadMock,
   skipReadingItem: mocks.skipReadingItemMock,
+  deleteReadingItem: mocks.deleteReadingItemMock,
 }));
 
 describe("ReadingRiverHomePage", () => {
@@ -95,6 +97,7 @@ describe("ReadingRiverHomePage", () => {
       screen.getByRole("link", { name: "Edit Daily stream pick" }),
     ).toBeInTheDocument();
     expect(screen.getByText("ideas")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Remove" })).toHaveLength(2);
     expect(screen.getByText("Choose a time")).toBeInTheDocument();
     expect(mocks.getHomePageDataMock).toHaveBeenCalledWith({
       userId: "user-1",

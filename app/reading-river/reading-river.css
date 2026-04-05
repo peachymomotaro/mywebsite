@@ -502,6 +502,15 @@ a {
   margin: 0;
 }
 
+.river-home-page .river-spotlight-remove-action {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.river-home-page .river-spotlight-remove-action-open {
+  flex-basis: min(100%, 20rem);
+}
+
 .river-home-page .river-spotlight-tags {
   margin: 0;
   max-width: min(100%, 15rem);
@@ -544,6 +553,61 @@ a {
   border-color: transparent;
   background: hsl(var(--foreground));
   color: hsl(var(--background));
+}
+
+.river-home-page .river-spotlight-action-danger {
+  border-color: rgba(138, 52, 52, 0.22);
+  background: rgba(255, 238, 236, 0.92);
+  color: rgb(133, 41, 41);
+}
+
+.river-home-page .river-spotlight-action-button:disabled {
+  cursor: progress;
+  opacity: 0.72;
+}
+
+.river-home-page .river-spotlight-action-button:disabled:hover {
+  transform: none;
+}
+
+.river-home-page .river-spotlight-remove-confirmation {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(138, 52, 52, 0.16);
+  border-radius: 1.05rem;
+  background: rgba(255, 248, 247, 0.95);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+}
+
+.river-home-page .river-spotlight-remove-confirmation-text {
+  margin: 0;
+  font-size: 0.96rem;
+  font-weight: 600;
+}
+
+.river-home-page .river-spotlight-remove-confirmation-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.river-home-page .river-spotlight-remove-confirmation-toggle input {
+  margin-top: 0.15rem;
+}
+
+.river-home-page .river-spotlight-remove-confirmation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.river-home-page .river-spotlight-remove-confirmation-actions .river-spotlight-action-button {
+  min-height: 2.55rem;
+  padding: 0.58rem 0.92rem;
 }
 
 .river-home-page .river-time-picker {
