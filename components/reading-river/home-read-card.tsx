@@ -1,6 +1,11 @@
 import Link from "next/link";
-import { markAsRead, skipReadingItem } from "@/app/reading-river/actions/reading-items";
+import {
+  deleteReadingItem,
+  markAsRead,
+  skipReadingItem,
+} from "@/app/reading-river/actions/reading-items";
 import { HomeCardTags } from "@/components/reading-river/home-card-tags";
+import { HomeRemoveAction } from "@/components/reading-river/home-remove-action";
 import type { HomePageFeaturedItem } from "@/lib/reading-river/homepage-data";
 import { readingRiverItemEditPath } from "@/lib/reading-river/routes";
 
@@ -29,6 +34,16 @@ export function HomeReadCard({ label, item, emptyMessage }: HomeReadCardProps) {
     }
 
     await skipReadingItem({ id: item.id });
+  }
+
+  async function deleteReadingItemAction() {
+    "use server";
+
+    if (!item) {
+      return;
+    }
+
+    await deleteReadingItem({ id: item.id });
   }
 
   return (
@@ -81,6 +96,7 @@ export function HomeReadCard({ label, item, emptyMessage }: HomeReadCardProps) {
                   Skip
                 </button>
               </form>
+              <HomeRemoveAction removeAction={deleteReadingItemAction} />
             </div>
 
             <HomeCardTags tags={item.tags} />
