@@ -4,6 +4,7 @@ import { readingRiverPath, READING_RIVER_BASE_PATH } from "@/lib/reading-river/r
 
 function isPublicReadingRiverPath(pathname: string) {
   return (
+    pathname.startsWith(readingRiverPath("/api/extension")) ||
     pathname === readingRiverPath("/beta") ||
     pathname === readingRiverPath("/invite") ||
     pathname === readingRiverPath("/login") ||
