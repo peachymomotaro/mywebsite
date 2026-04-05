@@ -3,6 +3,7 @@ node_modules/
 
 # next build output
 .next/
+.next.stale-middleware-cache/
 out/
 
 # logs
