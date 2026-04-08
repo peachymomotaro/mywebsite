@@ -1,25 +1,42 @@
 import "@testing-library/jest-dom/vitest";
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { login } from "@/extension/reading-river-firefox/lib/api-client";
 
 const storageKey = "reading-river-extension-token";
 
 function createBrowserMock({
   token,
   activeTab,
+  getReject,
+  queryReject,
 }: {
   token: string | null;
   activeTab: {
     url: string;
     title: string;
   };
+  getReject?: Error | null;
+  queryReject?: Error | null;
 }) {
-  const get = vi.fn(async (key: string) => ({
-    [key]: key === storageKey ? token : undefined,
-  }));
-  const query = vi.fn(async () => [activeTab]);
+  const get = vi.fn(async (key: string) => {
+    if (getReject) {
+      throw getReject;
+    }
+
+    return {
+      [key]: key === storageKey ? token : undefined,
+    };
+  });
+  const query = vi.fn(async () => {
+    if (queryReject) {
+      throw queryReject;
+    }
+
+    return [activeTab];
+  });
 
   vi.stubGlobal("browser", {
     storage: {
@@ -44,15 +61,19 @@ async function loadPopupModule({
     url: "https://example.com/article",
     title: "Saved from Firefox",
   },
+  getReject = null,
+  queryReject = null,
 }: Partial<{
   token: string | null;
   activeTab: {
     url: string;
     title: string;
   };
+  getReject: Error | null;
+  queryReject: Error | null;
 }> = {}) {
   document.body.innerHTML = '<main id="popup-root"></main>';
-  createBrowserMock({ token, activeTab });
+  createBrowserMock({ token, activeTab, getReject, queryReject });
   vi.resetModules();
 
   const popupModule = await import("@/extension/reading-river-firefox/popup");
@@ -79,6 +100,32 @@ describe("reading river firefox popup", () => {
     expect(html).not.toContain("bootPopup()");
   });
 
+  it("sends extension API requests to the Reading River origin", async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ token: "login-token" }), {
+      status: 200,
+      headers: {
+        "content-type": "application/json",
+      },
+    }));
+
+    await login(
+      {
+        email: "reader@example.com",
+        password: "secret-password",
+      },
+      {
+        fetchImpl,
+      },
+    );
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://petercurry.org/reading-river/api/extension/login",
+      expect.objectContaining({
+        method: "POST",
+      }),
+    );
+  });
+
   it("renders the login form when no stored token exists", async () => {
     await loadPopupModule();
 
@@ -87,6 +134,16 @@ describe("reading river firefox popup", () => {
     expect(screen.getByLabelText("Password")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
     expect(screen.queryByLabelText("URL")).not.toBeInTheDocument();
+  });
+
+  it("renders an inline error when popup data loading fails", async () => {
+    await loadPopupModule({
+      getReject: new Error("storage unavailable"),
+    });
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Unable to load Reading River.",
+    );
   });
 
   it("renders the save form when a token exists", async () => {
@@ -102,5 +159,28 @@ describe("reading river firefox popup", () => {
     expect(screen.getByDisplayValue("Saved from Firefox")).toBeInTheDocument();
     expect(screen.getByLabelText("Priority")).toBeRequired();
     expect(screen.getByRole("button", { name: "Save article" })).toBeDisabled();
+  });
+
+  it("enables the save button after a priority value is entered", async () => {
+    await loadPopupModule({
+      token: "stored-token",
+      activeTab: {
+        url: "https://example.com/article",
+        title: "Saved from Firefox",
+      },
+    });
+
+    const priorityInput = await screen.findByLabelText("Priority");
+    const saveButton = screen.getByRole("button", { name: "Save article" });
+
+    expect(saveButton).toBeDisabled();
+
+    fireEvent.input(priorityInput, {
+      target: {
+        value: "7",
+      },
+    });
+
+    expect(saveButton).toBeEnabled();
   });
 });

@@ -8,6 +8,7 @@
     "default_title": "Reading River"
   },
   "permissions": ["storage", "tabs"],
+  "host_permissions": ["https://petercurry.org/*"],
   "browser_specific_settings": {
     "gecko": {
       "id": "reading-river-firefox@example.com"

@@ -1,9 +1,7 @@
-function buildUrl(baseUrl, path) {
-  if (!baseUrl) {
-    return path;
-  }
+const DEFAULT_READING_RIVER_ORIGIN = "https://petercurry.org";
 
-  return new URL(path, baseUrl).toString();
+function buildUrl(baseUrl, path) {
+  return new URL(path, baseUrl || DEFAULT_READING_RIVER_ORIGIN).toString();
 }
 
 async function postJson(path, body, options = {}) {

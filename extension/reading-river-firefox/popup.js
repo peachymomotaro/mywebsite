@@ -133,17 +133,33 @@ function renderSignedIn(root, activeTab) {
   }
 }
 
+function renderBootError(root) {
+  root.innerHTML = `
+    <section class="popup-card">
+      <p class="popup-eyebrow">Reading River</p>
+      <h1 class="popup-title">Popup unavailable</h1>
+      <p class="popup-copy" role="alert">
+        Unable to load Reading River. Please reopen the popup.
+      </p>
+    </section>
+  `;
+}
+
 export async function bootPopup(root) {
   const popupRoot = getRoot(root);
-  const token = await getToken();
+  try {
+    const token = await getToken();
 
-  if (!token) {
-    renderSignedOut(popupRoot);
-    return;
+    if (!token) {
+      renderSignedOut(popupRoot);
+      return;
+    }
+
+    const activeTab = await getActiveTabSnapshot();
+    renderSignedIn(popupRoot, activeTab);
+  } catch {
+    renderBootError(popupRoot);
   }
-
-  const activeTab = await getActiveTabSnapshot();
-  renderSignedIn(popupRoot, activeTab);
 }
 
 async function autoBootPopup() {
