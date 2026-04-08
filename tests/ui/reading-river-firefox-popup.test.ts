@@ -215,6 +215,118 @@ describe("reading river firefox popup", () => {
     expect(screen.getByRole("button", { name: "Save article" })).toBeDisabled();
   });
 
+  it("enables Save after a valid priority is entered when the URL is valid", async () => {
+    await loadPopupModule({
+      token: "stored-token",
+      activeTab: {
+        url: "https://example.com/article",
+        title: "Saved from Firefox",
+      },
+    });
+
+    fireEvent.input(screen.getByLabelText("Priority"), {
+      target: {
+        value: "8",
+      },
+    });
+
+    expect(screen.getByRole("button", { name: "Save article" })).toBeEnabled();
+  });
+
+  it("does not call login when the login form is invalid", async () => {
+    const fetchImpl = vi.fn(async () =>
+      new Response(JSON.stringify({ token: "login-token" }), {
+        status: 200,
+        headers: {
+          "content-type": "application/json",
+        },
+      }),
+    );
+
+    vi.stubGlobal("fetch", fetchImpl);
+    await loadPopupModule();
+
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("does not call save when the edited URL is invalid", async () => {
+    const fetchImpl = vi.fn(async () =>
+      new Response(JSON.stringify({ id: "item-1", title: "Saved from Firefox" }), {
+        status: 201,
+        headers: {
+          "content-type": "application/json",
+        },
+      }),
+    );
+
+    vi.stubGlobal("fetch", fetchImpl);
+    await loadPopupModule({
+      token: "stored-token",
+      activeTab: {
+        url: "https://example.com/article",
+        title: "Saved from Firefox",
+      },
+    });
+
+    fireEvent.change(screen.getByLabelText("URL"), {
+      target: {
+        value: "not-a-url",
+      },
+    });
+    fireEvent.input(screen.getByLabelText("Priority"), {
+      target: {
+        value: "8",
+      },
+    });
+
+    fireEvent.submit(screen.getByLabelText("URL").closest("form") as HTMLFormElement);
+
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("does not persist the login token if the active tab lookup fails after a successful login", async () => {
+    const fetchImpl = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          token: "login-token",
+          user: {
+            id: "user-1",
+            email: "reader@example.com",
+            displayName: "River Reader",
+          },
+        }),
+        {
+          status: 200,
+          headers: {
+            "content-type": "application/json",
+          },
+        },
+      ),
+    );
+
+    vi.stubGlobal("fetch", fetchImpl);
+    const { browser } = await loadPopupModule({
+      queryReject: new Error("tabs unavailable"),
+    });
+
+    fireEvent.change(screen.getByLabelText("Email address"), {
+      target: {
+        value: "reader@example.com",
+      },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: {
+        value: "secret",
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not sign in. Try again.");
+    expect(browser.set).not.toHaveBeenCalled();
+  });
+
   it("submits login, stores the token, re-renders the save form, and sends the save payload", async () => {
     const fetchImpl = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);

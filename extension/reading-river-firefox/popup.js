@@ -108,6 +108,11 @@ async function handleLoginSubmit(event, popupRoot) {
   const email = getNamedInput(form, "email").value.trim();
   const password = getNamedInput(form, "password").value;
 
+  if (!form.checkValidity()) {
+    form.reportValidity();
+    return;
+  }
+
   submitButton.disabled = true;
   setFormStatus(form, "Signing in...", "status");
 
@@ -117,10 +122,9 @@ async function handleLoginSubmit(event, popupRoot) {
       password,
     });
 
-    await setToken(result.token);
-
     const activeTab = await getActiveTabSnapshot();
     renderSignedIn(popupRoot, activeTab, result.token);
+    await setToken(result.token);
   } catch {
     setFormStatus(form, "Could not sign in. Try again.", "alert");
   } finally {
@@ -148,6 +152,11 @@ async function handleSaveSubmit(event, popupRoot, token) {
   const url = getNamedInput(form, "url").value.trim();
   const title = getNamedInput(form, "title").value.trim();
   const priorityScore = Number(getNamedInput(form, "priorityScore").value);
+
+  if (!form.checkValidity()) {
+    form.reportValidity();
+    return;
+  }
 
   submitButton.disabled = true;
   setFormStatus(form, "Saving...", "status");
