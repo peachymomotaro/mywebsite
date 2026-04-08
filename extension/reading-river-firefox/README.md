@@ -19,3 +19,9 @@
 3. Confirm the current page URL and title are prefilled.
 4. Enter a priority score and click **Save article**.
 5. A successful save shows a confirmation message in the popup.
+
+## Current Caveats
+
+- Firefox only for now.
+- v1 saves the page URL, title, and priority score.
+- v1 does not estimate reading time during save.
