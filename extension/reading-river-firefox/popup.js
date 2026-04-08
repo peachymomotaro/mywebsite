@@ -145,3 +145,27 @@ export async function bootPopup(root) {
   const activeTab = await getActiveTabSnapshot();
   renderSignedIn(popupRoot, activeTab);
 }
+
+async function autoBootPopup() {
+  const popupRoot = document.getElementById("popup-root");
+
+  if (!popupRoot) {
+    return;
+  }
+
+  await bootPopup(popupRoot);
+}
+
+if (typeof document !== "undefined") {
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      () => {
+        void autoBootPopup();
+      },
+      { once: true },
+    );
+  } else {
+    void autoBootPopup();
+  }
+}
