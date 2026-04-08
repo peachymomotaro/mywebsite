@@ -192,6 +192,29 @@ describe("reading river firefox popup", () => {
     expect(screen.getByRole("button", { name: "Save article" })).toBeDisabled();
   });
 
+  it("keeps Save disabled when the URL is invalid even after a valid priority is entered", async () => {
+    await loadPopupModule({
+      token: "stored-token",
+      activeTab: {
+        url: "https://example.com/article",
+        title: "Saved from Firefox",
+      },
+    });
+
+    fireEvent.change(screen.getByLabelText("URL"), {
+      target: {
+        value: "not-a-url",
+      },
+    });
+    fireEvent.input(screen.getByLabelText("Priority"), {
+      target: {
+        value: "8",
+      },
+    });
+
+    expect(screen.getByRole("button", { name: "Save article" })).toBeDisabled();
+  });
+
   it("submits login, stores the token, re-renders the save form, and sends the save payload", async () => {
     const fetchImpl = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);

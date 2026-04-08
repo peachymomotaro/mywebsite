@@ -75,7 +75,6 @@ async function getActiveTabSnapshot() {
 }
 
 function updateSaveButtonState(form) {
-  const priorityField = getNamedInput(form, "priorityScore");
   const saveButton = form.querySelector('button[type="submit"]');
 
   if (!(saveButton instanceof HTMLButtonElement)) {
@@ -83,11 +82,11 @@ function updateSaveButtonState(form) {
   }
 
   const syncState = () => {
-    saveButton.disabled = !priorityField.checkValidity();
+    saveButton.disabled = !form.checkValidity();
   };
 
-  priorityField.addEventListener("input", syncState);
-  priorityField.addEventListener("change", syncState);
+  form.addEventListener("input", syncState);
+  form.addEventListener("change", syncState);
   syncState();
 }
 
