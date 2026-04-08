@@ -15,11 +15,11 @@ describe("ReadingRiverHowItWorksPage", () => {
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/If you want the deeper philosophy behind it, the influences are linked at the bottom\./i),
+      screen.getByRole("heading", { name: "Philosophy and More on How It Works" }),
     ).toBeInTheDocument();
 
     const howItWorksHeading = screen.getByRole("heading", { name: "How it works" });
-    const philosophyHeading = screen.getByRole("heading", { name: "Philosophy and influences" });
+    const philosophyHeading = screen.getByRole("heading", { name: "Philosophy and More on How It Works" });
 
     expect(
       howItWorksHeading.compareDocumentPosition(philosophyHeading) &
@@ -35,8 +35,11 @@ describe("ReadingRiverHowItWorksPage", () => {
       ),
     ).toBeInTheDocument();
 
+    const randomPickIntro = screen.getByText(
+      /When you want to read something, return to the river and go fishing\./i,
+    );
     const randomPickExplanation = screen.getByText(
-      /When you want to read something, return to the river and go fishing\. The left option is the 'most important' option based on the priority setting and the amount of time you have\. The right button is a randomly selected piece of reading\./i,
+      /The left option is the 'most important' option based on the priority setting and the amount of time you have\. The right button is a randomly selected piece of reading\./i,
     );
     const algorithmIntro = screen.getByText(
       /If you're interested, the priority algorithm for Reading River is as follows:/i,
@@ -52,6 +55,10 @@ describe("ReadingRiverHowItWorksPage", () => {
       ),
     ).toBeInTheDocument();
 
+    expect(
+      randomPickIntro.compareDocumentPosition(randomPickExplanation) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(
       randomPickExplanation.compareDocumentPosition(algorithmIntro) &
         Node.DOCUMENT_POSITION_FOLLOWING,

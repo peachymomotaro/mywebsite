@@ -28,7 +28,7 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["tests/setup.ts"],
-    exclude: [...configDefaults.exclude, "**/.worktrees/**"],
+    exclude: [...configDefaults.exclude, "**/.worktrees/**", "**/worktrees/**"],
   },
   resolve: {
     alias: {
