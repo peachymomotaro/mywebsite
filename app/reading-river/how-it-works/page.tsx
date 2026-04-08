@@ -94,7 +94,10 @@ export default function HowItWorksPage() {
             <p>
               If you do not choose a time budget, it prefers high-priority short reads, 
               then high-priority long reads, then lower-priority short reads, and then 
-              everything else.
+              everything else. 
+            </p>
+            <p>
+              Skipping a read lowers its priority score, making it less likely to appear in future.
             </p>
             <ul className="river-how-source-list">
               {influences.map((influence) => (
