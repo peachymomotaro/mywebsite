@@ -1,4 +1,5 @@
-import { getToken } from "./lib/storage.js";
+import { ApiError, login as loginRequest, save as saveRequest } from "./lib/api-client.js";
+import { clearToken, getToken, setToken } from "./lib/storage.js";
 
 function escapeHtml(value) {
   return String(value)
@@ -23,6 +24,43 @@ function getRoot(root) {
   return fallbackRoot;
 }
 
+function getNamedInput(form, name) {
+  const field = form.elements.namedItem(name);
+
+  if (!(field instanceof HTMLInputElement)) {
+    throw new Error(`Expected input named ${name}.`);
+  }
+
+  return field;
+}
+
+function getStatusElement(form) {
+  const status = form.querySelector("[data-popup-status]");
+
+  return status instanceof HTMLElement ? status : null;
+}
+
+function setFormStatus(form, message, role) {
+  const status = getStatusElement(form);
+
+  if (!status) {
+    return;
+  }
+
+  if (!message) {
+    status.hidden = true;
+    status.textContent = "";
+    status.removeAttribute("role");
+    status.removeAttribute("aria-live");
+    return;
+  }
+
+  status.hidden = false;
+  status.textContent = message;
+  status.setAttribute("role", role);
+  status.setAttribute("aria-live", role === "alert" ? "assertive" : "polite");
+}
+
 async function getActiveTabSnapshot() {
   const tabs = await globalThis.browser?.tabs?.query({
     active: true,
@@ -36,13 +74,121 @@ async function getActiveTabSnapshot() {
   };
 }
 
-function renderSignedOut(root) {
+function updateSaveButtonState(form) {
+  const priorityField = getNamedInput(form, "priorityScore");
+  const saveButton = form.querySelector('button[type="submit"]');
+
+  if (!(saveButton instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  const syncState = () => {
+    saveButton.disabled = !priorityField.checkValidity();
+  };
+
+  priorityField.addEventListener("input", syncState);
+  priorityField.addEventListener("change", syncState);
+  syncState();
+}
+
+async function handleLoginSubmit(event, popupRoot) {
+  event.preventDefault();
+
+  const form = event.currentTarget;
+
+  if (!(form instanceof HTMLFormElement)) {
+    return;
+  }
+
+  const submitButton = form.querySelector('button[type="submit"]');
+
+  if (!(submitButton instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  const email = getNamedInput(form, "email").value.trim();
+  const password = getNamedInput(form, "password").value;
+
+  submitButton.disabled = true;
+  setFormStatus(form, "Signing in...", "status");
+
+  try {
+    const result = await loginRequest({
+      email,
+      password,
+    });
+
+    await setToken(result.token);
+
+    const activeTab = await getActiveTabSnapshot();
+    renderSignedIn(popupRoot, activeTab, result.token);
+  } catch {
+    setFormStatus(form, "Could not sign in. Try again.", "alert");
+  } finally {
+    if (form.isConnected) {
+      submitButton.disabled = false;
+    }
+  }
+}
+
+async function handleSaveSubmit(event, popupRoot, token) {
+  event.preventDefault();
+
+  const form = event.currentTarget;
+
+  if (!(form instanceof HTMLFormElement)) {
+    return;
+  }
+
+  const submitButton = form.querySelector('button[type="submit"]');
+
+  if (!(submitButton instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  const url = getNamedInput(form, "url").value.trim();
+  const title = getNamedInput(form, "title").value.trim();
+  const priorityScore = Number(getNamedInput(form, "priorityScore").value);
+
+  submitButton.disabled = true;
+  setFormStatus(form, "Saving...", "status");
+
+  try {
+    await saveRequest(
+      {
+        url,
+        title,
+        priorityScore,
+      },
+      {
+        token,
+      },
+    );
+
+    setFormStatus(form, "Saved to Reading River.", "status");
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) {
+      await clearToken();
+      renderSignedOut(popupRoot, "Your session expired. Sign in again.", "alert");
+      return;
+    }
+
+    setFormStatus(form, "Could not save right now. Try again.", "alert");
+  } finally {
+    if (form.isConnected) {
+      updateSaveButtonState(form);
+    }
+  }
+}
+
+function renderSignedOut(root, message = "", role = "alert") {
   root.innerHTML = `
     <section class="popup-card">
       <p class="popup-eyebrow">Reading River</p>
       <h1 class="popup-title">Sign in to Reading River</h1>
       <p class="popup-copy">Use your Reading River account to save articles from Firefox.</p>
       <form class="popup-form" novalidate>
+        <p class="popup-status" data-popup-status hidden></p>
         <label class="popup-field">
           <span class="popup-label">Email address</span>
           <input class="popup-input" name="email" type="email" autocomplete="email" required />
@@ -64,35 +210,29 @@ function renderSignedOut(root) {
     </section>
   `;
 
-  root.querySelector("form")?.addEventListener("submit", (event) => {
-    event.preventDefault();
-  });
-}
+  const form = root.querySelector("form");
 
-function updateSaveButtonState(form) {
-  const priorityField = form.querySelector('[name="priorityScore"]');
-  const saveButton = form.querySelector('button[type="submit"]');
-
-  if (!(priorityField instanceof HTMLInputElement) || !(saveButton instanceof HTMLButtonElement)) {
+  if (!(form instanceof HTMLFormElement)) {
     return;
   }
 
-  const syncState = () => {
-    saveButton.disabled = !priorityField.checkValidity();
-  };
+  form.addEventListener("submit", (event) => {
+    void handleLoginSubmit(event, root);
+  });
 
-  priorityField.addEventListener("input", syncState);
-  priorityField.addEventListener("change", syncState);
-  syncState();
+  if (message) {
+    setFormStatus(form, message, role);
+  }
 }
 
-function renderSignedIn(root, activeTab) {
+function renderSignedIn(root, activeTab, token, message = "", role = "status") {
   root.innerHTML = `
     <section class="popup-card">
       <p class="popup-eyebrow">Signed in</p>
       <h1 class="popup-title">Save this page</h1>
       <p class="popup-copy">Capture the current tab with a priority score so it’s ready for later.</p>
       <form class="popup-form" novalidate>
+        <p class="popup-status" data-popup-status hidden></p>
         <label class="popup-field">
           <span class="popup-label">URL</span>
           <input class="popup-input" name="url" type="url" required value="${escapeHtml(
@@ -126,11 +266,18 @@ function renderSignedIn(root, activeTab) {
 
   const form = root.querySelector("form");
 
-  if (form) {
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-    });
-    updateSaveButtonState(form);
+  if (!(form instanceof HTMLFormElement)) {
+    return;
+  }
+
+  form.addEventListener("submit", (event) => {
+    void handleSaveSubmit(event, root, token);
+  });
+
+  updateSaveButtonState(form);
+
+  if (message) {
+    setFormStatus(form, message, role);
   }
 }
 
@@ -157,7 +304,7 @@ export async function bootPopup(root) {
     }
 
     const activeTab = await getActiveTabSnapshot();
-    renderSignedIn(popupRoot, activeTab);
+    renderSignedIn(popupRoot, activeTab, token);
   } catch {
     renderBootError(popupRoot);
   }

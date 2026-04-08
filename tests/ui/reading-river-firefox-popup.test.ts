@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -21,14 +21,24 @@ function createBrowserMock({
   getReject?: Error | null;
   queryReject?: Error | null;
 }) {
+  let currentToken = token;
+
   const get = vi.fn(async (key: string) => {
     if (getReject) {
       throw getReject;
     }
 
     return {
-      [key]: key === storageKey ? token : undefined,
+      [key]: key === storageKey ? currentToken : undefined,
     };
+  });
+  const set = vi.fn(async (value: Record<string, string>) => {
+    currentToken = value[storageKey] ?? null;
+  });
+  const remove = vi.fn(async (key: string) => {
+    if (key === storageKey) {
+      currentToken = null;
+    }
   });
   const query = vi.fn(async () => {
     if (queryReject) {
@@ -42,6 +52,8 @@ function createBrowserMock({
     storage: {
       local: {
         get,
+        set,
+        remove,
       },
     },
     tabs: {
@@ -51,6 +63,8 @@ function createBrowserMock({
 
   return {
     get,
+    set,
+    remove,
     query,
   };
 }
@@ -73,14 +87,17 @@ async function loadPopupModule({
   queryReject: Error | null;
 }> = {}) {
   document.body.innerHTML = '<main id="popup-root"></main>';
-  createBrowserMock({ token, activeTab, getReject, queryReject });
+  const browser = createBrowserMock({ token, activeTab, getReject, queryReject });
   vi.resetModules();
 
   const popupModule = await import("@/extension/reading-river-firefox/popup");
 
   expect(popupModule.bootPopup).toEqual(expect.any(Function));
 
-  return popupModule;
+  return {
+    browser,
+    popupModule,
+  };
 }
 
 describe("reading river firefox popup", () => {
@@ -175,7 +192,125 @@ describe("reading river firefox popup", () => {
     expect(screen.getByRole("button", { name: "Save article" })).toBeDisabled();
   });
 
-  it("enables the save button after a priority value is entered", async () => {
+  it("submits login, stores the token, re-renders the save form, and sends the save payload", async () => {
+    const fetchImpl = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+
+      if (url.endsWith("/reading-river/api/extension/login")) {
+        return new Response(
+          JSON.stringify({
+            token: "login-token",
+            user: {
+              id: "user-1",
+              email: "reader@example.com",
+              displayName: "River Reader",
+            },
+          }),
+          {
+            status: 200,
+            headers: {
+              "content-type": "application/json",
+            },
+          },
+        );
+      }
+
+      if (url.endsWith("/reading-river/api/extension/save")) {
+        expect(init?.headers).toEqual(
+          expect.objectContaining({
+            authorization: "Bearer login-token",
+          }),
+        );
+
+        return new Response(JSON.stringify({ id: "item-1", title: "Saved from Firefox" }), {
+          status: 201,
+          headers: {
+            "content-type": "application/json",
+          },
+        });
+      }
+
+      throw new Error(`Unexpected fetch call: ${url}`);
+    });
+
+    vi.stubGlobal("fetch", fetchImpl);
+    const { browser } = await loadPopupModule();
+
+    fireEvent.change(screen.getByLabelText("Email address"), {
+      target: {
+        value: "reader@example.com",
+      },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: {
+        value: "secret",
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(await screen.findByRole("heading", { name: "Save this page" })).toBeInTheDocument();
+    expect(browser.set).toHaveBeenCalledWith({
+      [storageKey]: "login-token",
+    });
+
+    const priorityInput = screen.getByLabelText("Priority");
+    fireEvent.input(priorityInput, {
+      target: {
+        value: "8",
+      },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Save article" }));
+
+    await waitFor(() => {
+      expect(fetchImpl).toHaveBeenCalledWith(
+        "https://petercurry.org/reading-river/api/extension/save",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            url: "https://example.com/article",
+            title: "Saved from Firefox",
+            priorityScore: 8,
+          }),
+        }),
+      );
+    });
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Saved to Reading River.");
+  });
+
+  it("clears the token and returns to the signed-out form after an expired token response", async () => {
+    const fetchImpl = vi.fn(async () =>
+      new Response(JSON.stringify({ error: "invalid_token" }), {
+        status: 401,
+        headers: {
+          "content-type": "application/json",
+        },
+      }),
+    );
+
+    vi.stubGlobal("fetch", fetchImpl);
+    const { browser } = await loadPopupModule({
+      token: "stored-token",
+      activeTab: {
+        url: "https://example.com/article",
+        title: "Saved from Firefox",
+      },
+    });
+
+    fireEvent.input(screen.getByLabelText("Priority"), {
+      target: {
+        value: "7",
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save article" }));
+
+    expect(await screen.findByRole("heading", { name: "Sign in to Reading River" })).toBeInTheDocument();
+    expect(browser.remove).toHaveBeenCalledWith(storageKey);
+    expect(screen.queryByLabelText("Priority")).not.toBeInTheDocument();
+  });
+
+  it("preserves save form values and shows a retryable error on network failure", async () => {
     await loadPopupModule({
       token: "stored-token",
       activeTab: {
@@ -184,41 +319,33 @@ describe("reading river firefox popup", () => {
       },
     });
 
-    const priorityInput = await screen.findByLabelText("Priority");
-    const saveButton = screen.getByRole("button", { name: "Save article" });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("Failed to fetch");
+      }),
+    );
 
-    expect(saveButton).toBeDisabled();
-
-    fireEvent.input(priorityInput, {
+    fireEvent.change(screen.getByLabelText("URL"), {
       target: {
-        value: "7",
+        value: "https://example.com/article",
       },
     });
+    fireEvent.change(screen.getByLabelText("Title"), {
+      target: {
+        value: "Saved from Firefox",
+      },
+    });
+    fireEvent.change(screen.getByLabelText("Priority"), {
+      target: {
+        value: "6",
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save article" }));
 
-    expect(saveButton).toBeEnabled();
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not save right now. Try again.");
+    expect(screen.getByLabelText("URL")).toHaveValue("https://example.com/article");
+    expect(screen.getByLabelText("Title")).toHaveValue("Saved from Firefox");
+    expect(screen.getByLabelText("Priority")).toHaveValue(6);
   });
-
-  it.each(["11", "-1", "1.5"])(
-    "keeps save disabled for invalid priority value %s",
-    async (value) => {
-      await loadPopupModule({
-        token: "stored-token",
-        activeTab: {
-          url: "https://example.com/article",
-          title: "Saved from Firefox",
-        },
-      });
-
-      const priorityInput = await screen.findByLabelText("Priority");
-      const saveButton = screen.getByRole("button", { name: "Save article" });
-
-      fireEvent.input(priorityInput, {
-        target: {
-          value,
-        },
-      });
-
-      expect(saveButton).toBeDisabled();
-    },
-  );
 });

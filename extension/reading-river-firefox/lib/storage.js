@@ -19,6 +19,11 @@ export async function getToken(storageArea = globalThis.browser?.storage?.local)
 export async function setToken(token, storageArea = globalThis.browser?.storage?.local) {
   const area = getStorageArea(storageArea);
 
+  if (typeof token !== "string" || !token.trim()) {
+    await area.remove(STORAGE_TOKEN_KEY);
+    return;
+  }
+
   await area.set({
     [STORAGE_TOKEN_KEY]: token,
   });
