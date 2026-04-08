@@ -78,10 +78,11 @@ function updateSaveButtonState(form) {
   }
 
   const syncState = () => {
-    saveButton.disabled = priorityField.value.trim().length === 0;
+    saveButton.disabled = !priorityField.checkValidity();
   };
 
   priorityField.addEventListener("input", syncState);
+  priorityField.addEventListener("change", syncState);
   syncState();
 }
 

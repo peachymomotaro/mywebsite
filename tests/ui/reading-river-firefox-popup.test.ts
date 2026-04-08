@@ -100,6 +100,20 @@ describe("reading river firefox popup", () => {
     expect(html).not.toContain("bootPopup()");
   });
 
+  it("requests only the activeTab permission in the manifest", () => {
+    const manifest = JSON.parse(
+      readFileSync(
+        path.resolve(process.cwd(), "extension/reading-river-firefox/manifest.json"),
+        "utf8",
+      ),
+    ) as {
+      permissions?: string[];
+    };
+
+    expect(manifest.permissions).toContain("activeTab");
+    expect(manifest.permissions).not.toContain("tabs");
+  });
+
   it("sends extension API requests to the Reading River origin", async () => {
     const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ token: "login-token" }), {
       status: 200,
@@ -183,4 +197,28 @@ describe("reading river firefox popup", () => {
 
     expect(saveButton).toBeEnabled();
   });
+
+  it.each(["11", "-1", "1.5"])(
+    "keeps save disabled for invalid priority value %s",
+    async (value) => {
+      await loadPopupModule({
+        token: "stored-token",
+        activeTab: {
+          url: "https://example.com/article",
+          title: "Saved from Firefox",
+        },
+      });
+
+      const priorityInput = await screen.findByLabelText("Priority");
+      const saveButton = screen.getByRole("button", { name: "Save article" });
+
+      fireEvent.input(priorityInput, {
+        target: {
+          value,
+        },
+      });
+
+      expect(saveButton).toBeDisabled();
+    },
+  );
 });
