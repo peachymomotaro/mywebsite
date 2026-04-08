@@ -22,6 +22,7 @@ pnpm-debug.log*
 
 # local git worktrees
 .worktrees/
+worktrees/
 
 # local docs
 /docs/

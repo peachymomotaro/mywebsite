@@ -3,7 +3,11 @@ import { getSessionCookieName } from "@/lib/reading-river/auth";
 import { readingRiverPath, READING_RIVER_BASE_PATH } from "@/lib/reading-river/routes";
 
 function isPublicReadingRiverPath(pathname: string) {
+  const extensionApiPath = readingRiverPath("/api/extension");
+
   return (
+    pathname === extensionApiPath ||
+    pathname.startsWith(`${extensionApiPath}/`) ||
     pathname === readingRiverPath("/beta") ||
     pathname === readingRiverPath("/invite") ||
     pathname === readingRiverPath("/login") ||

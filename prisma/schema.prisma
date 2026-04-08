@@ -69,6 +69,7 @@ model User {
   createdInvites  Invite[]     @relation("InviteCreatedBy")
   redeemedInvites Invite[]     @relation("InviteRedeemedBy")
   sessions        Session[]
+  extensionTokens ExtensionToken[]
 }
 
 model Invite {
@@ -90,6 +91,20 @@ model Invite {
 }
 
 model Session {
+  id         String   @id @default(cuid())
+  tokenHash  String   @unique
+  userId     String
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime?
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model ExtensionToken {
   id         String   @id @default(cuid())
   tokenHash  String   @unique
   userId     String

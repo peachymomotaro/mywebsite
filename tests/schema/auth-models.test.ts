@@ -10,6 +10,7 @@ describe("auth schema", () => {
     expect(Prisma.ModelName.User).toBe("User");
     expect(Prisma.ModelName.Invite).toBe("Invite");
     expect(Prisma.ModelName.Session).toBe("Session");
+    expect(Prisma.ModelName.ExtensionToken).toBe("ExtensionToken");
     expect(UserStatus.active).toBe("active");
     expect(UserStatus.deactivated).toBe("deactivated");
   });
@@ -20,6 +21,15 @@ describe("auth schema", () => {
     expect(Prisma.TagScalarFieldEnum.userId).toBe("userId");
     expect(Prisma.ReadEventScalarFieldEnum.userId).toBe("userId");
     expect(Prisma.AppSettingsScalarFieldEnum.userId).toBe("userId");
+  });
+
+  it("exposes the extension token fields", () => {
+    expect(Prisma.ExtensionTokenScalarFieldEnum.tokenHash).toBe("tokenHash");
+    expect(Prisma.ExtensionTokenScalarFieldEnum.userId).toBe("userId");
+    expect(Prisma.ExtensionTokenScalarFieldEnum.expiresAt).toBe("expiresAt");
+    expect(Prisma.ExtensionTokenScalarFieldEnum.revokedAt).toBe("revokedAt");
+    expect(Prisma.ExtensionTokenScalarFieldEnum.createdAt).toBe("createdAt");
+    expect(Prisma.ExtensionTokenScalarFieldEnum.lastUsedAt).toBe("lastUsedAt");
   });
 
   it("keeps read events tied to the owning user", () => {
