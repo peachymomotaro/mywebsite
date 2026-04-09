@@ -92,7 +92,10 @@ export function HomeReadCard({ label, item, emptyMessage }: HomeReadCardProps) {
                 </button>
               </form>
               <form action={skipReadingItemAction}>
-                <button type="submit" className="river-spotlight-action-button">
+                <button
+                  type="submit"
+                  className="river-spotlight-action-button river-spotlight-action-secondary"
+                >
                   Skip
                 </button>
               </form>

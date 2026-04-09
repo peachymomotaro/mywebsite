@@ -26,3 +26,6 @@ worktrees/
 
 # local docs
 /docs/
+
+# extension build artifacts
+extension/reading-river-firefox/dist/
