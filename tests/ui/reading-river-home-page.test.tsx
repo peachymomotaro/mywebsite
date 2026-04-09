@@ -97,6 +97,9 @@ describe("ReadingRiverHomePage", () => {
       screen.getByRole("link", { name: "Edit Daily stream pick" }),
     ).toBeInTheDocument();
     expect(screen.getByText("ideas")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Skip" })).toSatisfy((buttons) =>
+      buttons.every((button) => button.className.includes("river-spotlight-action-secondary")),
+    );
     expect(screen.getAllByRole("button", { name: "Remove" })).toHaveLength(2);
     expect(screen.getByText("Choose a time")).toBeInTheDocument();
     expect(mocks.getHomePageDataMock).toHaveBeenCalledWith({
