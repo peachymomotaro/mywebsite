@@ -42,6 +42,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps = {}) {
   const currentUser = await requireAdminUser();
   const resolvedSearchParams = (await searchParams) ?? {};
   const inviteToken = getSearchParamValue(resolvedSearchParams, "inviteToken");
+  const emailStatus = getSearchParamValue(resolvedSearchParams, "emailStatus");
   const origin = inviteToken ? await getRequestOrigin() : null;
   const inviteUrl = inviteToken
     ? origin
@@ -106,6 +107,14 @@ export default async function AdminPage({ searchParams }: AdminPageProps = {}) {
       {inviteUrl ? (
         <section className="editorial-panel">
           <p className="river-section-label">Invite link ready</p>
+          {emailStatus === "sent" ? (
+            <p className="river-history-meta">Invite email sent.</p>
+          ) : emailStatus === "failed" ? (
+            <p className="river-history-meta">
+              Invite created, but the email did not send. Copy the link below and send it
+              manually.
+            </p>
+          ) : null}
           <label className="block space-y-2">
             <span className="text-sm font-medium">Invite URL</span>
             <input className="intake-input" readOnly type="text" value={inviteUrl} />

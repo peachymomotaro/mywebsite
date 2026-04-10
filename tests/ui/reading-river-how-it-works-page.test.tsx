@@ -18,7 +18,7 @@ describe("ReadingRiverHowItWorksPage", () => {
       screen.getByRole("heading", { name: "Philosophy and More on How It Works" }),
     ).toBeInTheDocument();
 
-    const howItWorksHeading = screen.getByRole("heading", { name: "How it works" });
+    const howItWorksHeading = screen.getByRole("heading", { name: "How It Works" });
     const philosophyHeading = screen.getByRole("heading", { name: "Philosophy and More on How It Works" });
 
     expect(
@@ -31,12 +31,12 @@ describe("ReadingRiverHowItWorksPage", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        /Put the things you think are worthwhile into the river, and set how important something is to you by using the priority setting\./i,
+        /Put the things you think are worthwhile into the river, where they become fiches\. Set how important a fiche is to you by using the priority setting\./i,
       ),
     ).toBeInTheDocument();
 
     const randomPickIntro = screen.getByText(
-      /When you want to read something, return to the river and go fishing\./i,
+      /When you want to read something, return to the river and go ficheing\./i,
     );
     const randomPickExplanation = screen.getByText(
       /The left option is the 'most important' option based on the priority setting and the amount of time you have\. The right button is a randomly selected piece of reading\./i,
