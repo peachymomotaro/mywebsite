@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { createInviteAction, deactivateUserAction } from "./actions";
+import { createInviteAction, deactivateUserAction, revokeInviteAction } from "./actions";
 import { requireAdminUser } from "@/lib/reading-river/current-user";
 import { getPrismaClient } from "@/lib/reading-river/db";
 import { readingRiverPath } from "@/lib/reading-river/routes";
@@ -64,7 +64,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps = {}) {
     }),
   ]);
 
-  const pendingInvites = invites.filter((invite) => !invite.redeemedAt);
+  const pendingInvites = invites.filter((invite) => !invite.redeemedAt && !invite.revokedAt);
   const redeemedInvites = invites.filter((invite) => invite.redeemedAt);
 
   return (
@@ -137,6 +137,12 @@ export default async function AdminPage({ searchParams }: AdminPageProps = {}) {
                 <p className="river-history-meta">
                   Expires {dateFormatter.format(invite.expiresAt)}
                 </p>
+                <form action={revokeInviteAction}>
+                  <input name="inviteId" type="hidden" value={invite.id} />
+                  <button className="river-spotlight-action-button" type="submit">
+                    Revoke invite for {invite.email}
+                  </button>
+                </form>
               </li>
             ))}
           </ul>

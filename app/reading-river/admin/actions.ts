@@ -39,6 +39,36 @@ export async function createInviteAction(formData: FormData) {
   );
 }
 
+export async function revokeInviteAction(formData: FormData) {
+  await requireAdminUser();
+  const inviteId = String(formData.get("inviteId") ?? "").trim();
+
+  if (!inviteId) {
+    redirect(readingRiverPath("/admin"));
+  }
+
+  const prisma = getPrismaClient();
+  const invite = await prisma.invite.findUnique({
+    where: {
+      id: inviteId,
+    },
+  });
+
+  if (invite && !invite.redeemedAt && !invite.revokedAt) {
+    await prisma.invite.update({
+      where: {
+        id: invite.id,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
+  }
+
+  revalidatePath(readingRiverPath("/admin"));
+  redirect(readingRiverPath("/admin"));
+}
+
 export async function deactivateUserAction(formData: FormData) {
   const currentUser = await requireAdminUser();
   const userId = String(formData.get("userId") ?? "").trim();
