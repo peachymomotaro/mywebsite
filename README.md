@@ -19,6 +19,14 @@ Copy `.env.example` and provide at least:
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD`
 - `ADMIN_DISPLAY_NAME`
+- `READING_RIVER_BASE_URL`
+- `RESEND_FROM_EMAIL`
+- `RESEND_API_KEY`
+
+Recommended email values:
+
+- `READING_RIVER_BASE_URL=https://petercurry.org`
+- `RESEND_FROM_EMAIL=Reading River <invites@mail.petercurry.org>`
 
 ## Development
 
