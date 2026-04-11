@@ -72,7 +72,9 @@ export async function sendReadingRiverInviteEmail({
 }
 
 function getDigestItemUrl(item: DailyDigestEmailItem) {
-  return item.sourceUrl ?? getReadingRiverItemUrl(item.id);
+  const sourceUrl = item.sourceUrl?.trim();
+
+  return sourceUrl ? sourceUrl : getReadingRiverItemUrl(item.id);
 }
 
 function renderDigestItemHtml(item: DailyDigestEmailItem) {

@@ -16,7 +16,7 @@ export async function getDailyDigestItems({
 
 export function isLondonDailyDigestHour(now: Date) {
   const londonHour = new Intl.DateTimeFormat("en-GB", {
-    hour: "numeric",
+    hour: "2-digit",
     hour12: false,
     timeZone: "Europe/London",
   }).format(now);

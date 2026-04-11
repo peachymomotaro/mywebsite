@@ -27,4 +27,16 @@ describe("buildReadingRiverDailyDigestEmail", () => {
     expect(message.text).toContain("/reading-river/items/item-1/edit");
     expect(message.text).toContain("/reading-river");
   });
+
+  it("falls back to the Reading River URL when the source URL is blank", () => {
+    process.env.READING_RIVER_BASE_URL = "https://example.com";
+
+    const message = buildReadingRiverDailyDigestEmail({
+      displayName: "River Reader",
+      items: [{ id: "item-2", title: "Blank source", sourceUrl: "   ", tags: [] }],
+    });
+
+    expect(message.html).toContain("/reading-river/items/item-2/edit");
+    expect(message.text).toContain("/reading-river/items/item-2/edit");
+  });
 });
