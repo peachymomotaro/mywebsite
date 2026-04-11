@@ -11,7 +11,10 @@
   "host_permissions": ["https://petercurry.org/*"],
   "browser_specific_settings": {
     "gecko": {
-      "id": "reading-river-firefox@example.com"
+      "id": "reading-river-firefox@example.com",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
     }
   }
 }

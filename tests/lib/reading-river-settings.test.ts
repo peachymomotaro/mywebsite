@@ -51,6 +51,8 @@ describe("getOrCreateAppSettings", () => {
       highPriorityThreshold: 7,
       shortReadThresholdMinutes: 25,
       defaultReadingSpeedWpm: 200,
+      dailyDigestEnabled: false,
+      lastDailyDigestSentAt: null,
       createdAt: new Date("2026-04-01T12:00:00Z"),
       updatedAt: new Date("2026-04-01T12:00:00Z"),
     };
@@ -89,5 +91,13 @@ describe("getOrCreateAppSettings", () => {
       data: getAppSettingsDefaults("user-2"),
     });
     expect(context.upsert).not.toHaveBeenCalled();
+  });
+
+  it("returns the expected defaults", () => {
+    expect(getAppSettingsDefaults("user-2")).toMatchObject({
+      userId: "user-2",
+      dailyDigestEnabled: false,
+      lastDailyDigestSentAt: null,
+    });
   });
 });

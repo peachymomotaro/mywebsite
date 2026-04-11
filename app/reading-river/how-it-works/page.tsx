@@ -44,23 +44,18 @@ export default function HowItWorksPage() {
 
         <section className="editorial-page-content river-how-page-content">
           <section className="editorial-panel-soft river-how-section">
-            <h2>How it works</h2>
             <p>Find things that you think are worth reading.</p>
             <p>
-              Put the things you think are worthwhile into the river, and set how
-              important something is to you by using the priority setting.
+              Put the things you think are worthwhile into the river, where they
+              become fiches. Set how important a fiche is to you by using the priority setting.
             </p>
             <p>
-              When you want to read something, return to the river and go fishing.
+              When you want to read something, return to the river and go ficheing.
             </p>
             <p>
               The left option is the &apos;most important&apos; option based on the
               priority setting and the amount of time you have. The right button is a
               randomly selected piece of reading.
-            </p>
-            <p>
-              The Reading River is meant to be highly personal. Anything you upload
-              will never be looked at except for necessary maintenance and upkeep.
             </p>
           </section>
 
@@ -72,14 +67,11 @@ export default function HowItWorksPage() {
               and then sit by the banks.
             </p>
             <p>
-              The Reading River is about escaping from the urgency of the headline.
+              The Reading River is about escaping from urgency.
               Things often seem much more important than they are when we see them
               for the first time. Add anything you don&apos;t need to read this
               second to the river, and let it sit for some time. It will become
               clear whether it was worth reading.
-            </p>
-            <p>
-              This is a calmer way to sort through what you want to read.
             </p>
             <p>
               If you&apos;re interested, the priority algorithm for Reading River is

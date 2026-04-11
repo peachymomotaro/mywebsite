@@ -117,6 +117,15 @@ describe("reading river firefox popup", () => {
     expect(html).not.toContain("bootPopup()");
   });
 
+  it("avoids innerHTML in the packaged popup renderer", () => {
+    const source = readFileSync(
+      path.resolve(process.cwd(), "extension/reading-river-firefox/popup.js"),
+      "utf8",
+    );
+
+    expect(source).not.toContain("innerHTML");
+  });
+
   it("requests only the activeTab permission in the manifest", () => {
     const manifest = JSON.parse(
       readFileSync(
@@ -125,10 +134,20 @@ describe("reading river firefox popup", () => {
       ),
     ) as {
       permissions?: string[];
+      browser_specific_settings?: {
+        gecko?: {
+          data_collection_permissions?: {
+            required?: string[];
+          };
+        };
+      };
     };
 
     expect(manifest.permissions).toContain("activeTab");
     expect(manifest.permissions).not.toContain("tabs");
+    expect(manifest.browser_specific_settings?.gecko?.data_collection_permissions?.required).toEqual([
+      "none",
+    ]);
   });
 
   it("sends extension API requests to the Reading River origin", async () => {

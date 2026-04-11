@@ -21,6 +21,8 @@ export function getAppSettingsDefaults(userId: string): Pick<
   | "highPriorityThreshold"
   | "shortReadThresholdMinutes"
   | "defaultReadingSpeedWpm"
+  | "dailyDigestEnabled"
+  | "lastDailyDigestSentAt"
   | "userId"
 > {
   return {
@@ -30,6 +32,8 @@ export function getAppSettingsDefaults(userId: string): Pick<
     highPriorityThreshold: 7,
     shortReadThresholdMinutes: 25,
     defaultReadingSpeedWpm: DEFAULT_READING_SPEED_WPM,
+    dailyDigestEnabled: false,
+    lastDailyDigestSentAt: null,
   };
 }
 

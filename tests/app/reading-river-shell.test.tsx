@@ -62,6 +62,14 @@ describe("EditorialShell", () => {
       "data-next-link",
       "true"
     );
+    expect(screen.getByRole("link", { name: "Preferences" })).toHaveAttribute(
+      "href",
+      "/reading-river/preferences"
+    );
+    expect(screen.getByRole("link", { name: "Preferences" })).toHaveAttribute(
+      "data-next-link",
+      "true"
+    );
     expect(screen.getByRole("link", { name: "Admin" })).toHaveAttribute(
       "href",
       "/reading-river/admin"
@@ -118,6 +126,14 @@ describe("RootLayout", () => {
       "/reading-river/how-it-works"
     );
     expect(screen.getByRole("link", { name: "How It Works" })).toHaveAttribute(
+      "data-next-link",
+      "true"
+    );
+    expect(screen.getByRole("link", { name: "Preferences" })).toHaveAttribute(
+      "href",
+      "/reading-river/preferences"
+    );
+    expect(screen.getByRole("link", { name: "Preferences" })).toHaveAttribute(
       "data-next-link",
       "true"
     );
@@ -194,6 +210,14 @@ describe("RootLayout", () => {
       "/reading-river/how-it-works"
     );
     expect(screen.getByRole("link", { name: "How It Works" })).toHaveAttribute(
+      "data-next-link",
+      "true"
+    );
+    expect(screen.getByRole("link", { name: "Preferences" })).toHaveAttribute(
+      "href",
+      "/reading-river/preferences"
+    );
+    expect(screen.getByRole("link", { name: "Preferences" })).toHaveAttribute(
       "data-next-link",
       "true"
     );

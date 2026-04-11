@@ -1,5 +1,18 @@
 # Reading River Firefox Extension
 
+## Unlisted Signing For Testers
+
+1. Upload `dist/reading-river-firefox-0.1.0-amo-upload.zip` to the Firefox Add-on Developer Hub.
+2. Choose the unlisted or self-distributed signing flow.
+3. Download the signed `.xpi` Mozilla returns.
+4. Share that `.xpi` directly with testers so they can install it in Firefox.
+
+Mozilla docs:
+
+- https://extensionworkshop.com/documentation/publish/signing-and-distribution-overview/
+- https://extensionworkshop.com/documentation/publish/submitting-an-add-on/
+- https://extensionworkshop.com/documentation/publish/install-self-distributed/
+
 ## Load It Temporarily
 
 1. Open Firefox and go to `about:debugging#/runtime/this-firefox`.

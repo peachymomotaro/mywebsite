@@ -1,15 +1,6 @@
 import { ApiError, login as loginRequest, save as saveRequest } from "./lib/api-client.js";
 import { clearToken, getToken, setToken } from "./lib/storage.js";
 
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
 function getRoot(root) {
   if (root) {
     return root;
@@ -38,6 +29,99 @@ function getStatusElement(form) {
   const status = form.querySelector("[data-popup-status]");
 
   return status instanceof HTMLElement ? status : null;
+}
+
+function createElement(tagName, options = {}) {
+  const element = document.createElement(tagName);
+
+  if (options.className) {
+    element.className = options.className;
+  }
+
+  if (options.text) {
+    element.textContent = options.text;
+  }
+
+  if (options.hidden !== undefined) {
+    element.hidden = options.hidden;
+  }
+
+  if (options.attributes) {
+    for (const [name, value] of Object.entries(options.attributes)) {
+      if (value === false || value === null || value === undefined) {
+        continue;
+      }
+
+      if (value === true) {
+        element.setAttribute(name, "");
+        continue;
+      }
+
+      element.setAttribute(name, String(value));
+    }
+  }
+
+  if (options.properties) {
+    Object.assign(element, options.properties);
+  }
+
+  if (options.children) {
+    element.append(...options.children);
+  }
+
+  return element;
+}
+
+function createField(labelText, inputOptions) {
+  const label = createElement("label", {
+    className: "popup-field",
+  });
+  const labelTextElement = createElement("span", {
+    className: "popup-label",
+    text: labelText,
+  });
+  const input = createElement("input", inputOptions);
+
+  label.append(labelTextElement, input);
+
+  return label;
+}
+
+function createCard(children) {
+  return createElement("section", {
+    className: "popup-card",
+    children,
+  });
+}
+
+function createStatusMessage() {
+  return createElement("p", {
+    className: "popup-status",
+    hidden: true,
+    attributes: {
+      "data-popup-status": true,
+    },
+  });
+}
+
+function createActions(buttonText, disabled = false) {
+  const button = createElement("button", {
+    className: "popup-button",
+    text: buttonText,
+    properties: {
+      type: "submit",
+      disabled,
+    },
+  });
+
+  return createElement("div", {
+    className: "popup-actions",
+    children: [button],
+  });
+}
+
+function replaceRoot(root, child) {
+  root.replaceChildren(child);
 }
 
 function setFormStatus(form, message, role) {
@@ -190,39 +274,51 @@ async function handleSaveSubmit(event, popupRoot, token) {
 }
 
 function renderSignedOut(root, message = "", role = "alert") {
-  root.innerHTML = `
-    <section class="popup-card">
-      <p class="popup-eyebrow">Reading River</p>
-      <h1 class="popup-title">Sign in to Reading River</h1>
-      <p class="popup-copy">Use your Reading River account to save articles from Firefox.</p>
-      <form class="popup-form" novalidate>
-        <p class="popup-status" data-popup-status hidden></p>
-        <label class="popup-field">
-          <span class="popup-label">Email address</span>
-          <input class="popup-input" name="email" type="email" autocomplete="email" required />
-        </label>
-        <label class="popup-field">
-          <span class="popup-label">Password</span>
-          <input
-            class="popup-input"
-            name="password"
-            type="password"
-            autocomplete="current-password"
-            required
-          />
-        </label>
-        <div class="popup-actions">
-          <button class="popup-button" type="submit">Sign in</button>
-        </div>
-      </form>
-    </section>
-  `;
+  const form = createElement("form", {
+    className: "popup-form",
+    properties: {
+      noValidate: true,
+    },
+    children: [
+      createStatusMessage(),
+      createField("Email address", {
+        className: "popup-input",
+        properties: {
+          name: "email",
+          type: "email",
+          autocomplete: "email",
+          required: true,
+        },
+      }),
+      createField("Password", {
+        className: "popup-input",
+        properties: {
+          name: "password",
+          type: "password",
+          autocomplete: "current-password",
+          required: true,
+        },
+      }),
+      createActions("Sign in"),
+    ],
+  });
+  const card = createCard([
+    createElement("p", {
+      className: "popup-eyebrow",
+      text: "Reading River",
+    }),
+    createElement("h1", {
+      className: "popup-title",
+      text: "Sign in to Reading River",
+    }),
+    createElement("p", {
+      className: "popup-copy",
+      text: "Use your Reading River account to save articles from Firefox.",
+    }),
+    form,
+  ]);
 
-  const form = root.querySelector("form");
-
-  if (!(form instanceof HTMLFormElement)) {
-    return;
-  }
+  replaceRoot(root, card);
 
   form.addEventListener("submit", (event) => {
     void handleLoginSubmit(event, root);
@@ -234,49 +330,61 @@ function renderSignedOut(root, message = "", role = "alert") {
 }
 
 function renderSignedIn(root, activeTab, token, message = "", role = "status") {
-  root.innerHTML = `
-    <section class="popup-card">
-      <p class="popup-eyebrow">Signed in</p>
-      <h1 class="popup-title">Save this page</h1>
-      <p class="popup-copy">Capture the current tab with a priority score so it’s ready for later.</p>
-      <form class="popup-form" novalidate>
-        <p class="popup-status" data-popup-status hidden></p>
-        <label class="popup-field">
-          <span class="popup-label">URL</span>
-          <input class="popup-input" name="url" type="url" required value="${escapeHtml(
-            activeTab.url,
-          )}" />
-        </label>
-        <label class="popup-field">
-          <span class="popup-label">Title</span>
-          <input class="popup-input" name="title" type="text" value="${escapeHtml(
-            activeTab.title,
-          )}" />
-        </label>
-        <label class="popup-field">
-          <span class="popup-label">Priority</span>
-          <input
-            class="popup-input"
-            name="priorityScore"
-            type="number"
-            min="0"
-            max="10"
-            step="1"
-            required
-          />
-        </label>
-        <div class="popup-actions">
-          <button class="popup-button" type="submit" disabled>Save article</button>
-        </div>
-      </form>
-    </section>
-  `;
+  const form = createElement("form", {
+    className: "popup-form",
+    properties: {
+      noValidate: true,
+    },
+    children: [
+      createStatusMessage(),
+      createField("URL", {
+        className: "popup-input",
+        properties: {
+          name: "url",
+          type: "url",
+          required: true,
+          value: activeTab.url,
+        },
+      }),
+      createField("Title", {
+        className: "popup-input",
+        properties: {
+          name: "title",
+          type: "text",
+          value: activeTab.title,
+        },
+      }),
+      createField("Priority", {
+        className: "popup-input",
+        properties: {
+          name: "priorityScore",
+          type: "number",
+          min: "0",
+          max: "10",
+          step: "1",
+          required: true,
+        },
+      }),
+      createActions("Save article", true),
+    ],
+  });
+  const card = createCard([
+    createElement("p", {
+      className: "popup-eyebrow",
+      text: "Signed in",
+    }),
+    createElement("h1", {
+      className: "popup-title",
+      text: "Save this page",
+    }),
+    createElement("p", {
+      className: "popup-copy",
+      text: "Capture the current tab with a priority score so it’s ready for later.",
+    }),
+    form,
+  ]);
 
-  const form = root.querySelector("form");
-
-  if (!(form instanceof HTMLFormElement)) {
-    return;
-  }
+  replaceRoot(root, card);
 
   form.addEventListener("submit", (event) => {
     void handleSaveSubmit(event, root, token);
@@ -290,15 +398,25 @@ function renderSignedIn(root, activeTab, token, message = "", role = "status") {
 }
 
 function renderBootError(root) {
-  root.innerHTML = `
-    <section class="popup-card">
-      <p class="popup-eyebrow">Reading River</p>
-      <h1 class="popup-title">Popup unavailable</h1>
-      <p class="popup-copy" role="alert">
-        Unable to load Reading River. Please reopen the popup.
-      </p>
-    </section>
-  `;
+  const card = createCard([
+    createElement("p", {
+      className: "popup-eyebrow",
+      text: "Reading River",
+    }),
+    createElement("h1", {
+      className: "popup-title",
+      text: "Popup unavailable",
+    }),
+    createElement("p", {
+      className: "popup-copy",
+      text: "Unable to load Reading River. Please reopen the popup.",
+      attributes: {
+        role: "alert",
+      },
+    }),
+  ]);
+
+  replaceRoot(root, card);
 }
 
 export async function bootPopup(root) {
