@@ -24,7 +24,7 @@ Copy `.env.example` and provide at least:
 - `RESEND_API_KEY`
 - `RESEND_FROM_EMAIL`
 
-Recommended email values:
+Recommended values:
 
 - `READING_RIVER_BASE_URL=https://petercurry.org`
 - `CRON_SECRET=replace-me-with-a-long-random-secret`
@@ -33,7 +33,7 @@ Recommended email values:
 
 The shared daily digest send time is `08:00 London time`. `vercel.json` uses `07:00 UTC` and `08:00 UTC` cron triggers so the job fires correctly across GMT and BST.
 
-For local manual testing, hit `http://localhost:3000/api/reading-river/daily-digest` with `Authorization: Bearer <CRON_SECRET>`.
+For local manual testing, hit `http://localhost:3000/api/reading-river/daily-digest` with `Authorization: Bearer <CRON_SECRET>`. The route is time-gated and will return a skipped/outside-window response outside the `08:00 London time` window.
 
 ## Development
 
