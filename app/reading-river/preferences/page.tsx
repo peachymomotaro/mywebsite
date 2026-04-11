@@ -34,12 +34,6 @@ export default async function PreferencesPage({ searchParams }: PreferencesPageP
         </div>
       </section>
 
-      {saved ? (
-        <section className="editorial-panel">
-          <p className="river-history-meta">Preferences saved.</p>
-        </section>
-      ) : null}
-
       <section className="editorial-panel river-preferences-panel">
         <form action={updatePreferencesAction} className="editorial-form river-preferences-form">
           <label className="river-preferences-choice">
@@ -58,6 +52,11 @@ export default async function PreferencesPage({ searchParams }: PreferencesPageP
               Save preferences
             </button>
           </div>
+          {saved ? (
+            <p className="river-preferences-feedback" role="status">
+              Preferences saved.
+            </p>
+          ) : null}
         </form>
       </section>
     </main>

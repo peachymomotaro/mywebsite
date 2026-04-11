@@ -39,5 +39,30 @@ describe("ReadingRiverPreferencesPage", () => {
     );
     expect(container.querySelector(".editorial-page-kicker")).not.toBeInTheDocument();
     expect(container.querySelector(".river-preferences-choice")).not.toBeNull();
+    expect(container.querySelector(".river-preferences-feedback")).toBeNull();
+  });
+
+  it("shows a compact saved confirmation below the save button", async () => {
+    const { default: PreferencesPage } = await import("@/app/reading-river/preferences/page");
+
+    mocks.requireCurrentUserMock.mockResolvedValue({
+      id: "user-1",
+    });
+    mocks.getOrCreateAppSettingsMock.mockResolvedValue({
+      dailyDigestEnabled: true,
+    });
+
+    const page = await PreferencesPage({
+      searchParams: {
+        saved: "1",
+      },
+    });
+
+    const { container } = render(page);
+
+    expect(screen.getByText("Preferences saved.")).toBeInTheDocument();
+    expect(screen.getByText("Preferences saved.")).toHaveAttribute("role", "status");
+    expect(container.querySelectorAll(".editorial-panel")).toHaveLength(1);
+    expect(container.querySelector(".river-preferences-feedback")).not.toBeNull();
   });
 });
