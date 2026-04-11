@@ -71,7 +71,6 @@ export default async function AdminPage({ searchParams }: AdminPageProps = {}) {
     <main className="river-page">
       <section className="editorial-page-masthead">
         <div className="editorial-page-masthead-copy">
-          <p className="editorial-page-kicker">Admin</p>
           <h1 className="editorial-page-title">Admin beta management</h1>
           <p className="editorial-page-intro">
             Invite readers, review redemptions, and manage beta accounts.

@@ -28,11 +28,16 @@ describe("ReadingRiverPreferencesPage", () => {
 
     const page = await PreferencesPage();
 
-    render(page);
+    const { container } = render(page);
 
     expect(screen.getByRole("heading", { name: "Preferences" })).toBeInTheDocument();
     expect(
-      screen.getByLabelText("Receive a daily Reading River email at 08:00 London time."),
+      screen.getByLabelText("Receive a daily email with two picks from your River."),
     ).not.toBeChecked();
+    expect(screen.getByLabelText("Receive a daily email with two picks from your River.")).toHaveClass(
+      "river-preferences-checkbox",
+    );
+    expect(container.querySelector(".editorial-page-kicker")).not.toBeInTheDocument();
+    expect(container.querySelector(".river-preferences-choice")).not.toBeNull();
   });
 });

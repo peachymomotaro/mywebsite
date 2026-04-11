@@ -27,7 +27,6 @@ export default async function PreferencesPage({ searchParams }: PreferencesPageP
     <main className="river-page">
       <section className="editorial-page-masthead">
         <div className="editorial-page-masthead-copy">
-          <p className="editorial-page-kicker">Preferences</p>
           <h1 className="editorial-page-title">Preferences</h1>
           <p className="editorial-page-intro">
             Choose whether Reading River should send a daily digest email.
@@ -41,19 +40,24 @@ export default async function PreferencesPage({ searchParams }: PreferencesPageP
         </section>
       ) : null}
 
-      <section className="editorial-panel">
-        <form action={updatePreferencesAction} className="editorial-form">
-          <label className="block space-y-2">
+      <section className="editorial-panel river-preferences-panel">
+        <form action={updatePreferencesAction} className="editorial-form river-preferences-form">
+          <label className="river-preferences-choice">
             <input
+              className="river-preferences-checkbox"
               defaultChecked={settings.dailyDigestEnabled}
               name="dailyDigestEnabled"
               type="checkbox"
             />
-            <span>Receive a daily Reading River email at 08:00 London time.</span>
+            <span className="river-preferences-choice-copy">
+              Receive a daily email with two picks from your River.
+            </span>
           </label>
-          <button type="submit" className="intake-submit-button">
-            Save preferences
-          </button>
+          <div className="intake-submit-row river-preferences-submit-row">
+            <button type="submit" className="intake-submit-button">
+              Save preferences
+            </button>
+          </div>
         </form>
       </section>
     </main>

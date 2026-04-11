@@ -32,7 +32,6 @@ export default function HowItWorksPage() {
       <div className="editorial-page-surface">
         <header className="editorial-page-masthead">
           <div className="editorial-page-masthead-copy">
-            <p className="editorial-page-kicker">Reading River</p>
             <h1 className="editorial-page-title">How It Works</h1>
             <p className="editorial-page-intro">
               Reading River is a way to lower the pressure to read everything and make calmer choices about what to read next.

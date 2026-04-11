@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { ShellNav } from "@/components/reading-river/shell-nav";
 import { getCurrentUser } from "@/lib/reading-river/current-user";
@@ -14,6 +15,10 @@ export const metadata: Metadata = {
   },
   description: "Pick your next read from the stream.",
   applicationName: "Reading River",
+  icons: {
+    icon: "/reading-river-icon.png",
+    apple: "/reading-river-icon.png",
+  },
 };
 
 export const preferredRegion = "lhr1";
@@ -29,7 +34,16 @@ export function EditorialShell({
     <div className="editorial-shell-frame">
       <header className="river-shell-header">
         <Link href={readingRiverPath()} className="river-shell-brand">
-          Reading River
+          <Image
+            alt=""
+            aria-hidden="true"
+            className="river-shell-brand-mark"
+            height={40}
+            priority
+            src="/reading-river-icon.png"
+            width={40}
+          />
+          <span className="river-shell-brand-copy">Reading River</span>
         </Link>
         <ShellNav isAdmin={isAdmin} />
       </header>

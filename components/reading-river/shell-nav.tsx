@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { readingRiverPath } from "@/lib/reading-river/routes";
 
 type ShellNavProps = {
@@ -9,12 +8,6 @@ type ShellNavProps = {
 };
 
 export function ShellNav({ isAdmin = false }: ShellNavProps) {
-  const pathname = usePathname();
-
-  if (pathname === readingRiverPath("/history")) {
-    return null;
-  }
-
   return (
     <nav className="river-shell-nav" aria-label="Primary">
       <Link href={readingRiverPath("/how-it-works")} className="river-shell-nav-link">

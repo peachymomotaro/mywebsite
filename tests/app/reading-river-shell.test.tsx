@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
-import RootLayout, { EditorialShell, preferredRegion } from "@/app/reading-river/layout";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import RootLayout, { EditorialShell, metadata, preferredRegion } from "@/app/reading-river/layout";
 
 vi.mock("next/link", () => ({
   default: ({
@@ -18,17 +18,44 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+vi.mock("next/image", () => ({
+  default: ({
+    alt,
+    src,
+    ...props
+  }: {
+    alt: string;
+    src: string;
+  }) => <img alt={alt} src={src} {...props} />,
+}));
+
 const mocks = vi.hoisted(() => ({
   getCurrentUserMock: vi.fn(),
+  usePathnameMock: vi.fn(),
 }));
 
 vi.mock("@/lib/reading-river/current-user", () => ({
   getCurrentUser: mocks.getCurrentUserMock,
 }));
 
+vi.mock("next/navigation", () => ({
+  usePathname: mocks.usePathnameMock,
+}));
+
 describe("EditorialShell", () => {
+  beforeEach(() => {
+    mocks.usePathnameMock.mockReturnValue("/reading-river");
+  });
+
   it("pins the Reading River subtree to the London function region", () => {
     expect(preferredRegion).toBe("lhr1");
+  });
+
+  it("uses the Reading River icon as the route app mark", () => {
+    expect(metadata.icons).toEqual({
+      icon: "/reading-river-icon.png",
+      apple: "/reading-river-icon.png",
+    });
   });
 
   it("keeps Reading River navigation inside the prefixed route space", () => {
@@ -46,6 +73,9 @@ describe("EditorialShell", () => {
       "data-next-link",
       "true"
     );
+    expect(
+      screen.getByRole("link", { name: "Reading River" }).querySelector(".river-shell-brand-mark"),
+    ).not.toBeNull();
     expect(screen.getByRole("link", { name: "Read history" })).toHaveAttribute(
       "href",
       "/reading-river/history"
@@ -78,6 +108,20 @@ describe("EditorialShell", () => {
       "data-next-link",
       "true"
     );
+  });
+
+  it("keeps the shell navigation visible on the read history route", () => {
+    mocks.usePathnameMock.mockReturnValue("/reading-river/history");
+
+    render(
+      <EditorialShell isAdmin={false}>
+        <div>child</div>
+      </EditorialShell>
+    );
+
+    expect(screen.getByRole("link", { name: "How It Works" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Preferences" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Read history" })).toBeInTheDocument();
   });
 });
 

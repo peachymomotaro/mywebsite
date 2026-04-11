@@ -7,13 +7,14 @@ describe("ReadingRiverHowItWorksPage", () => {
     const { default: HowItWorksPage } = await import("@/app/reading-river/how-it-works/page");
     const page = await HowItWorksPage();
 
-    render(page);
+    const { container } = render(page);
 
     expect(
       screen.getByText(
         "Reading River is a way to lower the pressure to read everything and make calmer choices about what to read next.",
       ),
     ).toBeInTheDocument();
+    expect(container.querySelector(".editorial-page-kicker")).not.toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Philosophy and More on How It Works" }),
     ).toBeInTheDocument();

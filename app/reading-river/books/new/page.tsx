@@ -6,7 +6,6 @@ export default function NewBookPage() {
       <div className="editorial-page-surface">
         <header className="editorial-page-masthead">
           <div className="editorial-page-masthead-copy">
-            <p className="editorial-page-kicker">Reading River</p>
             <p className="editorial-page-intro">Book ledger</p>
           </div>
         </header>

@@ -145,10 +145,24 @@ hr {
 }
 
 .river-shell-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.72rem;
   font-family: var(--font-serif);
   font-size: 1.42rem;
   font-weight: 600;
   letter-spacing: -0.03em;
+}
+
+.river-shell-brand-mark {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  box-shadow: 0 12px 26px hsl(var(--river-deep) / 0.12);
+}
+
+.river-shell-brand-copy {
+  display: inline-block;
 }
 
 .river-shell-nav {
@@ -813,6 +827,76 @@ a {
   color: hsl(var(--accent-foreground));
 }
 
+.river-preferences-panel {
+  width: min(100%, 54rem);
+  margin-inline: auto;
+}
+
+.river-preferences-form {
+  margin-top: 0;
+}
+
+.river-preferences-choice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  width: min(100%, 34rem);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.river-preferences-choice-copy {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.65;
+  color: hsl(var(--foreground));
+}
+
+.river-preferences-checkbox {
+  appearance: none;
+  flex: 0 0 auto;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0;
+  border: 1px solid hsl(var(--river-secondary-rest-border));
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 35% 30%, hsl(var(--river-paper-bright)), hsl(var(--river-paper)));
+  box-shadow:
+    inset 0 0 0 0 hsl(var(--river-paper-bright)),
+    0 8px 22px hsl(var(--river-deep) / 0.08);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.river-preferences-checkbox:hover {
+  transform: translateY(-1px);
+  border-color: hsl(var(--river-teal));
+}
+
+.river-preferences-checkbox:focus-visible {
+  outline: 2px solid hsl(var(--river-teal));
+  outline-offset: 3px;
+}
+
+.river-preferences-checkbox:checked {
+  border-color: hsl(var(--river-teal));
+  background: hsl(var(--river-teal));
+  box-shadow:
+    inset 0 0 0 0.28rem hsl(var(--river-paper-bright)),
+    0 12px 26px hsl(var(--river-teal) / 0.18);
+}
+
+.river-preferences-submit-row {
+  justify-content: center;
+  padding-top: 0;
+}
+
 .add-mode-switch {
   padding-top: 0.35rem;
 }
@@ -937,6 +1021,17 @@ a {
 @media (min-width: 48rem) {
   .river-home-page .river-spotlight-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 40rem) {
+  .river-shell-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .river-preferences-choice {
+    flex-direction: column;
   }
 }
 

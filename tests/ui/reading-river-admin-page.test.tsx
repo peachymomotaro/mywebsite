@@ -84,8 +84,9 @@ describe("Reading River admin page", () => {
       },
     });
 
-    render(page);
+    const { container } = render(page);
 
+    expect(container.querySelector(".editorial-page-kicker")).not.toBeInTheDocument();
     expect(screen.getByText("Invite email sent.")).toBeInTheDocument();
     expect(screen.getByDisplayValue("https://petercurry.org/reading-river/invite/invite-token")).toBeInTheDocument();
   });
