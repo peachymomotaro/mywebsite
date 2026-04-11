@@ -46,38 +46,45 @@ export async function GET(request: Request) {
   let skipped = 0;
 
   for (const setting of settings) {
-    if (
-      setting.lastDailyDigestSentAt &&
-      getLondonDayKey(setting.lastDailyDigestSentAt) === londonDayKey
-    ) {
-      skipped += 1;
-      continue;
+    try {
+      if (
+        setting.lastDailyDigestSentAt &&
+        getLondonDayKey(setting.lastDailyDigestSentAt) === londonDayKey
+      ) {
+        skipped += 1;
+        continue;
+      }
+
+      const items = await getDailyDigestItems({
+        userId: setting.userId,
+        now,
+      });
+
+      if (items.length === 0) {
+        skipped += 1;
+        continue;
+      }
+
+      await sendReadingRiverDailyDigestEmail({
+        email: setting.user.email,
+        displayName: setting.user.displayName ?? setting.user.email,
+        items,
+      });
+
+      await prisma.appSettings.update({
+        where: { userId: setting.userId },
+        data: {
+          lastDailyDigestSentAt: now,
+        },
+      });
+
+      sent += 1;
+    } catch (error) {
+      console.error("Failed to process Reading River daily digest user", {
+        error,
+        userId: setting.userId,
+      });
     }
-
-    const items = await getDailyDigestItems({
-      userId: setting.userId,
-      now,
-    });
-
-    if (items.length === 0) {
-      skipped += 1;
-      continue;
-    }
-
-    await sendReadingRiverDailyDigestEmail({
-      email: setting.user.email,
-      displayName: setting.user.displayName ?? setting.user.email,
-      items,
-    });
-
-    await prisma.appSettings.update({
-      where: { userId: setting.userId },
-      data: {
-        lastDailyDigestSentAt: now,
-      },
-    });
-
-    sent += 1;
   }
 
   return NextResponse.json({

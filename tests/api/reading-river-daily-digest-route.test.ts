@@ -200,4 +200,63 @@ describe("reading river daily digest route", () => {
       skipped: 1,
     });
   });
+
+  it("continues processing later users when one update fails", async () => {
+    vi.setSystemTime(new Date("2026-06-01T07:15:00Z"));
+
+    const findManyMock = vi.fn(async () => [
+      createSettings({
+        id: "settings-1",
+        userId: "user-1",
+        user: {
+          id: "user-1",
+          email: "first@example.com",
+          displayName: "First Reader",
+        },
+      }),
+      createSettings({
+        id: "settings-2",
+        userId: "user-2",
+        user: {
+          id: "user-2",
+          email: "second@example.com",
+          displayName: "Second Reader",
+        },
+      }),
+    ]);
+    const updateMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("first user update failed"))
+      .mockResolvedValueOnce({
+        id: "settings-2",
+      });
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    routeMocks.setPrismaMock({
+      appSettings: {
+        findMany: findManyMock,
+        update: updateMock,
+      },
+    });
+    routeMocks.getDailyDigestItems.mockImplementation(async ({ userId }) => [
+      {
+        id: `item-${userId}`,
+        title: `Priority read for ${userId}`,
+        sourceUrl: `https://example.com/${userId}`,
+      },
+    ]);
+    routeMocks.sendReadingRiverDailyDigestEmail.mockResolvedValue({ id: "email-1" });
+
+    const response = await GET(authorizedRequest());
+
+    expect(routeMocks.sendReadingRiverDailyDigestEmail).toHaveBeenCalledTimes(2);
+    expect(updateMock).toHaveBeenCalledTimes(2);
+    expect(await response.json()).toMatchObject({
+      sent: 1,
+      skipped: 0,
+    });
+    expect(consoleError).toHaveBeenCalledTimes(1);
+
+    consoleError.mockRestore();
+  });
 });
