@@ -33,7 +33,6 @@ export async function GET(request: Request) {
     return NextResponse.json({
       skipped: true,
       reason: "outside-window",
-      sent: 0,
     });
   }
 

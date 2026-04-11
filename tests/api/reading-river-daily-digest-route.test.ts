@@ -99,7 +99,7 @@ describe("reading river daily digest route", () => {
     const response = await GET(authorizedRequest());
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({
+    expect(await response.json()).toEqual({
       skipped: true,
       reason: "outside-window",
     });
