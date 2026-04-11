@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getAppSettingsDefaults } from "@/lib/reading-river/settings";
 
 const actionMocks = vi.hoisted(() => ({
   revalidatePath: vi.fn(),
@@ -46,12 +47,12 @@ describe("Reading River preferences actions", () => {
     dbMocks.getPrismaClient.mockClear();
   });
 
-  it("updates the digest preference and redirects with saved status", async () => {
-    const appSettingsUpdate = vi.fn(async () => ({}));
+  it("upserts the digest preference and redirects with saved status", async () => {
+    const appSettingsUpsert = vi.fn(async () => ({}));
 
     dbMocks.setPrismaMock({
       appSettings: {
-        update: appSettingsUpdate,
+        upsert: appSettingsUpsert,
       },
     });
 
@@ -68,9 +69,13 @@ describe("Reading River preferences actions", () => {
       "redirect:/reading-river/preferences?saved=1",
     );
 
-    expect(appSettingsUpdate).toHaveBeenCalledWith({
+    expect(appSettingsUpsert).toHaveBeenCalledWith({
       where: { userId: "user-1" },
-      data: { dailyDigestEnabled: true },
+      update: { dailyDigestEnabled: true },
+      create: {
+        ...getAppSettingsDefaults("user-1"),
+        dailyDigestEnabled: true,
+      },
     });
     expect(actionMocks.revalidatePath).toHaveBeenCalledWith("/reading-river/preferences");
   });
