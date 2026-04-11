@@ -20,6 +20,9 @@ export function ShellNav({ isAdmin = false }: ShellNavProps) {
       <Link href={readingRiverPath("/how-it-works")} className="river-shell-nav-link">
         How It Works
       </Link>
+      <Link href={readingRiverPath("/preferences")} className="river-shell-nav-link">
+        Preferences
+      </Link>
       <Link href={readingRiverPath("/history")} className="river-shell-nav-link">
         Read history
       </Link>
