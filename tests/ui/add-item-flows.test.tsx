@@ -119,6 +119,7 @@ describe("AddPage", () => {
     expect(screen.getByLabelText("Title")).toHaveValue("Essay");
     expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Priority")).toHaveValue(7);
+    expect(screen.getByText("0–10, where 10 is highest priority.")).toBeInTheDocument();
     expect(screen.getByLabelText("Tags")).toHaveValue("work, essays");
     expect(screen.getByRole("button", { name: "Save article" })).toBeInTheDocument();
   });
@@ -185,6 +186,7 @@ describe("AddPage", () => {
     expect(screen.getByLabelText("Estimated minutes")).toBeRequired();
     expect(screen.queryByLabelText("Status")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
+    expect(screen.getByText("0–10, where 10 is highest priority.")).toBeInTheDocument();
     expect(screen.getByText('Added "Reading notebook entry" to the stream.')).toBeInTheDocument();
     expect(screen.getByText("Reading notebook entry")).toBeInTheDocument();
   });

@@ -481,6 +481,11 @@ a {
   line-height: 1.02;
 }
 
+.river-home-page .river-spotlight-title-wrap {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .river-home-page .river-spotlight-link {
   transition: color 160ms ease;
 }
@@ -1015,6 +1020,13 @@ a {
 .intake-textarea {
   resize: vertical;
   line-height: 1.6;
+}
+
+.intake-helper-text {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: hsl(var(--muted-foreground));
 }
 
 .intake-submit-row {

@@ -91,6 +91,7 @@ describe("ReadingRiverEditItemPage", () => {
     );
     expect(screen.getByLabelText("Estimated minutes")).toHaveValue(9);
     expect(screen.getByLabelText("Priority")).toHaveValue(8);
+    expect(screen.getByText("0–10, where 10 is highest priority.")).toBeInTheDocument();
     expect(screen.getByLabelText("Tags")).toHaveValue("focus, policy");
     expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Status")).not.toBeInTheDocument();

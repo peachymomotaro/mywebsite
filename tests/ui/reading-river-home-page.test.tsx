@@ -116,4 +116,34 @@ describe("ReadingRiverHomePage", () => {
       screen.queryByText("This landing page is now inside the Reading River shell and route scope."),
     ).not.toBeInTheDocument();
   });
+
+  it("marks spotlight titles so overlong URLs can wrap inside the card", async () => {
+    mocks.getHomePageDataMock.mockResolvedValueOnce({
+      priorityRead: {
+        id: "item-1",
+        title: "https://example.com/reallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallylong-title-without-breaks",
+        siteName: null,
+        estimatedMinutes: 9,
+        priorityScore: 8,
+        status: "unread",
+        pinned: false,
+        sourceUrl: "https://example.com/reallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallylong-title-without-breaks",
+        tags: [],
+      },
+      streamRead: null,
+      selectedTimeBudgetMinutes: null,
+    });
+
+    const { default: ReadingRiverHomePage } = await import("@/app/reading-river/page");
+    const page = await ReadingRiverHomePage();
+
+    const { container } = render(page);
+
+    const longTitleLink = screen.getByRole("link", {
+      name: "https://example.com/reallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallylong-title-without-breaks",
+    });
+
+    expect(longTitleLink).toBeInTheDocument();
+    expect(container.querySelector(".river-spotlight-link")).toHaveClass("river-spotlight-title-wrap");
+  });
 });

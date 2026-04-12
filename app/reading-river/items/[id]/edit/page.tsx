@@ -129,18 +129,23 @@ export default async function ReadingRiverEditItemPage({
               />
             </label>
 
-            <label className="grid gap-2 text-sm">
-              <span>Priority</span>
+            <div className="grid gap-2 text-sm">
+              <label htmlFor="edit-item-priority-score">Priority</label>
               <input
+                id="edit-item-priority-score"
                 name="priorityScore"
                 type="number"
                 min="0"
                 max="10"
                 required
                 defaultValue={item.priorityScore}
+                aria-describedby="edit-item-priority-help"
                 className="intake-input"
               />
-            </label>
+              <p id="edit-item-priority-help" className="intake-helper-text">
+                0–10, where 10 is highest priority.
+              </p>
+            </div>
           </div>
 
           <label className="grid gap-2 text-sm">

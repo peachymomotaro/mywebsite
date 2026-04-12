@@ -120,17 +120,22 @@ export function UrlIntakeForm() {
           </label>
         ) : null}
         <div className="grid gap-8 sm:grid-cols-2">
-          <label className="grid gap-2 text-sm">
-            <span>Priority</span>
+          <div className="grid gap-2 text-sm">
+            <label htmlFor="url-intake-priority-score">Priority</label>
             <input
+              id="url-intake-priority-score"
               name="priorityScore"
               type="number"
               min="0"
               max="10"
               defaultValue={draftValues.priorityScore}
+              aria-describedby="url-intake-priority-help"
               className="intake-input"
             />
-          </label>
+            <p id="url-intake-priority-help" className="intake-helper-text">
+              0–10, where 10 is highest priority.
+            </p>
+          </div>
           <label className="grid gap-2 text-sm">
             <span>Tags</span>
             <input

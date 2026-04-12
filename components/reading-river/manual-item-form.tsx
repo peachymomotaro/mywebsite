@@ -76,17 +76,22 @@ export function ManualItemForm() {
               className="intake-input"
             />
           </label>
-          <label className="grid gap-2 text-sm">
-            <span>Priority</span>
+          <div className="grid gap-2 text-sm">
+            <label htmlFor="manual-item-priority-score">Priority</label>
             <input
+              id="manual-item-priority-score"
               name="priorityScore"
               type="number"
               min="0"
               max="10"
               defaultValue="5"
+              aria-describedby="manual-item-priority-help"
               className="intake-input"
             />
-          </label>
+            <p id="manual-item-priority-help" className="intake-helper-text">
+              0–10, where 10 is highest priority.
+            </p>
+          </div>
         </div>
         <label className="grid gap-2 text-sm">
           <span>Tags</span>

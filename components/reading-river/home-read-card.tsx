@@ -64,11 +64,11 @@ export function HomeReadCard({ label, item, emptyMessage }: HomeReadCardProps) {
       {item ? (
         <div className="river-spotlight-body">
           {item.sourceUrl ? (
-            <a href={item.sourceUrl} className="river-spotlight-link">
+            <a href={item.sourceUrl} className="river-spotlight-link river-spotlight-title-wrap">
               {item.title}
             </a>
           ) : (
-            <h2 className="river-spotlight-title">{item.title}</h2>
+            <h2 className="river-spotlight-title river-spotlight-title-wrap">{item.title}</h2>
           )}
 
           {[item.siteName, item.estimatedMinutes ? `${item.estimatedMinutes} min` : null].filter(
