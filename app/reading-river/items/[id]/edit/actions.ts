@@ -3,11 +3,22 @@
 import { redirect } from "next/navigation";
 import { updateReadingItem } from "@/app/reading-river/actions/reading-items";
 import { readingRiverItemEditPath, readingRiverPath } from "@/lib/reading-river/routes";
+import { isDuplicateReadingItemUrlError } from "@/lib/reading-river/source-url";
 
 function parseInteger(value: FormDataEntryValue | null) {
   const parsed = Number(String(value ?? "").trim());
 
   return Number.isInteger(parsed) ? parsed : null;
+}
+
+function parsePriorityScore(value: FormDataEntryValue | null) {
+  const raw = String(value ?? "").trim();
+
+  if (raw === "none") {
+    return null;
+  }
+
+  return parseInteger(value);
 }
 
 function parseTagNames(value: string) {
@@ -50,16 +61,14 @@ export async function saveReadingItemEditAction(formData: FormData) {
   const sourceType = String(formData.get("sourceType") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
   const estimatedMinutes = parseInteger(formData.get("estimatedMinutes"));
-  const priorityScore = parseInteger(formData.get("priorityScore"));
+  const priorityScore = parsePriorityScore(formData.get("priorityScore"));
 
   if (
     !id ||
     !title ||
     estimatedMinutes === null ||
     estimatedMinutes <= 0 ||
-    priorityScore === null ||
-    priorityScore < 0 ||
-    priorityScore > 10
+    (priorityScore !== null && (priorityScore < 0 || priorityScore > 10))
   ) {
     redirectToEdit(id, "invalid_input");
   }
@@ -71,7 +80,7 @@ export async function saveReadingItemEditAction(formData: FormData) {
     id: string;
     title: string;
     estimatedMinutes: number;
-    priorityScore: number;
+    priorityScore: number | null;
     tagNames: string[];
     sourceUrl?: string;
   } = {
@@ -94,7 +103,11 @@ export async function saveReadingItemEditAction(formData: FormData) {
 
   try {
     await updateReadingItem(updateInput);
-  } catch {
+  } catch (error) {
+    if (isDuplicateReadingItemUrlError(error)) {
+      redirectToEdit(id, "duplicate_url");
+    }
+
     redirectToEdit(id, "save_failed");
   }
 

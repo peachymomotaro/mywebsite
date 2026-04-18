@@ -77,7 +77,7 @@ describe("ReadingRiverHomePage", () => {
     const { default: ReadingRiverHomePage } = await import("@/app/reading-river/page");
     const page = await ReadingRiverHomePage({ searchParams: { time: "15" } });
 
-    render(page);
+    const { container } = render(page);
 
     expect(screen.getByRole("heading", { name: "Pick your next read" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Add to stream" })).toBeInTheDocument();
@@ -101,6 +101,8 @@ describe("ReadingRiverHomePage", () => {
       buttons.every((button) => button.className.includes("river-spotlight-action-secondary")),
     );
     expect(screen.getAllByRole("button", { name: "Remove" })).toHaveLength(2);
+    expect(container.querySelectorAll(".river-spotlight-body-copy")).toHaveLength(2);
+    expect(container.querySelectorAll(".river-spotlight-body-actions")).toHaveLength(2);
     expect(screen.getByText("Choose a time")).toBeInTheDocument();
     expect(mocks.getHomePageDataMock).toHaveBeenCalledWith({
       userId: "user-1",
@@ -145,5 +147,6 @@ describe("ReadingRiverHomePage", () => {
 
     expect(longTitleLink).toBeInTheDocument();
     expect(container.querySelector(".river-spotlight-link")).toHaveClass("river-spotlight-title-wrap");
+    expect(container.querySelector(".river-spotlight-link")).toHaveClass("river-spotlight-title-clamp");
   });
 });

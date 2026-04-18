@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { getPrismaClient } from "@/lib/reading-river/db";
 import { readingRiverPath } from "@/lib/reading-river/routes";
+import { assertNoDuplicateReadingItemSourceUrl } from "@/lib/reading-river/source-url";
 
 const STREAM_PATH = readingRiverPath();
 
@@ -49,7 +50,7 @@ type CreateReadingItemForUserInput = {
     | "unknown"
     | null;
   lengthEstimationConfidence?: "high" | "medium" | "low" | "unknown" | null;
-  priorityScore: number;
+  priorityScore: number | null;
   status: "unread" | "reading" | "done" | "not_now" | "archived";
   pinned?: boolean;
   bookId?: string | null;
@@ -62,13 +63,19 @@ export async function createReadingItemForUser(
   input: CreateReadingItemForUserInput,
 ) {
   const prisma = getPrismaClient();
-  const { tagNames, ...data } = input;
+  const { tagNames, sourceUrl, ...data } = input;
   const normalizedTagNames = normalizeTagNames(tagNames ?? []);
+  const normalizedSourceUrl = await assertNoDuplicateReadingItemSourceUrl(
+    prisma,
+    userId,
+    sourceUrl,
+  );
 
   const item = await prisma.readingItem.create({
     data: {
       userId,
       ...data,
+      ...(sourceUrl !== undefined ? { sourceUrl: normalizedSourceUrl } : {}),
       ...(normalizedTagNames.length > 0 ? { tags: buildTagWrite(userId, normalizedTagNames) } : {}),
     },
     include: {

@@ -6,6 +6,7 @@ import { requireCurrentUser } from "@/lib/reading-river/current-user";
 import type { IntakeFormState } from "@/lib/reading-river/intake-form-state";
 import { buildTagWrite, createReadingItemForUser } from "@/lib/reading-river/extension-items";
 import { readingRiverPath } from "@/lib/reading-river/routes";
+import { assertNoDuplicateReadingItemSourceUrl } from "@/lib/reading-river/source-url";
 import {
   readingItemIdSchema,
   readingItemMarkAsReadSchema,
@@ -82,7 +83,7 @@ export async function submitManualReadingItem(
       estimatedMinutes,
       lengthEstimationMethod: "manual",
       lengthEstimationConfidence: "unknown",
-      priorityScore: parseOptionalInteger(formData.get("priorityScore")) ?? 5,
+      priorityScore: parseOptionalInteger(formData.get("priorityScore")),
       status: String(formData.get("status") || "unread"),
       tagNames: String(formData.get("tagNames") || "")
         .split(",")
@@ -112,7 +113,14 @@ export async function updateReadingItem(input: unknown) {
   const currentUser = await requireCurrentUser();
   const parsed = readingItemUpdateSchema.parse(input);
   const { id, tagNames, ...data } = parsed;
+  const { sourceUrl, ...restData } = data;
   const ownedItem = await requireOwnedReadingItem(prisma, currentUser.id, id);
+  const normalizedSourceUrl =
+    sourceUrl === undefined
+      ? undefined
+      : await assertNoDuplicateReadingItemSourceUrl(prisma, currentUser.id, sourceUrl, {
+          excludeId: ownedItem.id,
+        });
 
   const item = await prisma.$transaction(async (tx) => {
     if (tagNames) {
@@ -130,7 +138,8 @@ export async function updateReadingItem(input: unknown) {
       },
       data: {
         userId: currentUser.id,
-        ...data,
+        ...restData,
+        ...(sourceUrl !== undefined ? { sourceUrl: normalizedSourceUrl } : {}),
         ...(tagNames
           ? {
               tags: buildTagWrite(currentUser.id, tagNames),
@@ -277,7 +286,8 @@ export async function skipReadingItem(input: unknown) {
       },
     },
     data: {
-      priorityScore: Math.max(item.priorityScore - 1, 0),
+      priorityScore:
+        item.priorityScore === null ? null : Math.max(item.priorityScore - 1, 0),
     },
   });
 

@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createReadingItemForUser } from "@/lib/reading-river/extension-items";
 import { getCurrentUserFromExtensionToken } from "@/lib/reading-river/extension-auth";
+import { isDuplicateReadingItemUrlError } from "@/lib/reading-river/source-url";
 
 const saveExtensionItemSchema = z.object({
   url: z.string().trim().url(),
   title: z.string().optional().nullable(),
-  priorityScore: z.number().int().min(0).max(10),
+  priorityScore: z.number().int().min(0).max(10).nullable(),
   estimatedMinutes: z.number().int().positive().optional().nullable(),
 });
 
@@ -53,6 +54,17 @@ function saveFailed() {
   );
 }
 
+function duplicateUrl() {
+  return NextResponse.json(
+    {
+      error: "duplicate_url",
+    },
+    {
+      status: 409,
+    },
+  );
+}
+
 export async function POST(request: Request) {
   const token = getBearerToken(request.headers.get("authorization"));
 
@@ -93,7 +105,11 @@ export async function POST(request: Request) {
         status: 201,
       },
     );
-  } catch {
+  } catch (error) {
+    if (isDuplicateReadingItemUrlError(error)) {
+      return duplicateUrl();
+    }
+
     return saveFailed();
   }
 }

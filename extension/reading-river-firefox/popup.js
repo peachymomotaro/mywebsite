@@ -15,11 +15,11 @@ function getRoot(root) {
   return fallbackRoot;
 }
 
-function getNamedInput(form, name) {
+function getNamedField(form, name) {
   const field = form.elements.namedItem(name);
 
-  if (!(field instanceof HTMLInputElement)) {
-    throw new Error(`Expected input named ${name}.`);
+  if (!(field instanceof HTMLInputElement || field instanceof HTMLSelectElement)) {
+    throw new Error(`Expected field named ${name}.`);
   }
 
   return field;
@@ -87,6 +87,67 @@ function createField(labelText, inputOptions) {
   return label;
 }
 
+function createSelectField(labelText, selectOptions, optionDefinitions, helperText = "") {
+  const fieldName =
+    typeof selectOptions?.properties?.name === "string" && selectOptions.properties.name
+      ? selectOptions.properties.name
+      : labelText.toLowerCase().replace(/\s+/g, "-");
+  const selectId =
+    typeof selectOptions?.properties?.id === "string" && selectOptions.properties.id
+      ? selectOptions.properties.id
+      : `popup-${fieldName}`;
+  const helperId = `${selectId}-help`;
+  const field = createElement("div", {
+    className: "popup-field",
+  });
+  const labelTextElement = createElement("label", {
+    className: "popup-label",
+    text: labelText,
+    properties: {
+      htmlFor: selectId,
+    },
+  });
+  const select = createElement("select", selectOptions);
+
+  select.id = selectId;
+
+  if (helperText) {
+    select.setAttribute("aria-describedby", helperId);
+  }
+
+  select.append(
+    ...optionDefinitions.map(({ label: optionLabel, value, disabled = false }) =>
+      createElement("option", {
+        text: optionLabel,
+        properties: {
+          value,
+          disabled,
+        },
+      }),
+    ),
+  );
+
+  if (optionDefinitions.some((option) => option.value === "")) {
+    select.value = "";
+  }
+
+  field.append(labelTextElement, select);
+
+  if (helperText) {
+    field.append(
+      createElement("p", {
+        className: "popup-help",
+        text: helperText,
+        properties: {
+          id: helperId,
+        },
+      }),
+    );
+  }
+
+  return field;
+}
+
 function createCard(children) {
   return createElement("section", {
     className: "popup-card",
@@ -122,6 +183,10 @@ function createActions(buttonText, disabled = false) {
 
 function replaceRoot(root, child) {
   root.replaceChildren(child);
+}
+
+function parsePopupPriorityScore(value) {
+  return value === "none" ? null : Number(value);
 }
 
 function setFormStatus(form, message, role) {
@@ -189,8 +254,8 @@ async function handleLoginSubmit(event, popupRoot) {
     return;
   }
 
-  const email = getNamedInput(form, "email").value.trim();
-  const password = getNamedInput(form, "password").value;
+  const email = getNamedField(form, "email").value.trim();
+  const password = getNamedField(form, "password").value;
 
   if (!form.checkValidity()) {
     form.reportValidity();
@@ -233,9 +298,9 @@ async function handleSaveSubmit(event, popupRoot, token) {
     return;
   }
 
-  const url = getNamedInput(form, "url").value.trim();
-  const title = getNamedInput(form, "title").value.trim();
-  const priorityScore = Number(getNamedInput(form, "priorityScore").value);
+  const url = getNamedField(form, "url").value.trim();
+  const title = getNamedField(form, "title").value.trim();
+  const priorityScore = parsePopupPriorityScore(getNamedField(form, "priorityScore").value);
 
   if (!form.checkValidity()) {
     form.reportValidity();
@@ -262,6 +327,15 @@ async function handleSaveSubmit(event, popupRoot, token) {
     if (error instanceof ApiError && error.status === 401) {
       await clearToken();
       renderSignedOut(popupRoot, "Your session expired. Sign in again.", "alert");
+      return;
+    }
+
+    if (
+      error instanceof ApiError &&
+      error.status === 409 &&
+      error.payload?.error === "duplicate_url"
+    ) {
+      setFormStatus(form, "That link is already in Reading River.", "alert");
       return;
     }
 
@@ -354,17 +428,32 @@ function renderSignedIn(root, activeTab, token, message = "", role = "status") {
           value: activeTab.title,
         },
       }),
-      createField("Priority", {
-        className: "popup-input",
-        properties: {
-          name: "priorityScore",
-          type: "number",
-          min: "0",
-          max: "10",
-          step: "1",
-          required: true,
+      createSelectField(
+        "Priority",
+        {
+          className: "popup-input",
+          properties: {
+            name: "priorityScore",
+            required: true,
+          },
         },
-      }),
+        [
+          {
+            label: "Choose priority setting",
+            value: "",
+            disabled: true,
+          },
+          {
+            label: "No priority (stream only)",
+            value: "none",
+          },
+          ...Array.from({ length: 11 }, (_, value) => ({
+            label: String(value),
+            value: String(value),
+          })),
+        ],
+        "No priority keeps an item in the stream only, so it never appears in the left column.",
+      ),
       createActions("Save article", true),
     ],
   });
@@ -379,7 +468,7 @@ function renderSignedIn(root, activeTab, token, message = "", role = "status") {
     }),
     createElement("p", {
       className: "popup-copy",
-      text: "Capture the current tab with a priority score so it’s ready for later.",
+      text: "Capture the current tab with a priority setting so it’s ready for later.",
     }),
     form,
   ]);

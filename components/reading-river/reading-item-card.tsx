@@ -3,7 +3,7 @@ type ReadingItemCardProps = {
   sourceUrl?: string | null;
   siteName?: string | null;
   estimatedMinutes?: number | null;
-  priorityScore: number;
+  priorityScore: number | null;
   status: string;
   pinned: boolean;
   tags: string[];
@@ -37,7 +37,7 @@ export function ReadingItemCard({
           {title}
         </h3>
         <p className="flex flex-wrap items-center gap-x-2 gap-y-2 text-sm leading-7 text-[hsl(var(--muted-foreground))]">
-          <span>Priority {priorityScore}</span>
+          <span>{priorityScore === null ? "Stream only" : `Priority ${priorityScore}`}</span>
           {tags.length > 0 ? (
             <>
               <span aria-hidden="true">•</span>

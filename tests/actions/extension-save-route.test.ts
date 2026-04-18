@@ -48,7 +48,8 @@ describe("reading river extension save route", () => {
     routeMocks.revalidatePath.mockClear();
   });
 
-  it("creates an unread url item with a nullable estimated minutes value", async () => {
+  it("creates an unread url item with a nullable estimated minutes value and stream-only priority", async () => {
+    const findFirst = vi.fn(async () => null);
     const create = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
       id: "item-1",
       ...data,
@@ -56,6 +57,7 @@ describe("reading river extension save route", () => {
 
     routeMocks.setPrismaMock({
       readingItem: {
+        findFirst,
         create,
       },
     });
@@ -70,7 +72,7 @@ describe("reading river extension save route", () => {
       body: JSON.stringify({
         url: "https://example.com/article",
         title: "   ",
-        priorityScore: 7,
+        priorityScore: null,
         estimatedMinutes: null,
       }),
     });
@@ -90,7 +92,7 @@ describe("reading river extension save route", () => {
           title: "https://example.com/article",
           sourceType: "url",
           sourceUrl: "https://example.com/article",
-          priorityScore: 7,
+          priorityScore: null,
           status: "unread",
           estimatedMinutes: null,
         }),
@@ -104,6 +106,44 @@ describe("reading river extension save route", () => {
       }),
     );
     expect(routeMocks.revalidatePath).toHaveBeenCalled();
+  });
+
+  it("returns a conflict response when the URL already exists for the user", async () => {
+    const findFirst = vi.fn(async () => ({
+      id: "item-existing",
+      title: "Saved article",
+      sourceUrl: "https://example.com/article",
+    }));
+    const create = vi.fn();
+
+    routeMocks.setPrismaMock({
+      readingItem: {
+        findFirst,
+        create,
+      },
+    });
+    routeMocks.getCurrentUserFromExtensionToken.mockResolvedValue(createUser());
+
+    const request = new Request("https://example.com/reading-river/api/extension/save", {
+      method: "POST",
+      headers: {
+        authorization: "Bearer extension-token",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        url: "https://example.com/article",
+        title: "Read later",
+        priorityScore: null,
+      }),
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: "duplicate_url",
+    });
+    expect(create).not.toHaveBeenCalled();
   });
 
   it("rejects nonpositive estimated minutes", async () => {
@@ -173,6 +213,7 @@ describe("reading river extension save route", () => {
   });
 
   it("trims trailing whitespace from the bearer token", async () => {
+    const findFirst = vi.fn(async () => null);
     const create = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
       id: "item-1",
       ...data,
@@ -180,6 +221,7 @@ describe("reading river extension save route", () => {
 
     routeMocks.setPrismaMock({
       readingItem: {
+        findFirst,
         create,
       },
     });

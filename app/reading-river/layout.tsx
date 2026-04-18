@@ -31,7 +31,7 @@ export function EditorialShell({
   isAdmin?: boolean;
 }) {
   return (
-    <div className="editorial-shell-frame">
+    <div className="editorial-shell editorial-shell-frame">
       <header className="river-shell-header">
         <Link href={readingRiverPath()} className="river-shell-brand">
           <Image
@@ -61,13 +61,9 @@ export default async function RootLayout({
     const currentUser = await getCurrentUser();
 
     return (
-      <html lang="en">
-        <body className="editorial-shell">
-          <EditorialShell isAdmin={currentUser?.isAdmin ?? false}>
-            {children}
-          </EditorialShell>
-        </body>
-      </html>
+      <EditorialShell isAdmin={currentUser?.isAdmin ?? false}>
+        {children}
+      </EditorialShell>
     );
   });
 }

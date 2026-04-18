@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DuplicateReadingItemUrlError } from "@/lib/reading-river/source-url";
 
 const actionMocks = vi.hoisted(() => ({
   redirect: vi.fn((url: string) => {
@@ -34,7 +35,7 @@ describe("saveReadingItemEditAction", () => {
     formData.set("title", "Updated stream article");
     formData.set("sourceUrl", "https://example.com/updated-stream");
     formData.set("estimatedMinutes", "12");
-    formData.set("priorityScore", "7");
+    formData.set("priorityScore", "none");
     formData.set("tagNames", "focus, policy");
 
     await expect(saveReadingItemEditAction(formData)).rejects.toThrow("redirect:/reading-river");
@@ -44,8 +45,28 @@ describe("saveReadingItemEditAction", () => {
       title: "Updated stream article",
       sourceUrl: "https://example.com/updated-stream",
       estimatedMinutes: 12,
-      priorityScore: 7,
+      priorityScore: null,
       tagNames: ["focus", "policy"],
     });
+  });
+
+  it("redirects back to the edit page when the URL is already saved", async () => {
+    const formData = new FormData();
+
+    formData.set("id", "item-1");
+    formData.set("sourceType", "url");
+    formData.set("title", "Updated stream article");
+    formData.set("sourceUrl", "https://example.com/updated-stream");
+    formData.set("estimatedMinutes", "12");
+    formData.set("priorityScore", "none");
+    formData.set("tagNames", "focus, policy");
+
+    readingItemMocks.updateReadingItem.mockRejectedValueOnce(
+      new DuplicateReadingItemUrlError("https://example.com/updated-stream", "item-existing"),
+    );
+
+    await expect(saveReadingItemEditAction(formData)).rejects.toThrow(
+      "redirect:/reading-river/items/item-1/edit?error=duplicate_url",
+    );
   });
 });

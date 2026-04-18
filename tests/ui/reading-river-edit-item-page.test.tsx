@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => {
@@ -66,9 +66,16 @@ describe("ReadingRiverEditItemPage", () => {
           sourceType: "url",
           sourceUrl: "https://example.com/live-stream",
           estimatedMinutes: 9,
-          priorityScore: 8,
+          priorityScore: null,
           tags: [{ tag: { name: "focus" } }, { tag: { name: "policy" } }],
         })),
+      },
+      tag: {
+        findMany: vi.fn(async () => [
+          { name: "Focus" },
+          { name: "Policy" },
+          { name: "Longform" },
+        ]),
       },
     });
   });
@@ -90,11 +97,29 @@ describe("ReadingRiverEditItemPage", () => {
       "https://example.com/live-stream",
     );
     expect(screen.getByLabelText("Estimated minutes")).toHaveValue(9);
-    expect(screen.getByLabelText("Priority")).toHaveValue(8);
-    expect(screen.getByText("0–10, where 10 is highest priority.")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Priority" })).toHaveValue("none");
+    expect(screen.getByText(/stream only/i)).toBeInTheDocument();
     expect(screen.getByLabelText("Tags")).toHaveValue("focus, policy");
     expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Status")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save changes" })).toBeInTheDocument();
+  });
+
+  it("suggests remembered tags while editing an item", async () => {
+    const { default: ReadingRiverEditItemPage } = await import(
+      "@/app/reading-river/items/[id]/edit/page"
+    );
+    const page = await ReadingRiverEditItemPage({
+      params: { id: "item-1" },
+      searchParams: {},
+    });
+
+    render(page);
+
+    fireEvent.change(screen.getByLabelText("Tags"), {
+      target: { value: "po" },
+    });
+
+    expect(screen.getByRole("button", { name: "Policy" })).toBeInTheDocument();
   });
 });

@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { getDailyDigestItems, isLondonDailyDigestHour } from "@/lib/reading-river/daily-digest";
+import {
+  getDailyDigestItems,
+  isDigestCadenceDue,
+  isLondonDailyDigestHour,
+} from "@/lib/reading-river/daily-digest";
 import { getPrismaClient } from "@/lib/reading-river/db";
 import { sendReadingRiverDailyDigestEmail } from "@/lib/reading-river/email";
 
@@ -79,7 +83,11 @@ export async function GET(request: Request) {
 
   const prisma = getPrismaClient();
   const settings = await prisma.appSettings.findMany({
-    where: { dailyDigestEnabled: true },
+    where: {
+      digestCadence: {
+        not: "off",
+      },
+    },
     include: { user: true },
   });
   const londonDayKey = getLondonDayKey(now);
@@ -93,9 +101,14 @@ export async function GET(request: Request) {
 
     try {
       if (
-        setting.lastDailyDigestSentAt &&
-        getLondonDayKey(setting.lastDailyDigestSentAt) === londonDayKey
+        setting.lastDigestSentAt &&
+        getLondonDayKey(setting.lastDigestSentAt) === londonDayKey
       ) {
+        skipped += 1;
+        continue;
+      }
+
+      if (!isDigestCadenceDue(setting.digestCadence, now)) {
         skipped += 1;
         continue;
       }
@@ -113,14 +126,14 @@ export async function GET(request: Request) {
       const claimResult = await prisma.appSettings.updateMany({
         where: {
           userId: setting.userId,
-          dailyDigestEnabled: true,
+          digestCadence: setting.digestCadence,
           OR: [
-            { lastDailyDigestSentAt: null },
-            { lastDailyDigestSentAt: { lt: londonDayStart } },
+            { lastDigestSentAt: null },
+            { lastDigestSentAt: { lt: londonDayStart } },
           ],
         },
         data: {
-          lastDailyDigestSentAt: now,
+          lastDigestSentAt: now,
         },
       });
 
@@ -146,7 +159,7 @@ export async function GET(request: Request) {
           await prisma.appSettings.update({
             where: { userId: setting.userId },
             data: {
-              lastDailyDigestSentAt: setting.lastDailyDigestSentAt,
+              lastDigestSentAt: setting.lastDigestSentAt,
             },
           });
         } catch (revertError) {

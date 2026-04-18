@@ -3,6 +3,7 @@ import { initialIntakeFormState } from "@/lib/reading-river/intake-form-state";
 
 const createMock = vi.fn();
 const findAppSettingsMock = vi.fn();
+const findExistingReadingItemMock = vi.fn();
 const revalidatePathMock = vi.fn();
 const requireCurrentUserMock = vi.fn();
 const unstableRethrowMock = vi.fn();
@@ -22,6 +23,7 @@ vi.mock("@/lib/reading-river/db", () => ({
     },
     readingItem: {
       create: createMock,
+      findFirst: findExistingReadingItemMock,
     },
   }),
 }));
@@ -64,6 +66,8 @@ describe("submitUrlIntake jsdom runtime failures", () => {
     createMock.mockReset();
     findAppSettingsMock.mockReset();
     findAppSettingsMock.mockResolvedValue(null);
+    findExistingReadingItemMock.mockReset();
+    findExistingReadingItemMock.mockResolvedValue(null);
     revalidatePathMock.mockReset();
     unstableRethrowMock.mockReset();
     requireCurrentUserMock.mockReset();

@@ -4,6 +4,7 @@ import { readingRiverPath } from "@/lib/reading-river/routes";
 
 const createMock = vi.fn();
 const findAppSettingsMock = vi.fn();
+const findExistingReadingItemMock = vi.fn();
 const revalidatePathMock = vi.fn();
 const requireCurrentUserMock = vi.fn();
 const unstableRethrowMock = vi.fn();
@@ -23,6 +24,7 @@ vi.mock("@/lib/reading-river/db", () => ({
     },
     readingItem: {
       create: createMock,
+      findFirst: findExistingReadingItemMock,
     },
   }),
 }));
@@ -170,6 +172,8 @@ describe("submitUrlIntake", () => {
     createMock.mockReset();
     findAppSettingsMock.mockReset();
     findAppSettingsMock.mockResolvedValue(null);
+    findExistingReadingItemMock.mockReset();
+    findExistingReadingItemMock.mockResolvedValue(null);
     revalidatePathMock.mockReset();
     unstableRethrowMock.mockReset();
     requireCurrentUserMock.mockReset();
@@ -271,6 +275,37 @@ describe("submitUrlIntake", () => {
         url: "https://example.com/essay",
       }),
     );
+  });
+
+  it("blocks a duplicate URL before fetching details again", async () => {
+    const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
+    const formData = buildUrlFormData();
+    const fetchMock = vi.fn();
+
+    findExistingReadingItemMock.mockResolvedValue({
+      id: "item-9",
+      title: "Saved essay",
+      sourceUrl: "https://example.com/essay",
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await submitUrlIntake(initialIntakeFormState, formData);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(createMock).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      status: "error",
+      message: "That link is already in your stream.",
+      draftValues: {
+        url: "https://example.com/essay",
+        title: "Essay override",
+        notes: "Why this belongs in the stream",
+        priorityScore: "7",
+        estimatedMinutes: "",
+        tagNames: "work, essays",
+      },
+      submittedAt: expect.any(Number),
+    });
   });
 
   it("requires an estimated reading time before saving a manual review", async () => {

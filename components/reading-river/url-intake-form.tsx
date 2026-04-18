@@ -4,6 +4,9 @@ import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { submitUrlIntake } from "@/app/reading-river/actions/ingest-url";
 import { initialIntakeFormState } from "@/lib/reading-river/intake-form-state";
+import { TagInput } from "@/components/reading-river/tag-input";
+
+const PRIORITY_OPTIONS = Array.from({ length: 11 }, (_, value) => String(value));
 
 function SubmitButton({
   idleLabel,
@@ -21,7 +24,7 @@ function SubmitButton({
   );
 }
 
-export function UrlIntakeForm() {
+export function UrlIntakeForm({ knownTagNames = [] }: { knownTagNames?: string[] }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction] = useActionState(submitUrlIntake, initialIntakeFormState);
   const isReview = state.status === "review";
@@ -122,37 +125,43 @@ export function UrlIntakeForm() {
         <div className="grid gap-8 sm:grid-cols-2">
           <div className="grid gap-2 text-sm">
             <label htmlFor="url-intake-priority-score">Priority</label>
-            <input
+            <select
               id="url-intake-priority-score"
               name="priorityScore"
-              type="number"
-              min="0"
-              max="10"
               defaultValue={draftValues.priorityScore}
-              aria-describedby="url-intake-priority-help"
+              aria-describedby="url-intake-priority-help url-intake-priority-scale"
               className="intake-input"
-            />
+            >
+              <option value="none">No priority (stream only)</option>
+              {PRIORITY_OPTIONS.map((priorityValue) => (
+                <option key={priorityValue} value={priorityValue}>
+                  {priorityValue}
+                </option>
+              ))}
+            </select>
             <p id="url-intake-priority-help" className="intake-helper-text">
+              No priority items stay in the stream and never appear in the left column.
+            </p>
+            <p id="url-intake-priority-scale" className="intake-helper-text">
               0–10, where 10 is highest priority.
             </p>
           </div>
-          <label className="grid gap-2 text-sm">
-            <span>Tags</span>
-            <input
-              name="tagNames"
-              type="text"
-              defaultValue={draftValues.tagNames}
-              placeholder="work, essays"
-              className="intake-input"
-            />
-          </label>
-        </div>
-        <div className="intake-submit-row">
-          <SubmitButton
-            idleLabel={isReview ? "Save article" : "Fetch details"}
-            pendingLabel={isReview ? "Saving article..." : "Fetching details..."}
+          <TagInput
+            knownTagNames={knownTagNames}
+            defaultValue={draftValues.tagNames}
+            placeholder="work, essays"
           />
         </div>
+        {!isReview ? (
+          <div className="intake-submit-row intake-submit-row-start">
+            <SubmitButton idleLabel="Fetch details" pendingLabel="Fetching details..." />
+          </div>
+        ) : null}
+        {isReview ? (
+          <div className="intake-submit-row">
+            <SubmitButton idleLabel="Save article" pendingLabel="Saving article..." />
+          </div>
+        ) : null}
       </form>
     </section>
   );

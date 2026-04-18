@@ -10,6 +10,7 @@ vi.mock("@/lib/reading-river/homepage-data", () => ({
 
 import {
   getDailyDigestItems,
+  isDigestCadenceDue,
   isLondonDailyDigestHour,
 } from "@/lib/reading-river/daily-digest";
 
@@ -62,6 +63,20 @@ describe("daily digest helpers", () => {
     expect(isLondonDailyDigestHour(new Date("2026-06-01T07:15:00Z"))).toBe(true);
     expect(isLondonDailyDigestHour(new Date("2026-12-01T08:15:00Z"))).toBe(true);
     expect(isLondonDailyDigestHour(new Date("2026-12-01T07:15:00Z"))).toBe(false);
+  });
+
+  it("treats daily, every-other-day, weekly, monthly, and seasonal cadences as due on the correct London-local dates", () => {
+    expect(isDigestCadenceDue("daily", new Date("2026-06-02T07:15:00Z"))).toBe(true);
+    expect(isDigestCadenceDue("every_other_day", new Date("2026-01-01T08:15:00Z"))).toBe(true);
+    expect(isDigestCadenceDue("every_other_day", new Date("2026-01-02T08:15:00Z"))).toBe(false);
+    expect(isDigestCadenceDue("every_other_day", new Date("2026-01-03T08:15:00Z"))).toBe(true);
+    expect(isDigestCadenceDue("weekly", new Date("2026-06-01T07:15:00Z"))).toBe(true);
+    expect(isDigestCadenceDue("weekly", new Date("2026-06-02T07:15:00Z"))).toBe(false);
+    expect(isDigestCadenceDue("monthly", new Date("2026-06-01T07:15:00Z"))).toBe(true);
+    expect(isDigestCadenceDue("monthly", new Date("2026-06-02T07:15:00Z"))).toBe(false);
+    expect(isDigestCadenceDue("seasonal", new Date("2026-07-01T07:15:00Z"))).toBe(true);
+    expect(isDigestCadenceDue("seasonal", new Date("2026-08-01T07:15:00Z"))).toBe(false);
+    expect(isDigestCadenceDue("off", new Date("2026-06-01T07:15:00Z"))).toBe(false);
   });
 
   it("asks the formatter for a two-digit London hour", () => {

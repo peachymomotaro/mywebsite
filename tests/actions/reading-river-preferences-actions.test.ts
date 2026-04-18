@@ -47,7 +47,7 @@ describe("Reading River preferences actions", () => {
     dbMocks.getPrismaClient.mockClear();
   });
 
-  it("upserts the digest preference and redirects with saved status", async () => {
+  it("upserts the every-other-day digest preference and redirects with saved status", async () => {
     const appSettingsUpsert = vi.fn(async () => ({}));
 
     dbMocks.setPrismaMock({
@@ -63,7 +63,7 @@ describe("Reading River preferences actions", () => {
     const { updatePreferencesAction } = await import("@/app/reading-river/preferences/actions");
     const formData = new FormData();
 
-    formData.set("dailyDigestEnabled", "on");
+    formData.set("digestCadence", "every_other_day");
 
     await expect(updatePreferencesAction(formData)).rejects.toThrow(
       "redirect:/reading-river/preferences?saved=1",
@@ -71,10 +71,10 @@ describe("Reading River preferences actions", () => {
 
     expect(appSettingsUpsert).toHaveBeenCalledWith({
       where: { userId: "user-1" },
-      update: { dailyDigestEnabled: true },
+      update: { digestCadence: "every_other_day" },
       create: {
         ...getAppSettingsDefaults("user-1"),
-        dailyDigestEnabled: true,
+        digestCadence: "every_other_day",
       },
     });
     expect(actionMocks.revalidatePath).toHaveBeenCalledWith("/reading-river/preferences");

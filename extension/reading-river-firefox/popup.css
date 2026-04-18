@@ -88,6 +88,13 @@ body {
   outline: none;
 }
 
+.popup-help {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #475569;
+}
+
 .popup-actions {
   display: flex;
   justify-content: flex-end;

@@ -7,7 +7,7 @@ export type ReadingStreamItem = {
   sourceUrl?: string | null;
   siteName?: string | null;
   estimatedMinutes?: number | null;
-  priorityScore: number;
+  priorityScore: number | null;
   status: "unread" | "reading" | "done" | "not_now" | "archived";
   pinned: boolean;
   tags: string[];

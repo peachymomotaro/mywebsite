@@ -7,16 +7,32 @@ import { getPrismaClient } from "@/lib/reading-river/db";
 import { readingRiverPath } from "@/lib/reading-river/routes";
 import { getAppSettingsDefaults } from "@/lib/reading-river/settings";
 
+function parseDigestCadence(value: FormDataEntryValue | null) {
+  const candidate = String(value ?? "").trim();
+
+  switch (candidate) {
+    case "daily":
+    case "every_other_day":
+    case "weekly":
+    case "monthly":
+    case "seasonal":
+    case "off":
+      return candidate;
+    default:
+      return "off";
+  }
+}
+
 export async function updatePreferencesAction(formData: FormData) {
   const currentUser = await requireCurrentUser();
-  const enabled = String(formData.get("dailyDigestEnabled") ?? "") === "on";
+  const digestCadence = parseDigestCadence(formData.get("digestCadence"));
 
   await getPrismaClient().appSettings.upsert({
     where: { userId: currentUser.id },
-    update: { dailyDigestEnabled: enabled },
+    update: { digestCadence },
     create: {
       ...getAppSettingsDefaults(currentUser.id),
-      dailyDigestEnabled: enabled,
+      digestCadence,
     },
   });
 

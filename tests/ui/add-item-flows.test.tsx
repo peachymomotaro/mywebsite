@@ -3,6 +3,17 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const useActionStateMock = vi.hoisted(() => vi.fn());
+const serverMocks = vi.hoisted(() => {
+  let prismaMock: any;
+
+  return {
+    getPrismaClient: vi.fn(() => prismaMock),
+    requireCurrentUser: vi.fn(),
+    setPrismaMock(nextPrismaMock: any) {
+      prismaMock = nextPrismaMock;
+    },
+  };
+});
 
 vi.mock("react", async () => {
   const actual = await vi.importActual<typeof import("react")>("react");
@@ -13,6 +24,14 @@ vi.mock("react", async () => {
   };
 });
 
+vi.mock("@/lib/reading-river/db", () => ({
+  getPrismaClient: serverMocks.getPrismaClient,
+}));
+
+vi.mock("@/lib/reading-river/current-user", () => ({
+  requireCurrentUser: serverMocks.requireCurrentUser,
+}));
+
 import AddPage from "@/app/reading-river/add/page";
 import { ManualItemForm } from "@/components/reading-river/manual-item-form";
 import { UrlIntakeForm } from "@/components/reading-river/url-intake-form";
@@ -21,6 +40,16 @@ describe("AddPage", () => {
   beforeEach(() => {
     useActionStateMock.mockReset();
     useActionStateMock.mockImplementation((_action, initialState) => [initialState, vi.fn()]);
+    serverMocks.getPrismaClient.mockClear();
+    serverMocks.requireCurrentUser.mockReset();
+    serverMocks.requireCurrentUser.mockResolvedValue({
+      id: "user-1",
+    });
+    serverMocks.setPrismaMock({
+      tag: {
+        findMany: vi.fn(async () => [{ name: "Focus" }, { name: "Policy" }]),
+      },
+    });
   });
 
   it("shows the updated add-page copy and only one selected form at a time", async () => {
@@ -44,7 +73,13 @@ describe("AddPage", () => {
     expect(screen.getByRole("button", { name: "Manual item" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "Manual item" })).toHaveClass("river-primary-action");
     expect(screen.getByRole("heading", { name: "Paste a link" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Fetch details" })).toBeInTheDocument();
+    const fetchButton = screen.getByRole("button", { name: "Fetch details" });
+    expect(fetchButton).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Priority" })).toHaveValue("5");
+    expect(screen.getByRole("option", { name: "No priority (stream only)" })).toBeInTheDocument();
+    expect(screen.getByText(/never appear in the left column/i)).toBeInTheDocument();
+    const tagsField = screen.getByLabelText("Tags");
+    expect(tagsField.compareDocumentPosition(fetchButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Write it down" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Bring something into the stream" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Estimated minutes")).not.toBeInTheDocument();
@@ -118,7 +153,8 @@ describe("AddPage", () => {
     expect(screen.getByLabelText("URL")).toHaveValue("https://example.com/essay");
     expect(screen.getByLabelText("Title")).toHaveValue("Essay");
     expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Priority")).toHaveValue(7);
+    expect(screen.getByRole("combobox", { name: "Priority" })).toHaveValue("7");
+    expect(screen.getByRole("option", { name: "No priority (stream only)" })).toBeInTheDocument();
     expect(screen.getByText("0–10, where 10 is highest priority.")).toBeInTheDocument();
     expect(screen.getByLabelText("Tags")).toHaveValue("work, essays");
     expect(screen.getByRole("button", { name: "Save article" })).toBeInTheDocument();
@@ -167,6 +203,7 @@ describe("AddPage", () => {
       "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2033231",
     );
     expect(screen.getByLabelText("Title")).toHaveValue("Essay override");
+    expect(screen.getByRole("option", { name: "No priority (stream only)" })).toBeInTheDocument();
     expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
   });
 
@@ -186,8 +223,29 @@ describe("AddPage", () => {
     expect(screen.getByLabelText("Estimated minutes")).toBeRequired();
     expect(screen.queryByLabelText("Status")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
-    expect(screen.getByText("0–10, where 10 is highest priority.")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Priority" })).toHaveValue("5");
+    expect(screen.getByRole("option", { name: "No priority (stream only)" })).toBeInTheDocument();
+    expect(screen.getByText(/never appear in the left column/i)).toBeInTheDocument();
     expect(screen.getByText('Added "Reading notebook entry" to the stream.')).toBeInTheDocument();
     expect(screen.getByText("Reading notebook entry")).toBeInTheDocument();
+  });
+
+  it("suggests remembered tags in both add-item flows", async () => {
+    const page = await AddPage();
+
+    render(page);
+
+    fireEvent.change(screen.getByLabelText("Tags"), {
+      target: { value: "po" },
+    });
+
+    expect(screen.getByRole("button", { name: "Policy" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Manual item" }));
+    fireEvent.change(screen.getByLabelText("Tags"), {
+      target: { value: "fo" },
+    });
+
+    expect(screen.getByRole("button", { name: "Focus" })).toBeInTheDocument();
   });
 });

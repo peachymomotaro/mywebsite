@@ -29,7 +29,7 @@ export default async function PreferencesPage({ searchParams }: PreferencesPageP
         <div className="editorial-page-masthead-copy">
           <h1 className="editorial-page-title">Preferences</h1>
           <p className="editorial-page-intro">
-            Choose whether Reading River should send a daily digest email.
+            Choose how often Reading River should send your reminder email.
           </p>
         </div>
       </section>
@@ -37,16 +37,23 @@ export default async function PreferencesPage({ searchParams }: PreferencesPageP
       <section className="editorial-panel river-preferences-panel">
         <form action={updatePreferencesAction} className="editorial-form river-preferences-form">
           <label className="river-preferences-choice">
-            <input
-              className="river-preferences-checkbox"
-              defaultChecked={settings.dailyDigestEnabled}
-              name="dailyDigestEnabled"
-              type="checkbox"
-            />
-            <span className="river-preferences-choice-copy">
-              Receive a daily email with two picks from your River.
-            </span>
+            <span className="river-preferences-choice-copy">Reminder cadence</span>
+            <select
+              className="intake-input"
+              defaultValue={settings.digestCadence}
+              name="digestCadence"
+            >
+              <option value="off">Off</option>
+              <option value="daily">Daily</option>
+              <option value="every_other_day">Every other day</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="seasonal">Seasonal (every three months)</option>
+            </select>
           </label>
+          <p className="river-preferences-description">
+            Reading River emails you with your picks for that day around 08:00 London time.
+          </p>
           <div className="intake-submit-row river-preferences-submit-row">
             <button type="submit" className="intake-submit-button">
               Save preferences

@@ -10,7 +10,7 @@ describe("schema enums", () => {
 
 describe("app settings schema", () => {
   it("exposes the expected scalar fields", () => {
-    expect(Prisma.AppSettingsScalarFieldEnum.dailyDigestEnabled).toBe("dailyDigestEnabled");
-    expect(Prisma.AppSettingsScalarFieldEnum.lastDailyDigestSentAt).toBe("lastDailyDigestSentAt");
+    expect(Prisma.AppSettingsScalarFieldEnum.digestCadence).toBe("digestCadence");
+    expect(Prisma.AppSettingsScalarFieldEnum.lastDigestSentAt).toBe("lastDigestSentAt");
   });
 });

@@ -46,6 +46,10 @@ export function HomeReadCard({ label, item, emptyMessage }: HomeReadCardProps) {
     await deleteReadingItem({ id: item.id });
   }
 
+  const metaText = [item?.siteName, item?.estimatedMinutes ? `${item.estimatedMinutes} min` : null]
+    .filter(Boolean)
+    .join(" • ");
+
   return (
     <section className="river-spotlight-card">
       <div className="river-spotlight-card-head">
@@ -63,25 +67,30 @@ export function HomeReadCard({ label, item, emptyMessage }: HomeReadCardProps) {
 
       {item ? (
         <div className="river-spotlight-body">
-          {item.sourceUrl ? (
-            <a href={item.sourceUrl} className="river-spotlight-link river-spotlight-title-wrap">
-              {item.title}
-            </a>
-          ) : (
-            <h2 className="river-spotlight-title river-spotlight-title-wrap">{item.title}</h2>
-          )}
+          <div className="river-spotlight-body-copy">
+            {item.sourceUrl ? (
+              <a
+                href={item.sourceUrl}
+                className="river-spotlight-link river-spotlight-title-wrap river-spotlight-title-clamp"
+              >
+                {item.title}
+              </a>
+            ) : (
+              <h2 className="river-spotlight-title river-spotlight-title-wrap river-spotlight-title-clamp">
+                {item.title}
+              </h2>
+            )}
 
-          {[item.siteName, item.estimatedMinutes ? `${item.estimatedMinutes} min` : null].filter(
-            Boolean,
-          ).length > 0 ? (
-            <p className="river-spotlight-meta">
-              {[item.siteName, item.estimatedMinutes ? `${item.estimatedMinutes} min` : null]
-                .filter(Boolean)
-                .join(" • ")}
-            </p>
-          ) : null}
+            {metaText ? (
+              <p className="river-spotlight-meta">{metaText}</p>
+            ) : (
+              <p className="river-spotlight-meta river-spotlight-meta-placeholder" aria-hidden="true">
+                &nbsp;
+              </p>
+            )}
+          </div>
 
-          <div className="river-spotlight-footer">
+          <div className="river-spotlight-body-actions river-spotlight-footer">
             <div className="river-spotlight-actions">
               <form action={markAsReadAction}>
                 <button
@@ -101,8 +110,9 @@ export function HomeReadCard({ label, item, emptyMessage }: HomeReadCardProps) {
               </form>
               <HomeRemoveAction removeAction={deleteReadingItemAction} />
             </div>
-
-            <HomeCardTags tags={item.tags} />
+            <div className="river-spotlight-tags-row">
+              <HomeCardTags tags={item.tags} />
+            </div>
           </div>
         </div>
       ) : (

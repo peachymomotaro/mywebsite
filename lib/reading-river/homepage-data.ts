@@ -9,7 +9,7 @@ type HomepageSourceItem = {
   sourceUrl?: string | null;
   siteName?: string | null;
   estimatedMinutes?: number | null;
-  priorityScore: number;
+  priorityScore: number | null;
   status: "unread" | "reading" | "done" | "not_now" | "archived";
   pinned: boolean;
   manualRank?: number | null;
@@ -38,7 +38,7 @@ export type HomePageFeaturedItem = {
   sourceUrl?: string | null;
   siteName?: string | null;
   estimatedMinutes?: number | null;
-  priorityScore: number;
+  priorityScore: number | null;
   status: "unread" | "reading" | "done" | "not_now" | "archived";
   pinned: boolean;
   tags: string[];
@@ -103,7 +103,10 @@ function hashString(value: string) {
 
 function getSuggestedActiveItems(items: HomepageSourceItem[], settings: HomepageSettings) {
   return computeSuggestedOrder(
-    items.filter((item) => !item.readEvent),
+    items.filter(
+      (item): item is HomepageSourceItem & { priorityScore: number } =>
+        !item.readEvent && item.priorityScore !== null,
+    ),
     {
       highPriorityThreshold: settings.highPriorityThreshold ?? 7,
       shortReadThresholdMinutes: settings.shortReadThresholdMinutes ?? 25,
@@ -123,6 +126,14 @@ function compareDatesAscending(left: Date, right: Date) {
 
 function compareBucketPriority(left: HomepageSourceItem, right: HomepageSourceItem) {
   if (left.priorityScore !== right.priorityScore) {
+    if (left.priorityScore === null) {
+      return 1;
+    }
+
+    if (right.priorityScore === null) {
+      return -1;
+    }
+
     return right.priorityScore - left.priorityScore;
   }
 
@@ -147,6 +158,12 @@ function getBucketCandidates(items: HomepageSourceItem[]) {
     .sort(compareBucketPriority);
 }
 
+function getPriorityCandidates(items: HomepageSourceItem[]) {
+  return getBucketCandidates(items).filter(
+    (item): item is HomepageSourceItem & { priorityScore: number } => item.priorityScore !== null,
+  );
+}
+
 function resolveBucketItems(
   items: HomepageSourceItem[],
   selectedTimeBudgetMinutes: number | null,
@@ -162,6 +179,30 @@ function resolveBucketItems(
 
   if (selectedBucketIndex === -1) {
     return getSuggestedActiveItems(items, settings);
+  }
+
+  for (let index = selectedBucketIndex; index >= 0; index -= 1) {
+    const bucketItems = getBucketCandidates(items).filter((item) => matchesBucket(item, TIME_BUCKETS[index]));
+
+    if (bucketItems.length > 0) {
+      return bucketItems;
+    }
+  }
+
+  return [];
+}
+
+function resolveStreamItems(items: HomepageSourceItem[], selectedTimeBudgetMinutes: number | null) {
+  if (selectedTimeBudgetMinutes === null) {
+    return getBucketCandidates(items);
+  }
+
+  const selectedBucketIndex = TIME_BUCKETS.findIndex(
+    (bucket) => bucket.selectedMinutes === selectedTimeBudgetMinutes,
+  );
+
+  if (selectedBucketIndex === -1) {
+    return getBucketCandidates(items);
   }
 
   for (let index = selectedBucketIndex; index >= 0; index -= 1) {
@@ -207,9 +248,14 @@ export function buildHomePageData(
 ): HomePageData {
   const selectedTimeBudgetMinutes = options.timeBudgetMinutes ?? null;
   const dayKey = options.dayKey ?? getDayKey(options.now);
-  const suggestedItems = resolveBucketItems(items, selectedTimeBudgetMinutes, settings);
+  const suggestedItems = resolveBucketItems(
+    getPriorityCandidates(items),
+    selectedTimeBudgetMinutes,
+    settings,
+  );
+  const streamItems = resolveStreamItems(items, selectedTimeBudgetMinutes);
   const priorityItem = suggestedItems[0] ?? null;
-  const streamItem = pickDailyStreamItem(suggestedItems, dayKey, priorityItem?.id);
+  const streamItem = pickDailyStreamItem(streamItems, dayKey, priorityItem?.id);
 
   return {
     priorityRead: priorityItem ? toFeaturedItem(priorityItem) : null,

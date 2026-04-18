@@ -45,11 +45,12 @@ describe("reading item validation", () => {
     const parsed = readingItemSchema.parse({
       title: "Read later",
       sourceType: "manual",
-      priorityScore: 5,
+      priorityScore: null,
       status: "unread",
     });
 
     expect(parsed.title).toBe("Read later");
+    expect(parsed.priorityScore).toBeNull();
   });
 
   it("does not inject defaults for omitted fields when updating", () => {
@@ -114,7 +115,7 @@ describe("reading item validation", () => {
       estimatedMinutes: 12,
       lengthEstimationMethod: "manual",
       lengthEstimationConfidence: "unknown",
-      priorityScore: 5,
+      priorityScore: null,
       status: "unread",
       tagNames: ["keep", " keep "],
     });
@@ -128,7 +129,7 @@ describe("reading item validation", () => {
         estimatedMinutes: 12,
         lengthEstimationMethod: "manual",
         lengthEstimationConfidence: "unknown",
-        priorityScore: 5,
+        priorityScore: null,
         status: "unread",
         pinned: false,
         tags: {

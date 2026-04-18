@@ -1,5 +1,4 @@
 import { render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import RootLayout, { EditorialShell, metadata, preferredRegion } from "@/app/reading-river/layout";
 
@@ -100,6 +99,14 @@ describe("EditorialShell", () => {
       "data-next-link",
       "true"
     );
+    expect(screen.getByRole("link", { name: "Changelog" })).toHaveAttribute(
+      "href",
+      "/reading-river/changelog"
+    );
+    expect(screen.getByRole("link", { name: "Changelog" })).toHaveAttribute(
+      "data-next-link",
+      "true"
+    );
     expect(screen.getByRole("link", { name: "Admin" })).toHaveAttribute(
       "href",
       "/reading-river/admin"
@@ -121,6 +128,7 @@ describe("EditorialShell", () => {
 
     expect(screen.getByRole("link", { name: "How It Works" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Preferences" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Changelog" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Read history" })).toBeInTheDocument();
   });
 });
@@ -132,10 +140,20 @@ describe("RootLayout", () => {
     const page = await RootLayout({
       children: <main>child</main>,
     });
-    const body = page.props.children as { props: { children: ReactNode } };
 
-    render(body.props.children);
+    render(page);
   }
+
+  it("does not redefine html or body for the Reading River subtree", async () => {
+    mocks.getCurrentUserMock.mockResolvedValue(null);
+
+    const page = await RootLayout({
+      children: <main>child</main>,
+    });
+
+    expect(page.type).not.toBe("html");
+    expect(page.type).not.toBe("body");
+  });
 
   it("shows admin navigation for admin users", async () => {
     await renderShellForUser({
@@ -178,6 +196,14 @@ describe("RootLayout", () => {
       "/reading-river/preferences"
     );
     expect(screen.getByRole("link", { name: "Preferences" })).toHaveAttribute(
+      "data-next-link",
+      "true"
+    );
+    expect(screen.getByRole("link", { name: "Changelog" })).toHaveAttribute(
+      "href",
+      "/reading-river/changelog"
+    );
+    expect(screen.getByRole("link", { name: "Changelog" })).toHaveAttribute(
       "data-next-link",
       "true"
     );
@@ -227,6 +253,14 @@ describe("RootLayout", () => {
       "data-next-link",
       "true"
     );
+    expect(screen.getByRole("link", { name: "Changelog" })).toHaveAttribute(
+      "href",
+      "/reading-river/changelog"
+    );
+    expect(screen.getByRole("link", { name: "Changelog" })).toHaveAttribute(
+      "data-next-link",
+      "true"
+    );
     expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
   });
 
@@ -262,6 +296,14 @@ describe("RootLayout", () => {
       "/reading-river/preferences"
     );
     expect(screen.getByRole("link", { name: "Preferences" })).toHaveAttribute(
+      "data-next-link",
+      "true"
+    );
+    expect(screen.getByRole("link", { name: "Changelog" })).toHaveAttribute(
+      "href",
+      "/reading-river/changelog"
+    );
+    expect(screen.getByRole("link", { name: "Changelog" })).toHaveAttribute(
       "data-next-link",
       "true"
     );

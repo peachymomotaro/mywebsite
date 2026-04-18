@@ -1,0 +1,3 @@
+ALTER TABLE "ReadingItem"
+ALTER COLUMN "priorityScore" DROP NOT NULL,
+ALTER COLUMN "priorityScore" DROP DEFAULT;

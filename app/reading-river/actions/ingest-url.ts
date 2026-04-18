@@ -18,6 +18,11 @@ import type {
 } from "@/lib/reading-river/intake-form-state";
 import { readingRiverPath } from "@/lib/reading-river/routes";
 import {
+  assertNoDuplicateReadingItemSourceUrl,
+  findDuplicateReadingItemBySourceUrl,
+  isDuplicateReadingItemUrlError,
+} from "@/lib/reading-river/source-url";
+import {
   findMatchingSubstackFeedItem,
   getSubstackFeedUrl,
   isSubstackPostUrl,
@@ -33,13 +38,14 @@ const FETCH_FAILED_REVIEW_MESSAGE =
   "I couldn't fetch this page. Review the title and add a reading time before saving it manually.";
 const REVIEW_ESTIMATE_REQUIRED_MESSAGE = "Add an estimated reading time before saving this article.";
 const INVALID_URL_MESSAGE = "Add a valid link before saving it.";
+const DUPLICATE_URL_MESSAGE = "That link is already in your stream.";
 const FETCH_TIMEOUT_MS = 10_000;
 
 type IngestUrlInput = {
   url: string;
   title?: string | null;
   notes?: string | null;
-  priorityScore?: number;
+  priorityScore?: number | null;
   estimatedMinutes: number;
   tagNames?: string[];
   estimation?: ArticleLengthEstimate | null;
@@ -79,6 +85,10 @@ function normalizeOptionalString(value: string | null | undefined) {
 }
 
 function parsePriorityScore(value: string, fallback: number) {
+  if (value.trim() === "none") {
+    return null;
+  }
+
   const parsed = Number(value);
 
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -172,6 +182,31 @@ function buildReviewState({
       estimatedMinutesRequired,
       titleWasPrefilled,
     }),
+    submittedAt: Date.now(),
+  };
+}
+
+function buildDuplicateUrlState(
+  previousState: IntakeFormState,
+  draftValues: UrlIntakeDraftValues,
+): IntakeFormState {
+  if (previousState.status === "review" && previousState.draftValues?.url === draftValues.url) {
+    const reviewMetadata = previousState.reviewMetadata;
+
+    return buildReviewState({
+      draftValues,
+      message: DUPLICATE_URL_MESSAGE,
+      estimation: buildEstimationFromReviewMetadata(reviewMetadata),
+      fetchSucceeded: reviewMetadata?.fetchSucceeded ?? false,
+      estimatedMinutesRequired: reviewMetadata?.estimatedMinutesRequired ?? true,
+      previousReviewMetadata: reviewMetadata,
+    });
+  }
+
+  return {
+    status: "error",
+    message: DUPLICATE_URL_MESSAGE,
+    draftValues,
     submittedAt: Date.now(),
   };
 }
@@ -427,16 +462,17 @@ export async function ingestUrl(input: IngestUrlInput, userId?: string) {
   const url = input.url.trim();
   const estimation = input.estimation ?? null;
   const fallbackTitle = normalizeOptionalString(input.title) ?? url;
+  const normalizedSourceUrl = await assertNoDuplicateReadingItemSourceUrl(prisma, currentUserId, url);
 
   const item = await prisma.readingItem.create({
     data: {
       userId: currentUserId,
       title: normalizeOptionalString(input.title) ?? estimation?.title ?? fallbackTitle,
       sourceType: "url",
-      sourceUrl: url,
+      sourceUrl: normalizedSourceUrl,
       notes: normalizeOptionalString(input.notes),
       estimatedMinutes: input.estimatedMinutes,
-      priorityScore: input.priorityScore ?? 5,
+      priorityScore: input.priorityScore === undefined ? 5 : input.priorityScore,
       status: "unread",
       siteName: estimation?.siteName ?? null,
       author: estimation?.author ?? null,
@@ -481,6 +517,12 @@ export async function submitUrlIntake(
 
   try {
     const currentUser = await requireCurrentUser();
+    const prisma = getPrismaClient();
+    const existingItem = await findDuplicateReadingItemBySourceUrl(prisma, currentUser.id, url);
+
+    if (existingItem) {
+      return buildDuplicateUrlState(previousState, draftValues);
+    }
 
     const isSubmittingSameReviewedUrl =
       previousState.status === "review" && previousState.draftValues?.url === url;
@@ -579,6 +621,10 @@ export async function submitUrlIntake(
     });
   } catch (error) {
     unstable_rethrow(error);
+
+    if (isDuplicateReadingItemUrlError(error)) {
+      return buildDuplicateUrlState(previousState, draftValues);
+    }
 
     console.error("Reading River URL intake failed.", {
       url,

@@ -4,6 +4,9 @@ import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { submitManualReadingItem } from "@/app/reading-river/actions/reading-items";
 import { initialIntakeFormState } from "@/lib/reading-river/intake-form-state";
+import { TagInput } from "@/components/reading-river/tag-input";
+
+const PRIORITY_OPTIONS = Array.from({ length: 11 }, (_, value) => String(value));
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -15,7 +18,7 @@ function SubmitButton() {
   );
 }
 
-export function ManualItemForm() {
+export function ManualItemForm({ knownTagNames = [] }: { knownTagNames?: string[] }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction] = useActionState(submitManualReadingItem, initialIntakeFormState);
 
@@ -78,30 +81,29 @@ export function ManualItemForm() {
           </label>
           <div className="grid gap-2 text-sm">
             <label htmlFor="manual-item-priority-score">Priority</label>
-            <input
+            <select
               id="manual-item-priority-score"
               name="priorityScore"
-              type="number"
-              min="0"
-              max="10"
               defaultValue="5"
-              aria-describedby="manual-item-priority-help"
+              aria-describedby="manual-item-priority-help manual-item-priority-scale"
               className="intake-input"
-            />
+            >
+              <option value="none">No priority (stream only)</option>
+              {PRIORITY_OPTIONS.map((priorityValue) => (
+                <option key={priorityValue} value={priorityValue}>
+                  {priorityValue}
+                </option>
+              ))}
+            </select>
             <p id="manual-item-priority-help" className="intake-helper-text">
+              No priority items stay in the stream and never appear in the left column.
+            </p>
+            <p id="manual-item-priority-scale" className="intake-helper-text">
               0–10, where 10 is highest priority.
             </p>
           </div>
         </div>
-        <label className="grid gap-2 text-sm">
-          <span>Tags</span>
-          <input
-            name="tagNames"
-            type="text"
-            placeholder="ideas, book, work"
-            className="intake-input"
-          />
-        </label>
+        <TagInput knownTagNames={knownTagNames} placeholder="ideas, book, work" />
         <div className="intake-submit-row">
           <SubmitButton />
         </div>

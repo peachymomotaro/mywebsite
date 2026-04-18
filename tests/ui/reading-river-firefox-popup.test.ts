@@ -207,11 +207,12 @@ describe("reading river firefox popup", () => {
 
     expect(await screen.findByDisplayValue("https://example.com/article")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Saved from Firefox")).toBeInTheDocument();
-    expect(screen.getByLabelText("Priority")).toBeRequired();
+    expect(screen.getByRole("combobox", { name: "Priority" })).toBeRequired();
+    expect(screen.getByRole("option", { name: "No priority (stream only)" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save article" })).toBeDisabled();
   });
 
-  it("keeps Save disabled when the URL is invalid even after a valid priority is entered", async () => {
+  it("keeps Save disabled when the URL is invalid even after stream-only priority is chosen", async () => {
     await loadPopupModule({
       token: "stored-token",
       activeTab: {
@@ -225,16 +226,16 @@ describe("reading river firefox popup", () => {
         value: "not-a-url",
       },
     });
-    fireEvent.input(screen.getByLabelText("Priority"), {
+    fireEvent.change(screen.getByRole("combobox", { name: "Priority" }), {
       target: {
-        value: "8",
+        value: "none",
       },
     });
 
     expect(screen.getByRole("button", { name: "Save article" })).toBeDisabled();
   });
 
-  it("enables Save after a valid priority is entered when the URL is valid", async () => {
+  it("enables Save after stream-only priority is chosen when the URL is valid", async () => {
     await loadPopupModule({
       token: "stored-token",
       activeTab: {
@@ -243,9 +244,9 @@ describe("reading river firefox popup", () => {
       },
     });
 
-    fireEvent.input(screen.getByLabelText("Priority"), {
+    fireEvent.change(screen.getByRole("combobox", { name: "Priority" }), {
       target: {
-        value: "8",
+        value: "none",
       },
     });
 
@@ -294,9 +295,9 @@ describe("reading river firefox popup", () => {
         value: "not-a-url",
       },
     });
-    fireEvent.input(screen.getByLabelText("Priority"), {
+    fireEvent.change(screen.getByRole("combobox", { name: "Priority" }), {
       target: {
-        value: "8",
+        value: "none",
       },
     });
 
@@ -407,10 +408,10 @@ describe("reading river firefox popup", () => {
       [storageKey]: "login-token",
     });
 
-    const priorityInput = screen.getByLabelText("Priority");
-    fireEvent.input(priorityInput, {
+    const priorityInput = screen.getByRole("combobox", { name: "Priority" });
+    fireEvent.change(priorityInput, {
       target: {
-        value: "8",
+        value: "none",
       },
     });
 
@@ -424,7 +425,7 @@ describe("reading river firefox popup", () => {
           body: JSON.stringify({
             url: "https://example.com/article",
             title: "Saved from Firefox",
-            priorityScore: 8,
+            priorityScore: null,
           }),
         }),
       );
@@ -452,9 +453,9 @@ describe("reading river firefox popup", () => {
       },
     });
 
-    fireEvent.input(screen.getByLabelText("Priority"), {
+    fireEvent.change(screen.getByRole("combobox", { name: "Priority" }), {
       target: {
-        value: "7",
+        value: "none",
       },
     });
     fireEvent.click(screen.getByRole("button", { name: "Save article" }));
@@ -462,6 +463,38 @@ describe("reading river firefox popup", () => {
     expect(await screen.findByRole("heading", { name: "Sign in to Reading River" })).toBeInTheDocument();
     expect(browser.remove).toHaveBeenCalledWith(storageKey);
     expect(screen.queryByLabelText("Priority")).not.toBeInTheDocument();
+  });
+
+  it("shows a duplicate warning when the page is already in Reading River", async () => {
+    const fetchImpl = vi.fn(async () =>
+      new Response(JSON.stringify({ error: "duplicate_url" }), {
+        status: 409,
+        headers: {
+          "content-type": "application/json",
+        },
+      }),
+    );
+
+    vi.stubGlobal("fetch", fetchImpl);
+    await loadPopupModule({
+      token: "stored-token",
+      activeTab: {
+        url: "https://example.com/article",
+        title: "Saved from Firefox",
+      },
+    });
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Priority" }), {
+      target: {
+        value: "none",
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save article" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "That link is already in Reading River.",
+    );
+    expect(screen.getByLabelText("URL")).toHaveValue("https://example.com/article");
   });
 
   it("preserves save form values and shows a retryable error on network failure", async () => {
@@ -490,9 +523,9 @@ describe("reading river firefox popup", () => {
         value: "Saved from Firefox",
       },
     });
-    fireEvent.change(screen.getByLabelText("Priority"), {
+    fireEvent.change(screen.getByRole("combobox", { name: "Priority" }), {
       target: {
-        value: "6",
+        value: "none",
       },
     });
     fireEvent.click(screen.getByRole("button", { name: "Save article" }));
@@ -500,6 +533,6 @@ describe("reading river firefox popup", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Could not save right now. Try again.");
     expect(screen.getByLabelText("URL")).toHaveValue("https://example.com/article");
     expect(screen.getByLabelText("Title")).toHaveValue("Saved from Firefox");
-    expect(screen.getByLabelText("Priority")).toHaveValue(6);
+    expect(screen.getByRole("combobox", { name: "Priority" })).toHaveValue("none");
   });
 });

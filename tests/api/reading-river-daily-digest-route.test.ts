@@ -46,8 +46,8 @@ function createSettings(overrides: Record<string, unknown> = {}) {
   return {
     id: "settings-1",
     userId: "user-1",
-    dailyDigestEnabled: true,
-    lastDailyDigestSentAt: null,
+    digestCadence: "daily",
+    lastDigestSentAt: null,
     user: {
       id: "user-1",
       email: "reader@example.com",
@@ -60,8 +60,8 @@ function createSettings(overrides: Record<string, unknown> = {}) {
 function cloneSettings(setting: ReturnType<typeof createSettings>) {
   return {
     ...setting,
-    lastDailyDigestSentAt: setting.lastDailyDigestSentAt
-      ? new Date(setting.lastDailyDigestSentAt as Date)
+    lastDigestSentAt: setting.lastDigestSentAt
+      ? new Date(setting.lastDigestSentAt as Date)
       : null,
     user: {
       ...setting.user,
@@ -102,18 +102,18 @@ function createAppSettingsPrismaMock(initialSettings: Array<ReturnType<typeof cr
       return { count: 0 };
     }
 
-    const nextSentAt = data.lastDailyDigestSentAt as Date | null | undefined;
+    const nextSentAt = data.lastDigestSentAt as Date | null | undefined;
 
     if (
-      setting.lastDailyDigestSentAt &&
+      setting.lastDigestSentAt &&
       nextSentAt &&
-      getLondonDayKey(setting.lastDailyDigestSentAt) === getLondonDayKey(nextSentAt)
+      getLondonDayKey(setting.lastDigestSentAt) === getLondonDayKey(nextSentAt)
     ) {
       return { count: 0 };
     }
 
-    if (Object.prototype.hasOwnProperty.call(data, "lastDailyDigestSentAt")) {
-      setting.lastDailyDigestSentAt = nextSentAt ?? null;
+    if (Object.prototype.hasOwnProperty.call(data, "lastDigestSentAt")) {
+      setting.lastDigestSentAt = nextSentAt ?? null;
     }
 
     return { count: 1 };
@@ -211,7 +211,7 @@ describe("reading river daily digest route", () => {
     expect(routeMocks.sendReadingRiverDailyDigestEmail).toHaveBeenCalledTimes(1);
     expect(context.updateMany).toHaveBeenCalledWith({
       where: expect.objectContaining({ userId: "user-1" }),
-      data: { lastDailyDigestSentAt: expect.any(Date) },
+      data: { lastDigestSentAt: expect.any(Date) },
     });
     expect(context.update).not.toHaveBeenCalled();
     expect(await response.json()).toMatchObject({
@@ -297,7 +297,7 @@ describe("reading river daily digest route", () => {
     expect(context.update).toHaveBeenCalledTimes(1);
     expect(context.update).toHaveBeenCalledWith({
       where: { userId: "user-1" },
-      data: { lastDailyDigestSentAt: null },
+      data: { lastDigestSentAt: null },
     });
     expect(response.status).toBe(500);
     expect(await response.json()).toMatchObject({
@@ -315,7 +315,7 @@ describe("reading river daily digest route", () => {
 
     const findManyMock = vi.fn(async () => [
       createSettings({
-        lastDailyDigestSentAt: new Date("2026-05-31T23:30:00Z"),
+        lastDigestSentAt: new Date("2026-05-31T23:30:00Z"),
       }),
     ]);
     const updateMock = vi.fn();
@@ -365,6 +365,162 @@ describe("reading river daily digest route", () => {
     expect(await response.json()).toMatchObject({
       sent: 0,
       skipped: 1,
+    });
+  });
+
+  it("sends weekly digests only on Mondays in London time", async () => {
+    vi.setSystemTime(new Date("2026-06-02T07:15:00Z"));
+
+    const tuesdayContext = createAppSettingsPrismaMock([
+      createSettings({
+        digestCadence: "weekly",
+      }),
+    ]);
+    routeMocks.setPrismaMock(tuesdayContext.prismaMock);
+    routeMocks.getDailyDigestItems.mockResolvedValue([
+      {
+        id: "item-1",
+        title: "Priority read",
+        sourceUrl: "https://example.com/article",
+      },
+    ]);
+
+    const tuesdayResponse = await GET(authorizedRequest());
+
+    expect(routeMocks.sendReadingRiverDailyDigestEmail).not.toHaveBeenCalled();
+    expect(await tuesdayResponse.json()).toMatchObject({
+      sent: 0,
+      skipped: 1,
+      failed: 0,
+    });
+
+    vi.setSystemTime(new Date("2026-06-01T07:15:00Z"));
+
+    const mondayContext = createAppSettingsPrismaMock([
+      createSettings({
+        digestCadence: "weekly",
+      }),
+    ]);
+    routeMocks.setPrismaMock(mondayContext.prismaMock);
+    routeMocks.getDailyDigestItems.mockResolvedValue([
+      {
+        id: "item-1",
+        title: "Priority read",
+        sourceUrl: "https://example.com/article",
+      },
+    ]);
+
+    const mondayResponse = await GET(authorizedRequest());
+
+    expect(routeMocks.sendReadingRiverDailyDigestEmail).toHaveBeenCalledTimes(1);
+    expect(await mondayResponse.json()).toMatchObject({
+      sent: 1,
+      skipped: 0,
+      failed: 0,
+    });
+  });
+
+  it("sends every-other-day digests only on fixed-anchor London dates", async () => {
+    vi.setSystemTime(new Date("2026-01-02T08:15:00Z"));
+
+    const offDayContext = createAppSettingsPrismaMock([
+      createSettings({
+        digestCadence: "every_other_day",
+      }),
+    ]);
+    routeMocks.setPrismaMock(offDayContext.prismaMock);
+    routeMocks.getDailyDigestItems.mockResolvedValue([
+      {
+        id: "item-1",
+        title: "Priority read",
+        sourceUrl: "https://example.com/article",
+      },
+    ]);
+
+    const offDayResponse = await GET(authorizedRequest());
+
+    expect(routeMocks.sendReadingRiverDailyDigestEmail).not.toHaveBeenCalled();
+    expect(await offDayResponse.json()).toMatchObject({
+      sent: 0,
+      skipped: 1,
+      failed: 0,
+    });
+
+    vi.setSystemTime(new Date("2026-01-03T08:15:00Z"));
+
+    const dueDayContext = createAppSettingsPrismaMock([
+      createSettings({
+        digestCadence: "every_other_day",
+      }),
+    ]);
+    routeMocks.setPrismaMock(dueDayContext.prismaMock);
+    routeMocks.getDailyDigestItems.mockResolvedValue([
+      {
+        id: "item-1",
+        title: "Priority read",
+        sourceUrl: "https://example.com/article",
+      },
+    ]);
+
+    const dueDayResponse = await GET(authorizedRequest());
+
+    expect(routeMocks.sendReadingRiverDailyDigestEmail).toHaveBeenCalledTimes(1);
+    expect(await dueDayResponse.json()).toMatchObject({
+      sent: 1,
+      skipped: 0,
+      failed: 0,
+    });
+  });
+
+  it("sends seasonal digests only on quarter starts in London time", async () => {
+    vi.setSystemTime(new Date("2026-08-01T07:15:00Z"));
+
+    const augustContext = createAppSettingsPrismaMock([
+      createSettings({
+        digestCadence: "seasonal",
+      }),
+    ]);
+    routeMocks.setPrismaMock(augustContext.prismaMock);
+    routeMocks.getDailyDigestItems.mockResolvedValue([
+      {
+        id: "item-1",
+        title: "Priority read",
+        sourceUrl: "https://example.com/article",
+      },
+    ]);
+
+    const augustResponse = await GET(authorizedRequest());
+
+    expect(routeMocks.sendReadingRiverDailyDigestEmail).not.toHaveBeenCalled();
+    expect(await augustResponse.json()).toMatchObject({
+      sent: 0,
+      skipped: 1,
+      failed: 0,
+    });
+
+    vi.setSystemTime(new Date("2026-07-01T07:15:00Z"));
+
+    const julyContext = createAppSettingsPrismaMock([
+      createSettings({
+        digestCadence: "seasonal",
+      }),
+    ]);
+    routeMocks.setPrismaMock(julyContext.prismaMock);
+    routeMocks.getDailyDigestItems.mockResolvedValue([
+      {
+        id: "item-1",
+        title: "Priority read",
+        sourceUrl: "https://example.com/article",
+      },
+    ]);
+
+    const julyResponse = await GET(authorizedRequest());
+
+    expect(routeMocks.sendReadingRiverDailyDigestEmail).toHaveBeenCalledTimes(1);
+    expect(await julyResponse.json()).toMatchObject({
+      sent: 1,
+      skipped: 0,
+      failed: 0,
     });
   });
 

@@ -20,7 +20,7 @@ vi.mock("@/lib/reading-river/settings", () => ({
   getOrCreateAppSettings: mocks.getOrCreateAppSettingsMock,
 }));
 
-import { getHomePageData } from "@/lib/reading-river/homepage-data";
+import { buildHomePageData, getHomePageData } from "@/lib/reading-river/homepage-data";
 
 function createPrismaMock() {
   const findMany = vi.fn();
@@ -95,5 +95,48 @@ describe("getHomePageData", () => {
         },
       },
     });
+  });
+
+  it("keeps stream-only items out of the left card while allowing them in the right card", () => {
+    const data = buildHomePageData(
+      [
+        {
+          id: "item-priority",
+          title: "Priority essay",
+          sourceUrl: "https://example.com/priority",
+          siteName: "Example",
+          estimatedMinutes: 10,
+          priorityScore: 8,
+          status: "unread",
+          pinned: false,
+          createdAt: new Date("2026-06-01T12:00:00Z"),
+          tags: [],
+        },
+        {
+          id: "item-stream",
+          title: "Stream-only note",
+          sourceUrl: "https://example.com/stream",
+          siteName: "Example",
+          estimatedMinutes: 6,
+          priorityScore: null,
+          status: "unread",
+          pinned: false,
+          createdAt: new Date("2026-06-02T12:00:00Z"),
+          tags: [],
+        },
+      ],
+      {
+        displayMode: "suggested",
+        manualOrderActive: false,
+        highPriorityThreshold: 7,
+        shortReadThresholdMinutes: 25,
+      },
+      {
+        dayKey: "2026-06-03",
+      },
+    );
+
+    expect(data.priorityRead?.id).toBe("item-priority");
+    expect(data.streamRead?.id).toBe("item-stream");
   });
 });

@@ -43,23 +43,29 @@ export default function HowItWorksPage() {
 
         <section className="editorial-page-content river-how-page-content">
           <section className="editorial-panel-soft river-how-section">
-            <p>Find things that you think are worth reading.</p>
-            <p>
-              Put the things you think are worthwhile into the river, where they
-              become fiches. Set how important a fiche is to you by using the priority setting.
-            </p>
-            <p>
-              When you want to read something, return to the river and go ficheing.
-            </p>
-            <p>
-              The left option is the &apos;most important&apos; option based on the
+            <h2>The Basics</h2>
+            <p>1. Find things that you think are worth reading.</p>
+            <p> 2. Put the things you think are worthwhile into the river, where they
+              become fiches. Set how important a fiche is to you by using the priority setting.</p>
+            <p> 3. When you want to read something, return to the river and go ficheing. </p>
+            <p> 4. The left option is the &apos;most important&apos; option based on the
               priority setting and the amount of time you have. The right button is a
-              randomly selected piece of reading.
+              randomly selected piece of reading.</p>
+            <p>
+              5. I&apos;d recommend installing the Firefox extension, found{" "}
+              <a
+                href="https://addons.mozilla.org/en-GB/firefox/addon/reading-river/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline font-bold hover:text-blue-800"
+              >
+                here
+              </a>, which allows you to add fiche to the stream as you browse the web. I plan to add a Chrome extension soon.
             </p>
           </section>
 
           <section className="editorial-panel-soft river-how-section">
-            <h2>Philosophy and More on How It Works</h2>
+            <h2>The Philosophy and How It Works</h2>
             <p>
               The core idea is that your reading list should be more like a river
               than a bucket. You wade in at a spot, grab something you want to read,
@@ -89,6 +95,9 @@ export default function HowItWorksPage() {
             </p>
             <p>
               Skipping a read lowers its priority score, making it less likely to appear in future.
+            </p>
+             <p>
+              Here are some of the sites that influenced the design of the Reading River:
             </p>
             <ul className="river-how-source-list">
               {influences.map((influence) => (
