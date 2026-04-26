@@ -773,6 +773,63 @@ a {
   font-weight: 600;
 }
 
+.river-home-page .river-book-roulette {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 34rem;
+  padding-top: 0.35rem;
+}
+
+.river-home-page .river-book-roulette-pick {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.8rem;
+}
+
+.river-home-page .river-book-roulette-title {
+  display: inline-flex;
+  align-items: center;
+  max-width: min(100%, 24rem);
+  min-height: 2.55rem;
+  padding: 0.62rem 0.95rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 999px;
+  background: hsl(var(--river-paper-bright) / 0.74);
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: help;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.river-home-page .river-book-roulette-title:hover,
+.river-home-page .river-book-roulette-title:focus-visible {
+  transform: translateY(-1px);
+  border-color: hsl(var(--foreground));
+  background: hsl(var(--river-paper-bright));
+  outline: none;
+}
+
+.river-home-page .river-book-roulette-author,
+.river-home-page .river-book-roulette-empty {
+  color: hsl(var(--muted-foreground));
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.river-home-page .river-book-roulette-empty {
+  margin: 0;
+}
+
 .editorial-panel {
   border: 1px solid hsl(var(--border));
   border-radius: 2rem;

@@ -23,15 +23,20 @@ vi.mock("@/lib/reading-river/settings", () => ({
 import { buildHomePageData, getHomePageData } from "@/lib/reading-river/homepage-data";
 
 function createPrismaMock() {
-  const findMany = vi.fn();
+  const readingItemFindMany = vi.fn();
+  const bookFindMany = vi.fn();
 
   return {
     prismaMock: {
       readingItem: {
-        findMany,
+        findMany: readingItemFindMany,
+      },
+      book: {
+        findMany: bookFindMany,
       },
     },
-    findMany,
+    readingItemFindMany,
+    bookFindMany,
   };
 }
 
@@ -56,15 +61,17 @@ describe("getHomePageData", () => {
     const context = createPrismaMock();
 
     mocks.setPrismaMock(context.prismaMock);
-    context.findMany.mockResolvedValue([]);
+    context.readingItemFindMany.mockResolvedValue([]);
+    context.bookFindMany.mockResolvedValue([]);
 
     await expect(getHomePageData({ userId: "user-1" })).resolves.toEqual({
       priorityRead: null,
       streamRead: null,
+      bookRoulettePick: null,
       selectedTimeBudgetMinutes: null,
     });
 
-    expect(context.findMany).toHaveBeenCalledWith({
+    expect(context.readingItemFindMany).toHaveBeenCalledWith({
       where: {
         userId: "user-1",
         status: {
@@ -77,6 +84,7 @@ describe("getHomePageData", () => {
       select: {
         id: true,
         title: true,
+        sourceType: true,
         sourceUrl: true,
         siteName: true,
         estimatedMinutes: true,
@@ -95,6 +103,18 @@ describe("getHomePageData", () => {
         },
       },
     });
+    expect(context.bookFindMany).toHaveBeenCalledWith({
+      where: {
+        userId: "user-1",
+      },
+      select: {
+        id: true,
+        title: true,
+        author: true,
+        notes: true,
+        createdAt: true,
+      },
+    });
   });
 
   it("keeps stream-only items out of the left card while allowing them in the right card", () => {
@@ -103,6 +123,7 @@ describe("getHomePageData", () => {
         {
           id: "item-priority",
           title: "Priority essay",
+          sourceType: "url",
           sourceUrl: "https://example.com/priority",
           siteName: "Example",
           estimatedMinutes: 10,
@@ -115,6 +136,7 @@ describe("getHomePageData", () => {
         {
           id: "item-stream",
           title: "Stream-only note",
+          sourceType: "url",
           sourceUrl: "https://example.com/stream",
           siteName: "Example",
           estimatedMinutes: 6,
@@ -138,5 +160,197 @@ describe("getHomePageData", () => {
 
     expect(data.priorityRead?.id).toBe("item-priority");
     expect(data.streamRead?.id).toBe("item-stream");
+  });
+
+  it("chooses the priority read randomly from the top three ranked candidates", () => {
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.99);
+
+    try {
+      const data = buildHomePageData(
+        [
+          {
+            id: "rank-1",
+            title: "Top priority",
+            sourceType: "url",
+            sourceUrl: "https://example.com/one",
+            siteName: "Example",
+            estimatedMinutes: 10,
+            priorityScore: 10,
+            status: "unread",
+            pinned: false,
+            createdAt: new Date("2026-06-01T12:00:00Z"),
+            tags: [],
+          },
+          {
+            id: "rank-2",
+            title: "Second priority",
+            sourceType: "url",
+            sourceUrl: "https://example.com/two",
+            siteName: "Example",
+            estimatedMinutes: 10,
+            priorityScore: 9,
+            status: "unread",
+            pinned: false,
+            createdAt: new Date("2026-06-02T12:00:00Z"),
+            tags: [],
+          },
+          {
+            id: "rank-3",
+            title: "Third priority",
+            sourceType: "url",
+            sourceUrl: "https://example.com/three",
+            siteName: "Example",
+            estimatedMinutes: 10,
+            priorityScore: 8,
+            status: "unread",
+            pinned: false,
+            createdAt: new Date("2026-06-03T12:00:00Z"),
+            tags: [],
+          },
+          {
+            id: "rank-4",
+            title: "Fourth priority",
+            sourceType: "url",
+            sourceUrl: "https://example.com/four",
+            siteName: "Example",
+            estimatedMinutes: 10,
+            priorityScore: 7,
+            status: "unread",
+            pinned: false,
+            createdAt: new Date("2026-06-04T12:00:00Z"),
+            tags: [],
+          },
+        ],
+        {
+          displayMode: "suggested",
+          manualOrderActive: false,
+          highPriorityThreshold: 7,
+          shortReadThresholdMinutes: 25,
+        },
+        {
+          dayKey: "2026-06-05",
+        },
+      );
+
+      expect(data.priorityRead?.id).toBe("rank-3");
+      expect(data.priorityRead?.id).not.toBe("rank-4");
+      expect(randomSpy).toHaveBeenCalledOnce();
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
+  it("keeps manual and book chapter items out of the homepage article cards", () => {
+    const data = buildHomePageData(
+      [
+        {
+          id: "manual-1",
+          title: "Old manual note",
+          sourceType: "manual",
+          sourceUrl: null,
+          siteName: null,
+          estimatedMinutes: 5,
+          priorityScore: 10,
+          status: "unread",
+          pinned: false,
+          createdAt: new Date("2026-06-01T12:00:00Z"),
+          tags: [],
+        },
+        {
+          id: "chapter-1",
+          title: "Old book chapter",
+          sourceType: "book_chapter",
+          sourceUrl: null,
+          siteName: null,
+          estimatedMinutes: 8,
+          priorityScore: 9,
+          status: "unread",
+          pinned: false,
+          createdAt: new Date("2026-06-02T12:00:00Z"),
+          tags: [],
+        },
+        {
+          id: "article-1",
+          title: "Actual article",
+          sourceType: "url",
+          sourceUrl: "https://example.com/article",
+          siteName: "Example",
+          estimatedMinutes: 12,
+          priorityScore: 8,
+          status: "unread",
+          pinned: false,
+          createdAt: new Date("2026-06-03T12:00:00Z"),
+          tags: [],
+        },
+      ],
+      {
+        displayMode: "suggested",
+        manualOrderActive: false,
+        highPriorityThreshold: 7,
+        shortReadThresholdMinutes: 25,
+      },
+      {
+        dayKey: "2026-06-04",
+      },
+    );
+
+    expect(data.priorityRead?.id).toBe("article-1");
+    expect(data.streamRead).toBeNull();
+  });
+
+  it("chooses the book roulette pick deterministically from the book pool for each day", () => {
+    const books = [
+      {
+        id: "book-1",
+        title: "First Book",
+        author: "A. Writer",
+        notes: "For the autumn stack.",
+        createdAt: new Date("2026-06-01T12:00:00Z"),
+      },
+      {
+        id: "book-2",
+        title: "Second Book",
+        author: null,
+        notes: null,
+        createdAt: new Date("2026-06-02T12:00:00Z"),
+      },
+      {
+        id: "book-3",
+        title: "Third Book",
+        author: "C. Writer",
+        notes: "Short and strange.",
+        createdAt: new Date("2026-06-03T12:00:00Z"),
+      },
+    ];
+
+    const firstPick = buildHomePageData(
+      [],
+      {
+        displayMode: "suggested",
+        manualOrderActive: false,
+        highPriorityThreshold: 7,
+        shortReadThresholdMinutes: 25,
+      },
+      {
+        dayKey: "2026-06-05",
+        books,
+      },
+    ).bookRoulettePick;
+    const secondPick = buildHomePageData(
+      [],
+      {
+        displayMode: "suggested",
+        manualOrderActive: false,
+        highPriorityThreshold: 7,
+        shortReadThresholdMinutes: 25,
+      },
+      {
+        dayKey: "2026-06-05",
+        books: books.toReversed(),
+      },
+    ).bookRoulettePick;
+
+    expect(firstPick).not.toBeNull();
+    expect(secondPick).toEqual(firstPick);
   });
 });

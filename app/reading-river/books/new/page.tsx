@@ -18,8 +18,7 @@ export default function NewBookPage() {
             </p>
             <h1 className="editorial-page-title font-semibold">Add book</h1>
             <p className="editorial-page-intro">
-              Split a book into chapters so each part can live in the stream as its own readable
-              unit.
+              Add one book to the separate Book Roulette pool.
             </p>
           </header>
 

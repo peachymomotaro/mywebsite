@@ -36,6 +36,12 @@ const mocks = vi.hoisted(() => ({
       sourceUrl: "https://example.com/daily-stream",
       tags: ["ideas"],
     },
+    bookRoulettePick: {
+      id: "book-1",
+      title: "Small Gods",
+      author: "Terry Pratchett",
+      notes: "A gentle nudge from the shelf.",
+    },
     selectedTimeBudgetMinutes: timeBudgetMinutes,
   })),
   markAsReadMock: vi.fn(async () => {}),
@@ -104,6 +110,12 @@ describe("ReadingRiverHomePage", () => {
     expect(container.querySelectorAll(".river-spotlight-body-copy")).toHaveLength(2);
     expect(container.querySelectorAll(".river-spotlight-body-actions")).toHaveLength(2);
     expect(screen.getByText("Choose a time")).toBeInTheDocument();
+    expect(screen.getByText("Book Roulette")).toBeInTheDocument();
+    expect(screen.getByText("Small Gods")).toHaveAttribute(
+      "title",
+      "A gentle nudge from the shelf.",
+    );
+    expect(screen.getByText("Terry Pratchett")).toBeInTheDocument();
     expect(mocks.getHomePageDataMock).toHaveBeenCalledWith({
       userId: "user-1",
       timeBudgetMinutes: 15,
@@ -133,6 +145,12 @@ describe("ReadingRiverHomePage", () => {
         tags: [],
       },
       streamRead: null,
+      bookRoulettePick: {
+        id: "book-2",
+        title: "A Book Without Notes",
+        author: null,
+        notes: null,
+      },
       selectedTimeBudgetMinutes: null,
     });
 
@@ -148,5 +166,9 @@ describe("ReadingRiverHomePage", () => {
     expect(longTitleLink).toBeInTheDocument();
     expect(container.querySelector(".river-spotlight-link")).toHaveClass("river-spotlight-title-wrap");
     expect(container.querySelector(".river-spotlight-link")).toHaveClass("river-spotlight-title-clamp");
+    expect(screen.getByText("A Book Without Notes")).toHaveAttribute(
+      "title",
+      "Your notes about why you wanted to read this book would go here!",
+    );
   });
 });

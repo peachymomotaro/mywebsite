@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { getPrismaClient } from "@/lib/reading-river/db";
 import { requireCurrentUser } from "@/lib/reading-river/current-user";
-import type { IntakeFormState } from "@/lib/reading-river/intake-form-state";
 import { buildTagWrite, createReadingItemForUser } from "@/lib/reading-river/extension-items";
 import { readingRiverPath } from "@/lib/reading-river/routes";
 import { assertNoDuplicateReadingItemSourceUrl } from "@/lib/reading-river/source-url";
@@ -19,18 +18,6 @@ import {
 
 const STREAM_PATH = readingRiverPath();
 const HISTORY_PATH = readingRiverPath("/history");
-
-function parseOptionalInteger(value: FormDataEntryValue | null) {
-  const raw = String(value ?? "").trim();
-
-  if (!raw) {
-    return null;
-  }
-
-  const parsed = Number(raw);
-
-  return Number.isFinite(parsed) ? parsed : null;
-}
 
 async function requireOwnedReadingItem(prisma: ReturnType<typeof getPrismaClient>, userId: string, id: string) {
   const item = await prisma.readingItem.findUnique({
@@ -58,54 +45,6 @@ export async function createReadingItem(input: unknown) {
     ...data,
     tagNames,
   });
-}
-
-export async function submitManualReadingItem(
-  _previousState: IntakeFormState,
-  formData: FormData,
-): Promise<IntakeFormState> {
-  const title = String(formData.get("title") || "").trim();
-  const estimatedMinutes = parseOptionalInteger(formData.get("estimatedMinutes"));
-
-  if (estimatedMinutes === null || estimatedMinutes <= 0) {
-    return {
-      status: "error",
-      message: "Add an estimated reading time so this item can be placed in your time buckets.",
-      submittedAt: Date.now(),
-    };
-  }
-
-  try {
-    const item = await createReadingItem({
-      title,
-      sourceType: "manual",
-      notes: String(formData.get("notes") || "") || null,
-      estimatedMinutes,
-      lengthEstimationMethod: "manual",
-      lengthEstimationConfidence: "unknown",
-      priorityScore: parseOptionalInteger(formData.get("priorityScore")),
-      status: String(formData.get("status") || "unread"),
-      tagNames: String(formData.get("tagNames") || "")
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter(Boolean),
-    });
-
-    const savedTitle = item.title || title;
-
-    return {
-      status: "success",
-      message: `Added "${savedTitle}" to the stream.`,
-      savedTitle,
-      submittedAt: Date.now(),
-    };
-  } catch {
-    return {
-      status: "error",
-      message: "Couldn't add that item. Try again.",
-      submittedAt: Date.now(),
-    };
-  }
 }
 
 export async function updateReadingItem(input: unknown) {

@@ -44,8 +44,7 @@ export function ReadingStream({ items, manualOrderActive = false }: ReadingStrea
           items.map((item) => <ReadingItemCard key={item.id} {...item} />)
         ) : (
           <li className="py-10 text-[hsl(var(--muted-foreground))]">
-            The stream is empty right now. Add a URL, a manual item, or a book chapter to start
-            choosing from the river.
+            The stream is empty right now. Add an article link to start choosing from the river.
           </li>
         )}
       </ul>

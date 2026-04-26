@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BookRoulette } from "@/components/reading-river/book-roulette";
 import { HomeReadCard } from "@/components/reading-river/home-read-card";
 import { TimeBudgetPicker, parseTimeBudgetSearchParam } from "@/components/reading-river/time-budget-picker";
 import { requireCurrentUser } from "@/lib/reading-river/current-user";
@@ -48,6 +49,8 @@ export default async function ReadingRiverPage({ searchParams }: ReadingRiverPag
         </section>
 
         <TimeBudgetPicker selectedMinutes={data.selectedTimeBudgetMinutes} />
+
+        <BookRoulette book={data.bookRoulettePick} />
       </main>
     );
   });

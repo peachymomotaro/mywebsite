@@ -27,13 +27,13 @@ vi.mock("@/lib/reading-river/current-user", () => ({
   requireCurrentUser: mocks.requireCurrentUser,
 }));
 
-describe("createBookWithChapters", () => {
+describe("createBook", () => {
   beforeEach(() => {
     mocks.bookCreate.mockReset();
     mocks.requireCurrentUser.mockReset();
   });
 
-  it("assigns the created book and chapter items to the signed-in user", async () => {
+  it("assigns the created book to the signed-in user without creating reading items", async () => {
     mocks.requireCurrentUser.mockResolvedValue({
       id: "user-1",
       email: "reader@example.com",
@@ -50,22 +50,12 @@ describe("createBookWithChapters", () => {
       items: [],
     });
 
-    const { createBookWithChapters } = await import("@/app/reading-river/actions/books");
+    const { createBook } = await import("@/app/reading-river/actions/books");
 
-    await createBookWithChapters({
+    await createBook({
       title: "My Book",
       author: "A. Writer",
       notes: "Notes",
-      chapters: [
-        {
-          title: "Chapter One",
-          estimatedMinutes: 20,
-        },
-        {
-          title: "   ",
-          estimatedMinutes: 10,
-        },
-      ],
     });
 
     expect(mocks.bookCreate).toHaveBeenCalledWith({
@@ -74,22 +64,6 @@ describe("createBookWithChapters", () => {
         author: "A. Writer",
         notes: "Notes",
         userId: "user-1",
-        items: {
-          create: [
-            {
-              title: "Chapter One",
-              sourceType: "book_chapter",
-              estimatedMinutes: 20,
-              priorityScore: 5,
-              status: "unread",
-              chapterIndex: 1,
-              userId: "user-1",
-            },
-          ],
-        },
-      },
-      include: {
-        items: true,
       },
     });
   });

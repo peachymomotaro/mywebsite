@@ -33,7 +33,7 @@ vi.mock("@/lib/reading-river/current-user", () => ({
 }));
 
 import AddPage from "@/app/reading-river/add/page";
-import { ManualItemForm } from "@/components/reading-river/manual-item-form";
+import { BookForm } from "@/components/reading-river/book-form";
 import { UrlIntakeForm } from "@/components/reading-river/url-intake-form";
 
 describe("AddPage", () => {
@@ -60,7 +60,7 @@ describe("AddPage", () => {
     expect(screen.getByRole("heading", { name: "Add to stream" })).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Save a link or jot down something to read. Links fetch details first so you can review them before they enter the stream.",
+        "Save a link as an article, or add a book to the separate Book Roulette pool.",
       ),
     ).toBeInTheDocument();
     expect(
@@ -70,8 +70,8 @@ describe("AddPage", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Paste a link" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Paste a link" })).toHaveClass("river-primary-action");
-    expect(screen.getByRole("button", { name: "Manual item" })).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByRole("button", { name: "Manual item" })).toHaveClass("river-primary-action");
+    expect(screen.getByRole("button", { name: "Add a book" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Add a book" })).toHaveClass("river-primary-action");
     expect(screen.getByRole("heading", { name: "Paste a link" })).toBeInTheDocument();
     const fetchButton = screen.getByRole("button", { name: "Fetch details" });
     expect(fetchButton).toBeInTheDocument();
@@ -80,23 +80,27 @@ describe("AddPage", () => {
     expect(screen.getByText(/never appear in the left column/i)).toBeInTheDocument();
     const tagsField = screen.getByLabelText("Tags");
     expect(tagsField.compareDocumentPosition(fetchButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.queryByRole("heading", { name: "Write it down" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Add a book" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Bring something into the stream" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Estimated minutes")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Estimated minutes (optional)")).not.toBeInTheDocument();
     expect(screen.getByLabelText("URL")).toHaveAttribute("type", "text");
     expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Manual item" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add a book" }));
 
-    expect(screen.getByRole("button", { name: "Manual item" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Add a book" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
-    expect(screen.getByRole("heading", { name: "Write it down" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Add a book" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Author")).toHaveAttribute("type", "text");
+    expect(screen.getByLabelText("Notes")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save book" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Paste a link" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Status")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Estimated minutes")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add chapter" })).not.toBeInTheDocument();
   });
 
   it("shows inline success feedback for the URL form", () => {
@@ -207,27 +211,15 @@ describe("AddPage", () => {
     expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
   });
 
-  it("shows inline success feedback for the manual form", () => {
-    useActionStateMock.mockImplementationOnce(() => [
-      {
-        status: "success",
-        message: 'Added "Reading notebook entry" to the stream.',
-        savedTitle: "Reading notebook entry",
-        submittedAt: 1,
-      },
-      vi.fn(),
-    ]);
+  it("renders the book form as a single book entry for roulette", () => {
+    render(<BookForm />);
 
-    render(<ManualItemForm />);
-
-    expect(screen.getByLabelText("Estimated minutes")).toBeRequired();
-    expect(screen.queryByLabelText("Status")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Priority" })).toHaveValue("5");
-    expect(screen.getByRole("option", { name: "No priority (stream only)" })).toBeInTheDocument();
-    expect(screen.getByText(/never appear in the left column/i)).toBeInTheDocument();
-    expect(screen.getByText('Added "Reading notebook entry" to the stream.')).toBeInTheDocument();
-    expect(screen.getByText("Reading notebook entry")).toBeInTheDocument();
+    expect(screen.getByLabelText("Title")).toBeRequired();
+    expect(screen.getByLabelText("Author")).toHaveAttribute("type", "text");
+    expect(screen.getByLabelText("Notes")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save book" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Estimated minutes")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add chapter" })).not.toBeInTheDocument();
   });
 
   it("suggests remembered tags in both add-item flows", async () => {
@@ -241,11 +233,8 @@ describe("AddPage", () => {
 
     expect(screen.getByRole("button", { name: "Policy" })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Manual item" }));
-    fireEvent.change(screen.getByLabelText("Tags"), {
-      target: { value: "fo" },
-    });
+    fireEvent.click(screen.getByRole("button", { name: "Add a book" }));
 
-    expect(screen.getByRole("button", { name: "Focus" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Tags")).not.toBeInTheDocument();
   });
 });

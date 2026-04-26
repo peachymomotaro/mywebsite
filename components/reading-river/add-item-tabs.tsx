@@ -5,11 +5,11 @@ import { useState } from "react";
 
 type AddItemTabsProps = {
   articleContent: ReactNode;
-  manualContent: ReactNode;
+  bookContent: ReactNode;
 };
 
-export function AddItemTabs({ articleContent, manualContent }: AddItemTabsProps) {
-  const [selectedTab, setSelectedTab] = useState<"link" | "manual">("link");
+export function AddItemTabs({ articleContent, bookContent }: AddItemTabsProps) {
+  const [selectedTab, setSelectedTab] = useState<"link" | "book">("link");
 
   return (
     <div className="space-y-8">
@@ -29,21 +29,21 @@ export function AddItemTabs({ articleContent, manualContent }: AddItemTabsProps)
           </button>
           <button
             type="button"
-            aria-pressed={selectedTab === "manual"}
+            aria-pressed={selectedTab === "book"}
             className={
-              selectedTab === "manual"
+              selectedTab === "book"
                 ? "river-primary-action add-mode-button add-mode-button-active"
                 : "river-primary-action river-primary-action-muted add-mode-button"
             }
-            onClick={() => setSelectedTab("manual")}
+            onClick={() => setSelectedTab("book")}
           >
-            Manual item
+            Add a book
           </button>
         </div>
       </div>
 
       <div className="add-mode-panel">
-        {selectedTab === "link" ? articleContent : manualContent}
+        {selectedTab === "link" ? articleContent : bookContent}
       </div>
     </div>
   );

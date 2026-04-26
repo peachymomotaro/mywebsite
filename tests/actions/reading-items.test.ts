@@ -41,7 +41,7 @@ describe("reading item validation", () => {
     actionMocks.revalidatePath.mockClear();
   });
 
-  it("accepts a minimal manual item", () => {
+  it("accepts a legacy manual item", () => {
     const parsed = readingItemSchema.parse({
       title: "Read later",
       sourceType: "manual",

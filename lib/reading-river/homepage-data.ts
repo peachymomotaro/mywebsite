@@ -6,6 +6,7 @@ import { getOrCreateAppSettings } from "@/lib/reading-river/settings";
 type HomepageSourceItem = {
   id: string;
   title: string;
+  sourceType: string;
   sourceUrl?: string | null;
   siteName?: string | null;
   estimatedMinutes?: number | null;
@@ -23,6 +24,14 @@ type HomepageSourceItem = {
       name: string;
     };
   }>;
+};
+
+type HomepageBookSource = {
+  id: string;
+  title: string;
+  author?: string | null;
+  notes?: string | null;
+  createdAt: Date;
 };
 
 type HomepageSettings = {
@@ -47,7 +56,15 @@ export type HomePageFeaturedItem = {
 export type HomePageData = {
   priorityRead: HomePageFeaturedItem | null;
   streamRead: HomePageFeaturedItem | null;
+  bookRoulettePick: HomePageBook | null;
   selectedTimeBudgetMinutes: number | null;
+};
+
+export type HomePageBook = {
+  id: string;
+  title: string;
+  author?: string | null;
+  notes?: string | null;
 };
 
 type HomePageDataOptions = {
@@ -57,7 +74,9 @@ type HomePageDataOptions = {
   timeBudgetMinutes?: number | null;
 };
 
-type BuildHomePageDataOptions = Omit<HomePageDataOptions, "userId">;
+type BuildHomePageDataOptions = Omit<HomePageDataOptions, "userId"> & {
+  books?: HomepageBookSource[];
+};
 
 type TimeBucket = {
   selectedMinutes: 5 | 10 | 15 | 30 | 45;
@@ -72,6 +91,8 @@ const TIME_BUCKETS: TimeBucket[] = [
   { selectedMinutes: 30, minExclusive: 15, maxInclusive: 30 },
   { selectedMinutes: 45, minExclusive: 30, maxInclusive: 45 },
 ];
+
+const PRIORITY_RANDOM_POOL_SIZE = 3;
 
 function toFeaturedItem(item: HomepageSourceItem): HomePageFeaturedItem {
   return {
@@ -112,6 +133,10 @@ function getSuggestedActiveItems(items: HomepageSourceItem[], settings: Homepage
       shortReadThresholdMinutes: settings.shortReadThresholdMinutes ?? 25,
     },
   );
+}
+
+function getArticleItems(items: HomepageSourceItem[]) {
+  return items.filter((item) => item.sourceType !== "manual" && item.sourceType !== "book_chapter");
 }
 
 function matchesBucket(item: HomepageSourceItem, bucket: TimeBucket) {
@@ -241,6 +266,44 @@ function pickDailyStreamItem(
     })[0];
 }
 
+function pickPriorityItem(items: HomepageSourceItem[]) {
+  const randomPool = items.slice(0, PRIORITY_RANDOM_POOL_SIZE);
+
+  if (randomPool.length === 0) {
+    return null;
+  }
+
+  return randomPool[Math.floor(Math.random() * randomPool.length)];
+}
+
+function pickDailyBook(books: HomepageBookSource[], dayKey: string) {
+  if (books.length === 0) {
+    return null;
+  }
+
+  return books
+    .slice()
+    .sort((left, right) => {
+      const leftHash = hashString(`${dayKey}:${left.id}`);
+      const rightHash = hashString(`${dayKey}:${right.id}`);
+
+      if (leftHash !== rightHash) {
+        return leftHash - rightHash;
+      }
+
+      return left.id.localeCompare(right.id);
+    })[0];
+}
+
+function toHomePageBook(book: HomepageBookSource): HomePageBook {
+  return {
+    id: book.id,
+    title: book.title,
+    author: book.author,
+    notes: book.notes,
+  };
+}
+
 export function buildHomePageData(
   items: HomepageSourceItem[],
   settings: HomepageSettings,
@@ -248,25 +311,28 @@ export function buildHomePageData(
 ): HomePageData {
   const selectedTimeBudgetMinutes = options.timeBudgetMinutes ?? null;
   const dayKey = options.dayKey ?? getDayKey(options.now);
+  const articleItems = getArticleItems(items);
   const suggestedItems = resolveBucketItems(
-    getPriorityCandidates(items),
+    getPriorityCandidates(articleItems),
     selectedTimeBudgetMinutes,
     settings,
   );
-  const streamItems = resolveStreamItems(items, selectedTimeBudgetMinutes);
-  const priorityItem = suggestedItems[0] ?? null;
+  const streamItems = resolveStreamItems(articleItems, selectedTimeBudgetMinutes);
+  const priorityItem = pickPriorityItem(suggestedItems);
   const streamItem = pickDailyStreamItem(streamItems, dayKey, priorityItem?.id);
+  const bookRoulettePick = pickDailyBook(options.books ?? [], dayKey);
 
   return {
     priorityRead: priorityItem ? toFeaturedItem(priorityItem) : null,
     streamRead: streamItem ? toFeaturedItem(streamItem) : null,
+    bookRoulettePick: bookRoulettePick ? toHomePageBook(bookRoulettePick) : null,
     selectedTimeBudgetMinutes,
   };
 }
 
 export async function getHomePageData(options: HomePageDataOptions) {
   const prisma = getPrismaClient();
-  const [settings, items] = await Promise.all([
+  const [settings, items, books] = await Promise.all([
     getOrCreateAppSettings(options.userId),
     prisma.readingItem.findMany({
       where: {
@@ -281,6 +347,7 @@ export async function getHomePageData(options: HomePageDataOptions) {
       select: {
         id: true,
         title: true,
+        sourceType: true,
         sourceUrl: true,
         siteName: true,
         estimatedMinutes: true,
@@ -299,9 +366,21 @@ export async function getHomePageData(options: HomePageDataOptions) {
         },
       },
     }),
+    prisma.book.findMany({
+      where: {
+        userId: options.userId,
+      },
+      select: {
+        id: true,
+        title: true,
+        author: true,
+        notes: true,
+        createdAt: true,
+      },
+    }),
   ]);
 
   const { userId: _userId, ...restOptions } = options;
 
-  return buildHomePageData(items, settings, restOptions);
+  return buildHomePageData(items, settings, { ...restOptions, books });
 }

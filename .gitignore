@@ -29,3 +29,5 @@ worktrees/
 
 # extension build artifacts
 extension/reading-river-firefox/dist/
+
+targetselector.py

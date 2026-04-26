@@ -7,16 +7,10 @@ import { readingRiverPath } from "@/lib/reading-river/routes";
 
 const STREAM_PATH = readingRiverPath();
 
-type ChapterInput = {
-  title: string;
-  estimatedMinutes?: number | null;
-};
-
-type CreateBookInput = {
+type BookInput = {
   title: string;
   author?: string | null;
   notes?: string | null;
-  chapters: ChapterInput[];
 };
 
 function normalizeOptionalString(value: string | null | undefined) {
@@ -25,16 +19,9 @@ function normalizeOptionalString(value: string | null | undefined) {
   return normalized ? normalized : null;
 }
 
-export async function createBookWithChapters(input: CreateBookInput) {
+export async function createBook(input: BookInput) {
   const prisma = getPrismaClient();
   const currentUser = await requireCurrentUser();
-  const chapters = input.chapters
-    .map((chapter, index) => ({
-      title: chapter.title.trim(),
-      estimatedMinutes: chapter.estimatedMinutes ?? null,
-      chapterIndex: index + 1,
-    }))
-    .filter((chapter) => chapter.title.length > 0);
 
   const result = await prisma.book.create({
     data: {
@@ -42,20 +29,6 @@ export async function createBookWithChapters(input: CreateBookInput) {
       title: input.title.trim(),
       author: normalizeOptionalString(input.author),
       notes: normalizeOptionalString(input.notes),
-      items: {
-        create: chapters.map((chapter) => ({
-          userId: currentUser.id,
-          title: chapter.title,
-          sourceType: "book_chapter",
-          estimatedMinutes: chapter.estimatedMinutes,
-          priorityScore: 5,
-          status: "unread",
-          chapterIndex: chapter.chapterIndex,
-        })),
-      },
-    },
-    include: {
-      items: true,
     },
   });
 
