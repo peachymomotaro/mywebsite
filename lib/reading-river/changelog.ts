@@ -7,6 +7,15 @@ export type ReadingRiverChangelogEntry = {
 
 export const readingRiverChangelogEntries: ReadingRiverChangelogEntry[] = [
   {
+    slug: "book-roulette-and-priority-tuning",
+    date: "27 April 2026",
+    title: "Book Roulette and priority tuning",
+    items: [
+      "Made the priority option slightly less deterministic so you're not just staring at the same thing you haven't read day after day.",
+      "Changed manual items to books, and took them out of the priority queue. Now books show up in book roulette, at the bottom of the front page. You can also receive your daily book roulette by email, if you'd like to be reminded about books you wanted to read.",
+    ],
+  },
+  {
     slug: "The River Flows",
     date: "18 April 2026",
     title: "The River Flows",

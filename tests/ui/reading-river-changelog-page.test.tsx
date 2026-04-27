@@ -10,21 +10,18 @@ describe("ReadingRiverChangelogPage", () => {
     render(page);
 
     expect(screen.getByRole("heading", { name: "Changelog" })).toBeInTheDocument();
+    expect(screen.getByText("A record of changes to Reading River.")).toBeInTheDocument();
+    expect(screen.getByText("26 April 2026")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Book Roulette and priority tuning" })).toBeInTheDocument();
     expect(
       screen.getByText(
-        "A running note of recent changes to Reading River, kept in code and published here for readers.",
+        "Made the priority option slightly less deterministic so you're not just staring at the same thing you haven't read day after day.",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText("18 April 2026")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Daily rhythm and editing upgrades" })).toBeInTheDocument();
     expect(
-      screen.getByText("Reading River now supports reminder cadence settings from the Preferences page."),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Saved items can now be edited directly inside the app instead of only being re-added."),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Invite management now includes resend and revoke controls for beta access."),
+      screen.getByText(
+        "Changed manual items to books, and took them out of the priority queue. Now books show up in book roulette, at the bottom of the front page. You can also receive your daily book roulette by email, if you'd like to be reminded about books you wanted to read.",
+      ),
     ).toBeInTheDocument();
   });
 });
