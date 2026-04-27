@@ -54,6 +54,15 @@ export default async function PreferencesPage({ searchParams }: PreferencesPageP
           <p className="river-preferences-description">
             Reading River emails you with your picks for that day around 08:00 London time.
           </p>
+          <label className="river-preferences-checkbox-row">
+            <input
+              className="river-preferences-checkbox"
+              defaultChecked={settings.includeBookRouletteInDigest}
+              name="includeBookRouletteInDigest"
+              type="checkbox"
+            />
+            <span>Include Book Roulette in reminder emails</span>
+          </label>
           <div className="intake-submit-row river-preferences-submit-row">
             <button type="submit" className="intake-submit-button">
               Save preferences

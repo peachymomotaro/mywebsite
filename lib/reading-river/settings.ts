@@ -22,6 +22,7 @@ export function getAppSettingsDefaults(userId: string): Pick<
   | "shortReadThresholdMinutes"
   | "defaultReadingSpeedWpm"
   | "digestCadence"
+  | "includeBookRouletteInDigest"
   | "lastDigestSentAt"
   | "userId"
 > {
@@ -33,6 +34,7 @@ export function getAppSettingsDefaults(userId: string): Pick<
     shortReadThresholdMinutes: 25,
     defaultReadingSpeedWpm: DEFAULT_READING_SPEED_WPM,
     digestCadence: "off",
+    includeBookRouletteInDigest: false,
     lastDigestSentAt: null,
   };
 }

@@ -26,13 +26,18 @@ function parseDigestCadence(value: FormDataEntryValue | null) {
 export async function updatePreferencesAction(formData: FormData) {
   const currentUser = await requireCurrentUser();
   const digestCadence = parseDigestCadence(formData.get("digestCadence"));
+  const includeBookRouletteInDigest = formData.get("includeBookRouletteInDigest") === "on";
 
   await getPrismaClient().appSettings.upsert({
     where: { userId: currentUser.id },
-    update: { digestCadence },
+    update: {
+      digestCadence,
+      includeBookRouletteInDigest,
+    },
     create: {
       ...getAppSettingsDefaults(currentUser.id),
       digestCadence,
+      includeBookRouletteInDigest,
     },
   });
 

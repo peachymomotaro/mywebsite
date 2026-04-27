@@ -16,6 +16,18 @@ export async function getDailyDigestItems({
   );
 }
 
+export async function getDailyDigestBookRoulettePick({
+  userId,
+  now = new Date(),
+}: {
+  userId: string;
+  now?: Date;
+}) {
+  const data = await getHomePageData({ userId, now });
+
+  return data.bookRoulettePick;
+}
+
 export function isLondonDailyDigestHour(now: Date) {
   const londonHour = new Intl.DateTimeFormat("en-GB", {
     hour: "2-digit",

@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -111,9 +111,9 @@ describe("ReadingRiverHomePage", () => {
     expect(container.querySelectorAll(".river-spotlight-body-actions")).toHaveLength(2);
     expect(screen.getByText("Choose a time")).toBeInTheDocument();
     expect(screen.getByText("Book Roulette")).toBeInTheDocument();
-    expect(screen.getByText("Small Gods")).toHaveAttribute(
-      "title",
-      "A gentle nudge from the shelf.",
+    expect(screen.getByRole("button", { name: "Small Gods" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
     );
     expect(screen.getByText("Terry Pratchett")).toBeInTheDocument();
     expect(mocks.getHomePageDataMock).toHaveBeenCalledWith({
@@ -129,6 +129,27 @@ describe("ReadingRiverHomePage", () => {
     expect(
       screen.queryByText("This landing page is now inside the Reading River shell and route scope."),
     ).not.toBeInTheDocument();
+  });
+
+  it("unfolds and folds book roulette notes when the book is clicked", async () => {
+    const { default: ReadingRiverHomePage } = await import("@/app/reading-river/page");
+    const page = await ReadingRiverHomePage();
+
+    render(page);
+
+    const bookButton = screen.getByRole("button", { name: "Small Gods" });
+
+    expect(screen.queryByText("A gentle nudge from the shelf.")).not.toBeInTheDocument();
+
+    fireEvent.click(bookButton);
+
+    expect(screen.getByText("A gentle nudge from the shelf.")).toBeInTheDocument();
+    expect(bookButton).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.click(bookButton);
+
+    expect(screen.queryByText("A gentle nudge from the shelf.")).not.toBeInTheDocument();
+    expect(bookButton).toHaveAttribute("aria-expanded", "false");
   });
 
   it("marks spotlight titles so overlong URLs can wrap inside the card", async () => {
@@ -166,9 +187,14 @@ describe("ReadingRiverHomePage", () => {
     expect(longTitleLink).toBeInTheDocument();
     expect(container.querySelector(".river-spotlight-link")).toHaveClass("river-spotlight-title-wrap");
     expect(container.querySelector(".river-spotlight-link")).toHaveClass("river-spotlight-title-clamp");
-    expect(screen.getByText("A Book Without Notes")).toHaveAttribute(
-      "title",
-      "Your notes about why you wanted to read this book would go here!",
-    );
+    const bookButton = screen.getByRole("button", { name: "A Book Without Notes" });
+
+    expect(bookButton).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(bookButton);
+
+    expect(
+      screen.getByText("Your notes about why you wanted to read this book would go here!"),
+    ).toBeInTheDocument();
   });
 });

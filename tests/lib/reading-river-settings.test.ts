@@ -52,6 +52,7 @@ describe("getOrCreateAppSettings", () => {
       shortReadThresholdMinutes: 25,
       defaultReadingSpeedWpm: 200,
       digestCadence: "off",
+      includeBookRouletteInDigest: false,
       lastDigestSentAt: null,
       createdAt: new Date("2026-04-01T12:00:00Z"),
       updatedAt: new Date("2026-04-01T12:00:00Z"),
@@ -97,6 +98,7 @@ describe("getOrCreateAppSettings", () => {
     expect(getAppSettingsDefaults("user-2")).toMatchObject({
       userId: "user-2",
       digestCadence: "off",
+      includeBookRouletteInDigest: false,
       lastDigestSentAt: null,
     });
   });

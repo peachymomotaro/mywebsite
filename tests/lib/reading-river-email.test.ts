@@ -39,4 +39,28 @@ describe("buildReadingRiverDailyDigestEmail", () => {
     expect(message.html).toContain("/reading-river/items/item-2/edit");
     expect(message.text).toContain("/reading-river/items/item-2/edit");
   });
+
+  it("renders an optional book roulette pick in the daily digest", () => {
+    process.env.READING_RIVER_BASE_URL = "https://example.com";
+
+    const message = buildReadingRiverDailyDigestEmail({
+      displayName: "River Reader",
+      items: [{ id: "item-1", title: "One good article", sourceUrl: null, tags: [] }],
+      bookRoulettePick: {
+        id: "book-1",
+        title: "Small Gods",
+        author: "Terry Pratchett",
+        notes: "A gentle nudge from the shelf.",
+      },
+    });
+
+    expect(message.html).toContain("Book Roulette");
+    expect(message.html).toContain("Small Gods");
+    expect(message.html).toContain("Terry Pratchett");
+    expect(message.html).toContain("A gentle nudge from the shelf.");
+    expect(message.text).toContain("Book Roulette");
+    expect(message.text).toContain("Small Gods");
+    expect(message.text).toContain("Terry Pratchett");
+    expect(message.text).toContain("A gentle nudge from the shelf.");
+  });
 });

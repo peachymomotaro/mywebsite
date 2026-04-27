@@ -11,6 +11,9 @@ describe("schema enums", () => {
 describe("app settings schema", () => {
   it("exposes the expected scalar fields", () => {
     expect(Prisma.AppSettingsScalarFieldEnum.digestCadence).toBe("digestCadence");
+    expect(Prisma.AppSettingsScalarFieldEnum.includeBookRouletteInDigest).toBe(
+      "includeBookRouletteInDigest",
+    );
     expect(Prisma.AppSettingsScalarFieldEnum.lastDigestSentAt).toBe("lastDigestSentAt");
   });
 });

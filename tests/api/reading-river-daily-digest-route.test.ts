@@ -6,6 +6,7 @@ const routeMocks = vi.hoisted(() => {
   return {
     getPrismaClient: vi.fn(() => prismaMock),
     getDailyDigestItems: vi.fn(),
+    getDailyDigestBookRoulettePick: vi.fn(),
     sendReadingRiverDailyDigestEmail: vi.fn(),
     setPrismaMock(nextPrismaMock: any) {
       prismaMock = nextPrismaMock;
@@ -25,6 +26,7 @@ vi.mock("@/lib/reading-river/daily-digest", async () => {
   return {
     ...actual,
     getDailyDigestItems: routeMocks.getDailyDigestItems,
+    getDailyDigestBookRoulettePick: routeMocks.getDailyDigestBookRoulettePick,
   };
 });
 
@@ -47,6 +49,7 @@ function createSettings(overrides: Record<string, unknown> = {}) {
     id: "settings-1",
     userId: "user-1",
     digestCadence: "daily",
+    includeBookRouletteInDigest: false,
     lastDigestSentAt: null,
     user: {
       id: "user-1",
@@ -152,6 +155,8 @@ describe("reading river daily digest route", () => {
     vi.useFakeTimers();
     routeMocks.getPrismaClient.mockClear();
     routeMocks.getDailyDigestItems.mockReset();
+    routeMocks.getDailyDigestBookRoulettePick.mockReset();
+    routeMocks.getDailyDigestBookRoulettePick.mockResolvedValue(null);
     routeMocks.sendReadingRiverDailyDigestEmail.mockReset();
   });
 
@@ -214,6 +219,49 @@ describe("reading river daily digest route", () => {
       data: { lastDigestSentAt: expect.any(Date) },
     });
     expect(context.update).not.toHaveBeenCalled();
+    expect(await response.json()).toMatchObject({
+      sent: 1,
+      skipped: 0,
+      failed: 0,
+    });
+  });
+
+  it("includes the book roulette pick only when the reader opts in", async () => {
+    vi.setSystemTime(new Date("2026-06-01T07:15:00Z"));
+
+    const context = createAppSettingsPrismaMock([
+      createSettings({
+        includeBookRouletteInDigest: true,
+      }),
+    ]);
+    routeMocks.setPrismaMock(context.prismaMock);
+    routeMocks.getDailyDigestItems.mockResolvedValue([]);
+    routeMocks.getDailyDigestBookRoulettePick.mockResolvedValue({
+      id: "book-1",
+      title: "Small Gods",
+      author: "Terry Pratchett",
+      notes: "A gentle nudge from the shelf.",
+    });
+    routeMocks.sendReadingRiverDailyDigestEmail.mockResolvedValue({ id: "email-1" });
+
+    const response = await GET(authorizedRequest());
+
+    expect(routeMocks.getDailyDigestBookRoulettePick).toHaveBeenCalledWith({
+      userId: "user-1",
+      now: expect.any(Date),
+    });
+    expect(routeMocks.sendReadingRiverDailyDigestEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [],
+        bookRoulettePick: {
+          id: "book-1",
+          title: "Small Gods",
+          author: "Terry Pratchett",
+          notes: "A gentle nudge from the shelf.",
+        },
+      }),
+    );
+    expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
       sent: 1,
       skipped: 0,
