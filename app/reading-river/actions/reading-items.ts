@@ -225,8 +225,7 @@ export async function skipReadingItem(input: unknown) {
       },
     },
     data: {
-      priorityScore:
-        item.priorityScore === null ? null : Math.max(item.priorityScore - 1, 0),
+      priorityScore: item.priorityScore === null ? null : 0,
     },
   });
 

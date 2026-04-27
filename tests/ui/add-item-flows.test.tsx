@@ -82,8 +82,8 @@ describe("AddPage", () => {
     expect(tagsField.compareDocumentPosition(fetchButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Add a book" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Bring something into the stream" })).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Estimated minutes")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Estimated minutes (optional)")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Estimated minutes")).not.toBeRequired();
+    expect(screen.getByLabelText("Estimated minutes")).toHaveValue(null);
     expect(screen.getByLabelText("URL")).toHaveAttribute("type", "text");
     expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
 
@@ -99,7 +99,6 @@ describe("AddPage", () => {
     expect(screen.getByRole("button", { name: "Save book" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Paste a link" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Status")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Estimated minutes")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Add chapter" })).not.toBeInTheDocument();
   });
 

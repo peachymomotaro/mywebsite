@@ -21,9 +21,9 @@ export function BookForm() {
         </p>
       </div>
 
-      <form action={submitBook} className="editorial-form">
-        <div className="grid gap-8 sm:grid-cols-2">
-          <label className="grid gap-2 text-sm">
+      <form action={submitBook} className="editorial-form book-form">
+        <div className="book-form-row">
+          <label className="book-form-field">
             <span>Title</span>
             <input
               name="title"
@@ -33,7 +33,7 @@ export function BookForm() {
               className="intake-input"
             />
           </label>
-          <label className="grid gap-2 text-sm">
+          <label className="book-form-field">
             <span>Author</span>
             <input
               name="author"
@@ -44,13 +44,13 @@ export function BookForm() {
           </label>
         </div>
 
-        <label className="grid gap-3 text-sm">
+        <label className="book-form-field">
           <span>Notes</span>
           <textarea
             name="notes"
             rows={4}
             placeholder="Why do you want to read this book?"
-            className="intake-input min-h-28"
+            className="intake-input intake-textarea book-form-notes"
           />
         </label>
 

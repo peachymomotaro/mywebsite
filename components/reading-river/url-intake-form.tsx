@@ -107,21 +107,19 @@ export function UrlIntakeForm({ knownTagNames = [] }: { knownTagNames?: string[]
             className="intake-input"
           />
         </label>
-        {isReview ? (
-          <label className="grid gap-2 text-sm">
-            <span>Estimated minutes</span>
-            <input
-              name="estimatedMinutes"
-              type="number"
-              min="1"
-              required={estimatedMinutesRequired}
-              autoFocus={estimatedMinutesRequired}
-              defaultValue={draftValues.estimatedMinutes}
-              placeholder="12"
-              className="intake-input"
-            />
-          </label>
-        ) : null}
+        <label className="grid gap-2 text-sm">
+          <span>Estimated minutes</span>
+          <input
+            name="estimatedMinutes"
+            type="number"
+            min="1"
+            required={estimatedMinutesRequired}
+            autoFocus={isReview && estimatedMinutesRequired}
+            defaultValue={draftValues.estimatedMinutes}
+            placeholder="12"
+            className="intake-input"
+          />
+        </label>
         <div className="grid gap-8 sm:grid-cols-2">
           <div className="grid gap-2 text-sm">
             <label htmlFor="url-intake-priority-score">Priority</label>

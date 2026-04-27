@@ -10,14 +10,17 @@ const storageKey = "reading-river-extension-token";
 function createBrowserMock({
   token,
   activeTab,
+  pageText,
   getReject,
   queryReject,
 }: {
   token: string | null;
   activeTab: {
+    id?: number;
     url: string;
     title: string;
   };
+  pageText?: string | null;
   getReject?: Error | null;
   queryReject?: Error | null;
 }) {
@@ -47,6 +50,11 @@ function createBrowserMock({
 
     return [activeTab];
   });
+  const executeScript = vi.fn(async () => [
+    {
+      result: pageText,
+    },
+  ]);
 
   vi.stubGlobal("browser", {
     storage: {
@@ -59,6 +67,9 @@ function createBrowserMock({
     tabs: {
       query,
     },
+    scripting: {
+      executeScript,
+    },
   });
 
   return {
@@ -66,28 +77,33 @@ function createBrowserMock({
     set,
     remove,
     query,
+    executeScript,
   };
 }
 
 async function loadPopupModule({
   token = null,
   activeTab = {
+    id: 7,
     url: "https://example.com/article",
     title: "Saved from Firefox",
   },
+  pageText = null,
   getReject = null,
   queryReject = null,
 }: Partial<{
   token: string | null;
   activeTab: {
+    id?: number;
     url: string;
     title: string;
   };
+  pageText: string | null;
   getReject: Error | null;
   queryReject: Error | null;
 }> = {}) {
   document.body.innerHTML = '<main id="popup-root"></main>';
-  const browser = createBrowserMock({ token, activeTab, getReject, queryReject });
+  const browser = createBrowserMock({ token, activeTab, pageText, getReject, queryReject });
   vi.resetModules();
 
   const popupModule = await import("@/extension/reading-river-firefox/popup");
@@ -126,7 +142,7 @@ describe("reading river firefox popup", () => {
     expect(source).not.toContain("innerHTML");
   });
 
-  it("requests only the activeTab permission in the manifest", () => {
+  it("requests the page access permissions needed by the popup in the manifest", () => {
     const manifest = JSON.parse(
       readFileSync(
         path.resolve(process.cwd(), "extension/reading-river-firefox/manifest.json"),
@@ -144,6 +160,7 @@ describe("reading river firefox popup", () => {
     };
 
     expect(manifest.permissions).toContain("activeTab");
+    expect(manifest.permissions).toContain("scripting");
     expect(manifest.permissions).not.toContain("tabs");
     expect(manifest.browser_specific_settings?.gecko?.data_collection_permissions?.required).toEqual([
       "none",
@@ -200,16 +217,40 @@ describe("reading river firefox popup", () => {
     await loadPopupModule({
       token: "stored-token",
       activeTab: {
+        id: 7,
         url: "https://example.com/article",
         title: "Saved from Firefox",
       },
+      pageText: Array.from({ length: 410 }, (_, index) => `word${index}`).join(" "),
     });
 
     expect(await screen.findByDisplayValue("https://example.com/article")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Saved from Firefox")).toBeInTheDocument();
+    expect(screen.getByRole("spinbutton", { name: "Estimated minutes" })).toHaveValue(3);
     expect(screen.getByRole("combobox", { name: "Priority" })).toBeRequired();
     expect(screen.getByRole("option", { name: "No priority (stream only)" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save article" })).toBeDisabled();
+  });
+
+  it("leaves estimated minutes empty when article text cannot be detected", async () => {
+    const { browser } = await loadPopupModule({
+      token: "stored-token",
+      activeTab: {
+        id: 7,
+        url: "https://example.com/article",
+        title: "Saved from Firefox",
+      },
+      pageText: "",
+    });
+
+    expect(await screen.findByRole("spinbutton", { name: "Estimated minutes" })).toHaveValue(null);
+    expect(browser.executeScript).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: {
+          tabId: 7,
+        },
+      }),
+    );
   });
 
   it("keeps Save disabled when the URL is invalid even after stream-only priority is chosen", async () => {
@@ -389,7 +430,9 @@ describe("reading river firefox popup", () => {
     });
 
     vi.stubGlobal("fetch", fetchImpl);
-    const { browser } = await loadPopupModule();
+    const { browser } = await loadPopupModule({
+      pageText: Array.from({ length: 400 }, (_, index) => `word${index}`).join(" "),
+    });
 
     fireEvent.change(screen.getByLabelText("Email address"), {
       target: {
@@ -426,6 +469,7 @@ describe("reading river firefox popup", () => {
             url: "https://example.com/article",
             title: "Saved from Firefox",
             priorityScore: null,
+            estimatedMinutes: 2,
           }),
         }),
       );

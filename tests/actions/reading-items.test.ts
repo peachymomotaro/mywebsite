@@ -32,7 +32,11 @@ vi.mock("@/lib/reading-river/current-user", () => ({
   requireCurrentUser: actionMocks.requireCurrentUser,
 }));
 
-import { createReadingItem, updateReadingItem } from "@/app/reading-river/actions/reading-items";
+import {
+  createReadingItem,
+  skipReadingItem,
+  updateReadingItem,
+} from "@/app/reading-river/actions/reading-items";
 
 describe("reading item validation", () => {
   beforeEach(() => {
@@ -279,6 +283,45 @@ describe("reading item validation", () => {
           },
         },
       ],
+    });
+  });
+
+  it("demotes skipped priority items to the bottom of the priority queue", async () => {
+    const update = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
+      id: "item-1",
+      priorityScore: data.priorityScore,
+    }));
+
+    actionMocks.setPrismaMock({
+      readingItem: {
+        findUnique: vi.fn(async () => ({
+          id: "item-1",
+          priorityScore: 9,
+        })),
+        update,
+      },
+    });
+    actionMocks.requireCurrentUser.mockResolvedValue({
+      id: "user-1",
+    });
+
+    const item = await skipReadingItem({ id: "item-1" });
+
+    expect(update).toHaveBeenCalledWith({
+      where: {
+        userId_id: {
+          userId: "user-1",
+          id: "item-1",
+        },
+      },
+      data: {
+        priorityScore: 0,
+      },
+    });
+    expect(actionMocks.revalidatePath).toHaveBeenCalledWith(readingRiverPath());
+    expect(item).toMatchObject({
+      id: "item-1",
+      priorityScore: 0,
     });
   });
 });

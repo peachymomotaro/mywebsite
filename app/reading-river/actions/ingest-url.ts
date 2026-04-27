@@ -173,9 +173,10 @@ function buildReviewState({
       ...draftValues,
       title: resolvedTitle,
       estimatedMinutes:
-        estimation?.estimatedMinutes !== null && estimation?.estimatedMinutes !== undefined
+        draftValues.estimatedMinutes ||
+        (estimation?.estimatedMinutes !== null && estimation?.estimatedMinutes !== undefined
           ? String(estimation.estimatedMinutes)
-          : draftValues.estimatedMinutes,
+          : draftValues.estimatedMinutes),
     },
     reviewMetadata: buildReviewMetadata(estimation, {
       fetchSucceeded,

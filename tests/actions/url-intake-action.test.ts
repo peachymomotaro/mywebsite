@@ -477,6 +477,37 @@ describe("submitUrlIntake", () => {
     expect(revalidatePathMock).not.toHaveBeenCalled();
   });
 
+  it("keeps a manually entered estimate when fetched details are reviewed", async () => {
+    const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
+    const formData = buildUrlFormData(undefined, {
+      title: "",
+      estimatedMinutes: "12",
+    });
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () =>
+          `<html><head><title>Essay</title><meta property="og:site_name" content="Example" /></head><body><article><h1>Essay</h1><p>${repeatWords(
+            220,
+          )}</p></article></body></html>`,
+      }),
+    );
+
+    const result = await submitUrlIntake(initialIntakeFormState, formData);
+
+    expect(result).toMatchObject({
+      status: "review",
+      draftValues: {
+        estimatedMinutes: "12",
+      },
+      reviewMetadata: {
+        estimatedMinutes: 2,
+      },
+    });
+  });
+
   it("saves the reviewed article without fetching again and preserves extracted metadata", async () => {
     const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
     const formData = buildUrlFormData(undefined, {

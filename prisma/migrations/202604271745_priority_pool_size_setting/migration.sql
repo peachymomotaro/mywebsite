@@ -1,0 +1,2 @@
+ALTER TABLE "AppSettings"
+ADD COLUMN "priorityRandomPoolSize" INTEGER NOT NULL DEFAULT 3;

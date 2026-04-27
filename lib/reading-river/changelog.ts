@@ -13,6 +13,7 @@ export const readingRiverChangelogEntries: ReadingRiverChangelogEntry[] = [
     items: [
       "Made the priority option slightly less deterministic so you're not just staring at the same thing you haven't read day after day.",
       "Changed manual items to books, and took them out of the priority queue. Now books show up in book roulette, at the bottom of the front page. You can also receive your daily book roulette by email, if you'd like to be reminded about books you wanted to read.",
+      "The Firefox extension should now estimate reading time of an article for you if you're on the correct page, but this will take about a day to update."
     ],
   },
   {

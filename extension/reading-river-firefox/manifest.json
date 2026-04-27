@@ -7,7 +7,7 @@
     "default_popup": "popup.html",
     "default_title": "Reading River"
   },
-  "permissions": ["storage", "activeTab"],
+  "permissions": ["storage", "activeTab", "scripting"],
   "host_permissions": ["https://petercurry.org/*"],
   "browser_specific_settings": {
     "gecko": {

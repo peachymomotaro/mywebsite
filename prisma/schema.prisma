@@ -225,6 +225,7 @@ model AppSettings {
   defaultReadingSpeedWpm    Int         @default(200)
   digestCadence             DigestCadence @default(off)
   includeBookRouletteInDigest Boolean   @default(false)
+  priorityRandomPoolSize    Int         @default(3)
   lastDigestSentAt          DateTime?
   createdAt                 DateTime    @default(now())
   updatedAt                 DateTime    @updatedAt

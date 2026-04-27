@@ -23,6 +23,7 @@ export function getAppSettingsDefaults(userId: string): Pick<
   | "defaultReadingSpeedWpm"
   | "digestCadence"
   | "includeBookRouletteInDigest"
+  | "priorityRandomPoolSize"
   | "lastDigestSentAt"
   | "userId"
 > {
@@ -35,6 +36,7 @@ export function getAppSettingsDefaults(userId: string): Pick<
     defaultReadingSpeedWpm: DEFAULT_READING_SPEED_WPM,
     digestCadence: "off",
     includeBookRouletteInDigest: false,
+    priorityRandomPoolSize: 3,
     lastDigestSentAt: null,
   };
 }

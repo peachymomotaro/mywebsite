@@ -1122,6 +1122,31 @@ a {
   gap: clamp(1.35rem, 2.5vw, 1.85rem);
 }
 
+.book-form {
+  gap: 1.15rem;
+}
+
+.book-form-row {
+  display: grid;
+  gap: 1.15rem;
+}
+
+.book-form-field {
+  display: grid;
+  gap: 0.65rem;
+  font-size: 0.875rem;
+}
+
+.book-form-notes {
+  min-height: 7rem;
+}
+
+@media (min-width: 640px) {
+  .book-form-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .intake-panel-success {
   animation: river-soft-flash 720ms ease;
 }

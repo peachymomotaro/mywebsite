@@ -53,6 +53,7 @@ describe("getOrCreateAppSettings", () => {
       defaultReadingSpeedWpm: 200,
       digestCadence: "off",
       includeBookRouletteInDigest: false,
+      priorityRandomPoolSize: 3,
       lastDigestSentAt: null,
       createdAt: new Date("2026-04-01T12:00:00Z"),
       updatedAt: new Date("2026-04-01T12:00:00Z"),

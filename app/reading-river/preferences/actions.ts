@@ -23,21 +23,36 @@ function parseDigestCadence(value: FormDataEntryValue | null) {
   }
 }
 
+function parsePriorityRandomPoolSize(value: FormDataEntryValue | null) {
+  const parsed = Number.parseInt(String(value ?? ""), 10);
+
+  if (!Number.isFinite(parsed)) {
+    return 3;
+  }
+
+  return Math.min(Math.max(parsed, 1), 20);
+}
+
 export async function updatePreferencesAction(formData: FormData) {
   const currentUser = await requireCurrentUser();
   const digestCadence = parseDigestCadence(formData.get("digestCadence"));
   const includeBookRouletteInDigest = formData.get("includeBookRouletteInDigest") === "on";
+  const priorityRandomPoolSize = parsePriorityRandomPoolSize(
+    formData.get("priorityRandomPoolSize"),
+  );
 
   await getPrismaClient().appSettings.upsert({
     where: { userId: currentUser.id },
     update: {
       digestCadence,
       includeBookRouletteInDigest,
+      priorityRandomPoolSize,
     },
     create: {
       ...getAppSettingsDefaults(currentUser.id),
       digestCadence,
       includeBookRouletteInDigest,
+      priorityRandomPoolSize,
     },
   });
 

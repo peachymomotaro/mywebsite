@@ -39,6 +39,7 @@ type HomepageSettings = {
   manualOrderActive: boolean;
   highPriorityThreshold?: number;
   shortReadThresholdMinutes?: number;
+  priorityRandomPoolSize?: number;
 };
 
 export type HomePageFeaturedItem = {
@@ -92,7 +93,7 @@ const TIME_BUCKETS: TimeBucket[] = [
   { selectedMinutes: 45, minExclusive: 30, maxInclusive: 45 },
 ];
 
-const PRIORITY_RANDOM_POOL_SIZE = 3;
+const DEFAULT_PRIORITY_RANDOM_POOL_SIZE = 3;
 
 function toFeaturedItem(item: HomepageSourceItem): HomePageFeaturedItem {
   return {
@@ -266,14 +267,31 @@ function pickDailyStreamItem(
     })[0];
 }
 
-function pickPriorityItem(items: HomepageSourceItem[]) {
-  const randomPool = items.slice(0, PRIORITY_RANDOM_POOL_SIZE);
+function getPriorityRandomPoolSize(settings: HomepageSettings) {
+  const configuredSize = settings.priorityRandomPoolSize ?? DEFAULT_PRIORITY_RANDOM_POOL_SIZE;
+
+  return Math.max(1, Math.floor(configuredSize));
+}
+
+function pickPriorityItem(items: HomepageSourceItem[], dayKey: string, settings: HomepageSettings) {
+  const randomPool = items.slice(0, getPriorityRandomPoolSize(settings));
 
   if (randomPool.length === 0) {
     return null;
   }
 
-  return randomPool[Math.floor(Math.random() * randomPool.length)];
+  return randomPool
+    .slice()
+    .sort((left, right) => {
+      const leftHash = hashString(`${dayKey}:priority:${left.id}`);
+      const rightHash = hashString(`${dayKey}:priority:${right.id}`);
+
+      if (leftHash !== rightHash) {
+        return leftHash - rightHash;
+      }
+
+      return left.id.localeCompare(right.id);
+    })[0];
 }
 
 function pickDailyBook(books: HomepageBookSource[], dayKey: string) {
@@ -318,7 +336,7 @@ export function buildHomePageData(
     settings,
   );
   const streamItems = resolveStreamItems(articleItems, selectedTimeBudgetMinutes);
-  const priorityItem = pickPriorityItem(suggestedItems);
+  const priorityItem = pickPriorityItem(suggestedItems, dayKey, settings);
   const streamItem = pickDailyStreamItem(streamItems, dayKey, priorityItem?.id);
   const bookRoulettePick = pickDailyBook(options.books ?? [], dayKey);
 

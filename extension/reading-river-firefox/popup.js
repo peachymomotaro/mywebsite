@@ -1,6 +1,8 @@
 import { ApiError, login as loginRequest, save as saveRequest } from "./lib/api-client.js";
 import { clearToken, getToken, setToken } from "./lib/storage.js";
 
+const READING_SPEED_WORDS_PER_MINUTE = 200;
+
 function getRoot(root) {
   if (root) {
     return root;
@@ -189,6 +191,72 @@ function parsePopupPriorityScore(value) {
   return value === "none" ? null : Number(value);
 }
 
+function parsePopupEstimatedMinutes(value) {
+  const parsedValue = Number(value);
+
+  return Number.isInteger(parsedValue) && parsedValue > 0 ? parsedValue : null;
+}
+
+function countWords(text) {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function estimateReadingMinutes(text) {
+  const wordCount = countWords(text);
+
+  if (wordCount === 0) {
+    return null;
+  }
+
+  return Math.max(1, Math.ceil(wordCount / READING_SPEED_WORDS_PER_MINUTE));
+}
+
+function getVisiblePageTextForReadingEstimate() {
+  const root =
+    document.querySelector("article") ||
+    document.querySelector("main") ||
+    document.querySelector('[role="main"]') ||
+    document.body;
+
+  if (!root) {
+    return "";
+  }
+
+  const clone = root.cloneNode(true);
+
+  if (!(clone instanceof Element)) {
+    return root.textContent || "";
+  }
+
+  clone
+    .querySelectorAll("script, style, noscript, nav, header, footer, aside, form, button, svg")
+    .forEach((element) => {
+      element.remove();
+    });
+
+  return clone.textContent || "";
+}
+
+async function estimateActiveTabReadingTime(tabId) {
+  if (!Number.isInteger(tabId) || !globalThis.browser?.scripting?.executeScript) {
+    return null;
+  }
+
+  try {
+    const results = await globalThis.browser.scripting.executeScript({
+      target: {
+        tabId,
+      },
+      func: getVisiblePageTextForReadingEstimate,
+    });
+    const pageText = results?.[0]?.result;
+
+    return typeof pageText === "string" ? estimateReadingMinutes(pageText) : null;
+  } catch {
+    return null;
+  }
+}
+
 function setFormStatus(form, message, role) {
   const status = getStatusElement(form);
 
@@ -216,10 +284,13 @@ async function getActiveTabSnapshot() {
     currentWindow: true,
   });
   const activeTab = tabs?.[0] ?? {};
+  const tabId = typeof activeTab.id === "number" ? activeTab.id : null;
+  const estimatedMinutes = await estimateActiveTabReadingTime(tabId);
 
   return {
     url: String(activeTab.url ?? ""),
     title: String(activeTab.title ?? ""),
+    estimatedMinutes,
   };
 }
 
@@ -301,6 +372,7 @@ async function handleSaveSubmit(event, popupRoot, token) {
   const url = getNamedField(form, "url").value.trim();
   const title = getNamedField(form, "title").value.trim();
   const priorityScore = parsePopupPriorityScore(getNamedField(form, "priorityScore").value);
+  const estimatedMinutes = parsePopupEstimatedMinutes(getNamedField(form, "estimatedMinutes").value);
 
   if (!form.checkValidity()) {
     form.reportValidity();
@@ -316,6 +388,7 @@ async function handleSaveSubmit(event, popupRoot, token) {
         url,
         title,
         priorityScore,
+        estimatedMinutes,
       },
       {
         token,
@@ -426,6 +499,16 @@ function renderSignedIn(root, activeTab, token, message = "", role = "status") {
           name: "title",
           type: "text",
           value: activeTab.title,
+        },
+      }),
+      createField("Estimated minutes", {
+        className: "popup-input",
+        properties: {
+          name: "estimatedMinutes",
+          type: "number",
+          min: "1",
+          inputMode: "numeric",
+          value: activeTab.estimatedMinutes ? String(activeTab.estimatedMinutes) : "",
         },
       }),
       createSelectField(

@@ -25,6 +25,7 @@ describe("ReadingRiverPreferencesPage", () => {
     mocks.getOrCreateAppSettingsMock.mockResolvedValue({
       digestCadence: "every_other_day",
       includeBookRouletteInDigest: true,
+      priorityRandomPoolSize: 5,
     });
 
     const page = await PreferencesPage();
@@ -33,13 +34,14 @@ describe("ReadingRiverPreferencesPage", () => {
 
     expect(screen.getByRole("heading", { name: "Preferences" })).toBeInTheDocument();
     expect(screen.getByText("Choose how often Reading River should send your reminder email.")).toBeInTheDocument();
-    expect(screen.getByLabelText("Reminder cadence")).toHaveValue("every_other_day");
+    expect(screen.getByLabelText("Email cadence")).toHaveValue("every_other_day");
     expect(screen.getByRole("option", { name: "Off" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Daily" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Every other day" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Weekly" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Monthly" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Seasonal (every three months)" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Priority rotation")).toHaveValue(5);
     expect(screen.getByLabelText("Include Book Roulette in reminder emails")).toBeChecked();
     const helperCopy = screen.getByText(/08:00 London time/i);
     expect(helperCopy).toBeInTheDocument();
@@ -58,6 +60,7 @@ describe("ReadingRiverPreferencesPage", () => {
     mocks.getOrCreateAppSettingsMock.mockResolvedValue({
       digestCadence: "daily",
       includeBookRouletteInDigest: false,
+      priorityRandomPoolSize: 3,
     });
 
     const page = await PreferencesPage({

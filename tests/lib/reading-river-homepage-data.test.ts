@@ -162,82 +162,170 @@ describe("getHomePageData", () => {
     expect(data.streamRead?.id).toBe("item-stream");
   });
 
-  it("chooses the priority read randomly from the top three ranked candidates", () => {
-    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.99);
+  it("keeps the priority read fixed for a day while choosing from the top three ranked candidates", () => {
+    const items = [
+      {
+        id: "rank-1",
+        title: "Top priority",
+        sourceType: "url",
+        sourceUrl: "https://example.com/one",
+        siteName: "Example",
+        estimatedMinutes: 10,
+        priorityScore: 10,
+        status: "unread" as const,
+        pinned: false,
+        createdAt: new Date("2026-06-01T12:00:00Z"),
+        tags: [],
+      },
+      {
+        id: "rank-2",
+        title: "Second priority",
+        sourceType: "url",
+        sourceUrl: "https://example.com/two",
+        siteName: "Example",
+        estimatedMinutes: 10,
+        priorityScore: 9,
+        status: "unread" as const,
+        pinned: false,
+        createdAt: new Date("2026-06-02T12:00:00Z"),
+        tags: [],
+      },
+      {
+        id: "rank-3",
+        title: "Third priority",
+        sourceType: "url",
+        sourceUrl: "https://example.com/three",
+        siteName: "Example",
+        estimatedMinutes: 10,
+        priorityScore: 8,
+        status: "unread" as const,
+        pinned: false,
+        createdAt: new Date("2026-06-03T12:00:00Z"),
+        tags: [],
+      },
+      {
+        id: "rank-4",
+        title: "Fourth priority",
+        sourceType: "url",
+        sourceUrl: "https://example.com/four",
+        siteName: "Example",
+        estimatedMinutes: 10,
+        priorityScore: 7,
+        status: "unread" as const,
+        pinned: false,
+        createdAt: new Date("2026-06-04T12:00:00Z"),
+        tags: [],
+      },
+    ];
+    const settings = {
+      displayMode: "suggested" as const,
+      manualOrderActive: false,
+      highPriorityThreshold: 7,
+      shortReadThresholdMinutes: 25,
+    };
+    const lowRandomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+    const firstPick = buildHomePageData(items, settings, {
+      dayKey: "2026-06-05",
+    }).priorityRead;
 
-    try {
-      const data = buildHomePageData(
-        [
-          {
-            id: "rank-1",
-            title: "Top priority",
-            sourceType: "url",
-            sourceUrl: "https://example.com/one",
-            siteName: "Example",
-            estimatedMinutes: 10,
-            priorityScore: 10,
-            status: "unread",
-            pinned: false,
-            createdAt: new Date("2026-06-01T12:00:00Z"),
-            tags: [],
-          },
-          {
-            id: "rank-2",
-            title: "Second priority",
-            sourceType: "url",
-            sourceUrl: "https://example.com/two",
-            siteName: "Example",
-            estimatedMinutes: 10,
-            priorityScore: 9,
-            status: "unread",
-            pinned: false,
-            createdAt: new Date("2026-06-02T12:00:00Z"),
-            tags: [],
-          },
-          {
-            id: "rank-3",
-            title: "Third priority",
-            sourceType: "url",
-            sourceUrl: "https://example.com/three",
-            siteName: "Example",
-            estimatedMinutes: 10,
-            priorityScore: 8,
-            status: "unread",
-            pinned: false,
-            createdAt: new Date("2026-06-03T12:00:00Z"),
-            tags: [],
-          },
-          {
-            id: "rank-4",
-            title: "Fourth priority",
-            sourceType: "url",
-            sourceUrl: "https://example.com/four",
-            siteName: "Example",
-            estimatedMinutes: 10,
-            priorityScore: 7,
-            status: "unread",
-            pinned: false,
-            createdAt: new Date("2026-06-04T12:00:00Z"),
-            tags: [],
-          },
-        ],
+    lowRandomSpy.mockReturnValue(0.99);
+
+    const secondPick = buildHomePageData(items, settings, {
+      dayKey: "2026-06-05",
+    }).priorityRead;
+
+    lowRandomSpy.mockRestore();
+
+    expect(secondPick).toEqual(firstPick);
+    expect(firstPick?.id).not.toBe("rank-4");
+  });
+
+  it("uses the configured priority rotation size when choosing the daily priority read", () => {
+    const data = buildHomePageData(
+      [
         {
-          displayMode: "suggested",
-          manualOrderActive: false,
-          highPriorityThreshold: 7,
-          shortReadThresholdMinutes: 25,
+          id: "alpha",
+          title: "Top priority",
+          sourceType: "url",
+          sourceUrl: "https://example.com/one",
+          siteName: "Example",
+          estimatedMinutes: 10,
+          priorityScore: 10,
+          status: "unread",
+          pinned: false,
+          createdAt: new Date("2026-06-01T12:00:00Z"),
+          tags: [],
         },
         {
-          dayKey: "2026-06-05",
+          id: "beta",
+          title: "Second priority",
+          sourceType: "url",
+          sourceUrl: "https://example.com/two",
+          siteName: "Example",
+          estimatedMinutes: 10,
+          priorityScore: 9,
+          status: "unread",
+          pinned: false,
+          createdAt: new Date("2026-06-02T12:00:00Z"),
+          tags: [],
         },
-      );
+      ],
+      {
+        displayMode: "suggested",
+        manualOrderActive: false,
+        highPriorityThreshold: 7,
+        shortReadThresholdMinutes: 25,
+        priorityRandomPoolSize: 1,
+      },
+      {
+        dayKey: "2026-06-05",
+      },
+    );
 
-      expect(data.priorityRead?.id).toBe("rank-3");
-      expect(data.priorityRead?.id).not.toBe("rank-4");
-      expect(randomSpy).toHaveBeenCalledOnce();
-    } finally {
-      randomSpy.mockRestore();
-    }
+    expect(data.priorityRead?.id).toBe("alpha");
+
+    const widerRotationData = buildHomePageData(
+      [
+        {
+          id: "alpha",
+          title: "Top priority",
+          sourceType: "url",
+          sourceUrl: "https://example.com/one",
+          siteName: "Example",
+          estimatedMinutes: 10,
+          priorityScore: 10,
+          status: "unread",
+          pinned: false,
+          createdAt: new Date("2026-06-01T12:00:00Z"),
+          tags: [],
+        },
+        {
+          id: "beta",
+          title: "Second priority",
+          sourceType: "url",
+          sourceUrl: "https://example.com/two",
+          siteName: "Example",
+          estimatedMinutes: 10,
+          priorityScore: 9,
+          status: "unread",
+          pinned: false,
+          createdAt: new Date("2026-06-02T12:00:00Z"),
+          tags: [],
+        },
+      ],
+      {
+        displayMode: "suggested",
+        manualOrderActive: false,
+        highPriorityThreshold: 7,
+        shortReadThresholdMinutes: 25,
+        priorityRandomPoolSize: 2,
+      },
+      {
+        dayKey: "2026-06-05",
+      },
+    );
+
+    expect(widerRotationData.priorityRead?.id).toBe("beta");
   });
 
   it("keeps manual and book chapter items out of the homepage article cards", () => {

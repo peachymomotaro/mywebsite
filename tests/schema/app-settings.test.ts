@@ -14,6 +14,9 @@ describe("app settings schema", () => {
     expect(Prisma.AppSettingsScalarFieldEnum.includeBookRouletteInDigest).toBe(
       "includeBookRouletteInDigest",
     );
+    expect(Prisma.AppSettingsScalarFieldEnum.priorityRandomPoolSize).toBe(
+      "priorityRandomPoolSize",
+    );
     expect(Prisma.AppSettingsScalarFieldEnum.lastDigestSentAt).toBe("lastDigestSentAt");
   });
 });

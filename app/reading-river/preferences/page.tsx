@@ -37,7 +37,7 @@ export default async function PreferencesPage({ searchParams }: PreferencesPageP
       <section className="editorial-panel river-preferences-panel">
         <form action={updatePreferencesAction} className="editorial-form river-preferences-form">
           <label className="river-preferences-choice">
-            <span className="river-preferences-choice-copy">Reminder cadence</span>
+            <span className="river-preferences-choice-copy">Email cadence</span>
             <select
               className="intake-input"
               defaultValue={settings.digestCadence}
@@ -53,6 +53,21 @@ export default async function PreferencesPage({ searchParams }: PreferencesPageP
           </label>
           <p className="river-preferences-description">
             Reading River emails you with your picks for that day around 08:00 London time.
+          </p>
+          <label className="river-preferences-choice">
+            <span className="river-preferences-choice-copy">Priority rotation</span>
+            <input
+              className="intake-input"
+              defaultValue={settings.priorityRandomPoolSize}
+              max={20}
+              min={1}
+              name="priorityRandomPoolSize"
+              type="number"
+            />
+          </label>
+          <p className="river-preferences-description">
+            Choose how many of your highest priority reads the daily recommendation will rotate between.
+            It's recommended to set this to at least three - focused on your priority picks, but it won't just show you the same thing day after day.
           </p>
           <label className="river-preferences-checkbox-row">
             <input

@@ -65,6 +65,7 @@ describe("Reading River preferences actions", () => {
 
     formData.set("digestCadence", "every_other_day");
     formData.set("includeBookRouletteInDigest", "on");
+    formData.set("priorityRandomPoolSize", "5");
 
     await expect(updatePreferencesAction(formData)).rejects.toThrow(
       "redirect:/reading-river/preferences?saved=1",
@@ -75,11 +76,13 @@ describe("Reading River preferences actions", () => {
       update: {
         digestCadence: "every_other_day",
         includeBookRouletteInDigest: true,
+        priorityRandomPoolSize: 5,
       },
       create: {
         ...getAppSettingsDefaults("user-1"),
         digestCadence: "every_other_day",
         includeBookRouletteInDigest: true,
+        priorityRandomPoolSize: 5,
       },
     });
     expect(actionMocks.revalidatePath).toHaveBeenCalledWith("/reading-river/preferences");
