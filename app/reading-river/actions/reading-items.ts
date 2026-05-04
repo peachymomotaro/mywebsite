@@ -8,6 +8,7 @@ import { readingRiverPath } from "@/lib/reading-river/routes";
 import { assertNoDuplicateReadingItemSourceUrl } from "@/lib/reading-river/source-url";
 import {
   readingItemIdSchema,
+  readingItemDeleteSchema,
   readingItemMarkAsReadSchema,
   readingItemPinnedSchema,
   readingItemSchema,
@@ -103,8 +104,8 @@ export async function updateReadingItem(input: unknown) {
 export async function deleteReadingItem(input: unknown) {
   const prisma = getPrismaClient();
   const currentUser = await requireCurrentUser();
-  const id = readingItemIdSchema.parse(input);
-  const ownedItem = await requireOwnedReadingItem(prisma, currentUser.id, id);
+  const parsed = readingItemDeleteSchema.parse(input);
+  const ownedItem = await requireOwnedReadingItem(prisma, currentUser.id, parsed.id);
 
   const item = await prisma.readingItem.delete({
     where: {

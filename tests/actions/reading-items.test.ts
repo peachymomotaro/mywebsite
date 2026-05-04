@@ -34,6 +34,7 @@ vi.mock("@/lib/reading-river/current-user", () => ({
 
 import {
   createReadingItem,
+  deleteReadingItem,
   skipReadingItem,
   updateReadingItem,
 } from "@/app/reading-river/actions/reading-items";
@@ -322,6 +323,39 @@ describe("reading item validation", () => {
     expect(item).toMatchObject({
       id: "item-1",
       priorityScore: 0,
+    });
+  });
+
+  it("deletes a reading item from the current user's river", async () => {
+    const deleteMock = vi.fn(async () => ({
+      id: "item-1",
+    }));
+
+    actionMocks.setPrismaMock({
+      readingItem: {
+        findUnique: vi.fn(async () => ({
+          id: "item-1",
+        })),
+        delete: deleteMock,
+      },
+    });
+    actionMocks.requireCurrentUser.mockResolvedValue({
+      id: "user-1",
+    });
+
+    const item = await deleteReadingItem({ id: "item-1" });
+
+    expect(deleteMock).toHaveBeenCalledWith({
+      where: {
+        userId_id: {
+          userId: "user-1",
+          id: "item-1",
+        },
+      },
+    });
+    expect(actionMocks.revalidatePath).toHaveBeenCalledWith(readingRiverPath());
+    expect(item).toMatchObject({
+      id: "item-1",
     });
   });
 });

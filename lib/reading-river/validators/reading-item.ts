@@ -81,3 +81,7 @@ export const readingItemMarkAsReadSchema = z.object({
 export const readingItemSkipSchema = z.object({
   id: readingItemIdSchema,
 });
+
+export const readingItemDeleteSchema = z.object({
+  id: readingItemIdSchema,
+});
