@@ -73,6 +73,8 @@ body {
 }
 
 .editorial-shell {
+  position: relative;
+  isolation: isolate;
   background:
     linear-gradient(
       to bottom,
@@ -82,6 +84,20 @@ body {
     radial-gradient(circle at 15% 0%, hsl(var(--river-peach) / 0.2), transparent 34%),
     radial-gradient(circle at 85% 12%, hsl(var(--river-teal) / 0.16), transparent 26%),
     hsl(var(--background));
+}
+
+.editorial-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url("/ReadingRiverBackground.png");
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-size: min(92rem, 120vw) auto;
+  opacity: 0.08;
+  mix-blend-mode: multiply;
 }
 
 button,
@@ -131,6 +147,8 @@ hr {
 }
 
 .editorial-shell-frame > :not(.editorial-shell-rule) {
+  position: relative;
+  z-index: 1;
   width: min(var(--page-width), calc(100vw - (var(--page-gutter) * 2)));
   margin-left: auto;
   margin-right: auto;

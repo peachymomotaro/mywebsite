@@ -20,6 +20,21 @@ describe("Reading River theme stylesheet", () => {
     expect(stylesheet).toContain(".river-home-page .river-spotlight-action-danger {");
   });
 
+  it("uses the Reading River artwork as a faint shell background overlay", () => {
+    const stylesheet = readFileSync(
+      path.resolve(process.cwd(), "app/reading-river/reading-river.css"),
+      "utf8",
+    );
+
+    expect(stylesheet).toContain(".editorial-shell::before {");
+    expect(stylesheet).toContain("background-image: url(\"/ReadingRiverBackground.png\");");
+    expect(stylesheet).toContain("opacity: 0.08;");
+    expect(stylesheet).toContain("pointer-events: none;");
+    expect(stylesheet).toContain(".editorial-shell-frame > :not(.editorial-shell-rule) {");
+    expect(stylesheet).toContain("position: relative;");
+    expect(stylesheet).toContain("z-index: 1;");
+  });
+
   it("keeps the preferences panel compact but left aligned", () => {
     const stylesheet = readFileSync(
       path.resolve(process.cwd(), "app/reading-river/reading-river.css"),

@@ -33,6 +33,8 @@ export function HomeRemoveAction({ removeAction }: HomeRemoveActionProps) {
   function submitRemove() {
     startTransition(async () => {
       await removeAction();
+      setShowConfirmation(false);
+      setSkipFutureConfirmation(false);
     });
   }
 

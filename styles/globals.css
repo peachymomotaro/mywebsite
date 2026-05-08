@@ -218,6 +218,30 @@ p {
   box-shadow: var(--shadow);
 }
 
+.quick-link-card {
+  display: flex;
+  min-height: 82px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text);
+  padding: 18px 20px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  font-size: 1.3rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.quick-link-card:hover {
+  border-color: var(--text);
+  background: var(--text);
+  color: var(--bg);
+}
+
 .post-card {
   display: flex;
   align-items: center;
@@ -407,6 +431,129 @@ p {
   margin-top: 14px;
   color: var(--muted);
   font-size: 0.95rem;
+}
+
+.reading-river-project {
+  margin-top: 44px;
+  padding-top: 40px;
+  border-top: 1px solid var(--border);
+}
+
+.reading-river-project h2 {
+  margin-top: 0;
+}
+
+.reading-river-project-copy {
+  min-width: 0;
+}
+
+.reading-river-panels {
+  display: grid;
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.reading-river-panel {
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background: var(--bg-elevated);
+  padding: 22px;
+}
+
+.reading-river-panel h3 {
+  margin-top: 0;
+}
+
+.reading-river-panel p,
+.reading-river-panel li {
+  color: var(--text);
+}
+
+.reading-river-panel ol {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.reading-river-source-list {
+  display: grid;
+  gap: 14px;
+  padding: 0;
+  margin: 18px 0 0;
+  list-style: none;
+}
+
+.reading-river-source-list li {
+  display: grid;
+  gap: 6px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.reading-river-source-list p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.reading-river-source-list a {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.reading-river-contact-box {
+  display: grid;
+  gap: 14px;
+  margin-top: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+}
+
+.reading-river-contact-box p {
+  margin: 0;
+  color: var(--text);
+}
+
+.reading-river-contact-box a {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--text);
+  border-radius: 999px;
+  color: var(--text);
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.reading-river-contact-box a:hover {
+  background: var(--text);
+  color: var(--bg);
+}
+
+.reading-river-project-image {
+  display: block;
+  overflow: hidden;
+  margin-top: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow);
+}
+
+.reading-river-project-image img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  object-position: top center;
 }
 
 .snapshot-stack {

@@ -21,6 +21,7 @@ const TOOL_IMAGES = [
 ];
 
 const CHATHAM_LOGO = "/chatham-house-logo.png";
+const READING_RIVER_IMAGE = "/ReadingRiver.png";
 const TYPE_SPEED_MS = 18;
 
 const buildStoryText = (story) => {
@@ -255,6 +256,117 @@ export default function Projects() {
             </p>
           )}
         </div>
+      </section>
+
+      <section className="reading-river-project" id="reading-river">
+        <div className="reading-river-project-copy">
+          <div className="partner-label">Personal tool</div>
+          <h2>Reading River</h2>
+          <p className="lead">
+            Reading River is a way to lower the pressure to read everything. It 
+            is aimed at people who spend a lot of time reading, and who want to make 
+            calmer choices about what to read next. 
+          </p>
+          <p>
+            The core idea is that your reading list should be more like a river
+            than a bucket. You wade in at a spot, grab something you want to
+            read, and then let the rest keep moving.
+          </p>
+        </div>
+        <div className="reading-river-panels">
+          {/*
+          <section className="reading-river-panel">
+            <h3>The Basics</h3>
+            <ol>
+              <li>Find things that you think are worth reading.</li>
+              <li>
+                Put them into the river, where they become fiches. Set how
+                important each fiche is with the priority setting.
+              </li>
+              <li>When you want to read something, return to the river.</li>
+            </ol>
+          </section>
+          */}
+
+          <section className="reading-river-panel">
+            <h3>The Philosophy and How It Works</h3>
+            <p>
+              Things often seem much more important than they are when we see them for the
+              first time. Letting things sit lets us better assess how worthwhile they are.
+              The Reading River can also send out an email including items from your River, 
+              creating a small personal newsletter curated by you.
+            </p>
+            <p>
+              If you set how long you have to read, it first winnows your list
+              down to pieces that fit that time, falling back to shorter
+              options if needed. Then it sorts by a simple equation that
+              considers priority, reading time, and age.
+            </p>
+            <ul className="reading-river-source-list">
+              <li>
+                <a
+                  href="https://www.oliverburkeman.com/river"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Oliver Burkeman on the river
+                </a>
+                <p>The primary inspiration for the philosophy of the site, and the source of the idea that reading should be treated like a river, not a bucket.</p>
+              </li>
+              <li>
+                <a
+                  href="https://davidepstein.substack.com/p/how-to-improve-your-information-diet"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  David Epstein, How To Improve Your Information Diet
+                </a>
+                <p>
+                  As David Epstein puts it: "With your information diet, the whole goal is to be intentional about what you’re consuming."
+                  The Reading River adds an intentionality to your reading. 
+                </p>
+              </li>
+              <li>
+                <a
+                  href="https://notes.andymatuschak.org/Spaced_repetition_systems_can_be_used_to_program_attention"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Andy Matuschak on programming attention
+                </a>
+                <p>
+                  Reading River treats saving a link as a way of deciding to pay
+                  attention later, not right now.
+                </p>
+              </li>
+            </ul>
+          </section>
+        </div>
+        <div className="reading-river-contact-box">
+          <p>
+            If you&apos;d like to join the Reading River beta, just drop me an email saying you'd like to try it and I'll get back to you.
+          </p>
+          <a href="mailto:curry.peter@googlemail.com?subject=Reading%20River">
+            Sign up for the Reading River
+          </a>
+        </div>
+        <button
+          className="media-button reading-river-project-image"
+          type="button"
+          onClick={() =>
+            setActiveImage({
+              src: READING_RIVER_IMAGE,
+              alt: "Reading River app screenshot"
+            })
+          }
+          aria-label="Expand Reading River app screenshot"
+        >
+          <img
+            src={READING_RIVER_IMAGE}
+            alt="Reading River app screenshot"
+            loading="lazy"
+          />
+        </button>
       </section>
 
     </>

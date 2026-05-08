@@ -45,6 +45,23 @@ describe("HomeRemoveAction", () => {
     expect(window.localStorage.getItem(READING_RIVER_SKIP_REMOVE_CONFIRMATION_KEY)).toBe("true");
   });
 
+  it("closes the confirmation after the item is removed", async () => {
+    const removeAction = vi.fn(async () => {});
+
+    render(<HomeRemoveAction removeAction={removeAction} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm remove" }));
+
+    await waitFor(() => {
+      expect(removeAction).toHaveBeenCalledTimes(1);
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText("Are you sure?")).not.toBeInTheDocument();
+    });
+  });
+
   it("removes immediately when the reader has already opted out of confirmation", async () => {
     const removeAction = vi.fn(async () => {});
     window.localStorage.setItem(READING_RIVER_SKIP_REMOVE_CONFIRMATION_KEY, "true");

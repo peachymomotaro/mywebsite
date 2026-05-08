@@ -85,34 +85,35 @@ export default function Home({ latestPost }) {
       <section>
         <h1>I’m Peter Curry.</h1>
         <p className="lead">
-          I currently work at the intersection of research and AI, translating complex ideas into clear narratives and concrete tools. Previously, I was a audiovisual producer and editor, creating podcasts and video content for a range of clients.
+          I'm building AI tools which capitalise on the strengths of current machine learning architectures.
         </p>
         <p className="lead">
-          This site is a hub for my AI scenario work, writing, and audio projects.
+          I'm currently the ML lead for a startup called The Fizz. We're working to use AI to create more positive visions of the future and to help people adapt to climate change.
+        </p>
+        <p className="lead">
+          I write a blog about systems and neuroscience, exploring how we can and should think about the future and the structure of our software and business.
+        </p>
+        <p className="lead">
+          Previously, I was a researcher, an audiovisual producer and an editor, creating podcasts and video content for a range of clients.
+        </p>
+        <p className="lead">
+          This site is a hub for my creative projects and writing.
         </p>
       </section>
 
       <section className="section-grid" aria-label="Quick links">
-        <article className="card">
-          <h3 className="card-title">About &amp; CV</h3>
-          <p className="card-meta">Background, experience, and focus areas.</p>
-          <Link href="/about">Go to About</Link>
-        </article>
-        <article className="card">
-          <h3 className="card-title">Blog</h3>
-          <p className="card-meta">Selected writing hosted off-site.</p>
-          <Link href="/blog">View writing</Link>
-        </article>
-        <article className="card">
-          <h3 className="card-title">Projects</h3>
-          <p className="card-meta">AI scenarios and prototype work.</p>
-          <Link href="/projects">Explore projects</Link>
-        </article>
-        <article className="card">
-          <h3 className="card-title">Podcasts</h3>
-          <p className="card-meta">Shows I’ve produced, edited, or hosted.</p>
-          <Link href="/podcasts">See podcasts</Link>
-        </article>
+        <Link className="quick-link-card" href="/about">
+          About &amp; CV
+        </Link>
+        <Link className="quick-link-card" href="/blog">
+          Blog
+        </Link>
+        <Link className="quick-link-card" href="/projects">
+          Projects
+        </Link>
+        <Link className="quick-link-card" href="/podcasts">
+          Podcasts
+        </Link>
       </section>
 
       <section>
