@@ -7,6 +7,16 @@ export type ReadingRiverChangelogEntry = {
 
 export const readingRiverChangelogEntries: ReadingRiverChangelogEntry[] = [
   {
+    slug: "fiches-and-password-reset",
+    date: "9th May 2026",
+    title: "Fiches and Password Reset",
+    items: [
+      "Added fiches to the background! Now you have aquatic companions in the river.",
+      "You can now reset your password to the Reading River if you forget it.",
+      "Book Roulette now lets you remove books. If you click on the book in the book roulette, there is now a remove book button, which takes it out of the river permanently."
+    ],
+  },
+  {
     slug: "book-roulette-and-priority-tuning",
     date: "27 April 2026",
     title: "Book Roulette and priority tuning",

@@ -47,6 +47,7 @@ const mocks = vi.hoisted(() => ({
   markAsReadMock: vi.fn(async () => {}),
   skipReadingItemMock: vi.fn(async () => {}),
   deleteReadingItemMock: vi.fn(async () => {}),
+  deleteBookMock: vi.fn(async () => {}),
 }));
 
 vi.mock("next/link", () => ({
@@ -76,6 +77,10 @@ vi.mock("@/app/reading-river/actions/reading-items", () => ({
   markAsRead: mocks.markAsReadMock,
   skipReadingItem: mocks.skipReadingItemMock,
   deleteReadingItem: mocks.deleteReadingItemMock,
+}));
+
+vi.mock("@/app/reading-river/actions/books", () => ({
+  deleteBook: mocks.deleteBookMock,
 }));
 
 describe("ReadingRiverHomePage", () => {
@@ -144,11 +149,13 @@ describe("ReadingRiverHomePage", () => {
     fireEvent.click(bookButton);
 
     expect(screen.getByText("A gentle nudge from the shelf.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Remove book" })).toBeInTheDocument();
     expect(bookButton).toHaveAttribute("aria-expanded", "true");
 
     fireEvent.click(bookButton);
 
     expect(screen.queryByText("A gentle nudge from the shelf.")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Remove book" })).not.toBeInTheDocument();
     expect(bookButton).toHaveAttribute("aria-expanded", "false");
   });
 

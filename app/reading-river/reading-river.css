@@ -90,13 +90,14 @@ body {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
   background-image: url("/ReadingRiverBackground.png");
   background-position: center top;
   background-repeat: no-repeat;
   background-size: min(92rem, 120vw) auto;
-  opacity: 0.08;
+  opacity: 0.72;
+  filter: contrast(1.24) saturate(1.12);
   mix-blend-mode: multiply;
 }
 
@@ -265,7 +266,7 @@ a {
 .auth-page {
   min-height: 100vh;
   padding: 4rem 1.5rem;
-  background: hsl(var(--background));
+  background: transparent;
   color: hsl(var(--foreground));
 }
 
@@ -376,6 +377,43 @@ a {
 
 .auth-action-full {
   width: 100%;
+}
+
+.auth-text-button {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  font-family: var(--font-sans);
+  font-size: 0.94rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: color 160ms ease;
+}
+
+summary.auth-text-button {
+  list-style: none;
+}
+
+summary.auth-text-button::-webkit-details-marker {
+  display: none;
+}
+
+.auth-text-button:hover,
+.auth-text-button:focus-visible {
+  color: hsl(var(--foreground));
+  outline: none;
+}
+
+.forgot-password {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.forgot-password-form {
+  padding-top: 0.2rem;
 }
 
 .river-page {
@@ -862,6 +900,21 @@ a {
   font-family: var(--font-sans);
   font-size: 0.9rem;
   line-height: 1.55;
+}
+
+.river-home-page .river-book-roulette-details {
+  display: grid;
+  gap: 0.85rem;
+  justify-items: start;
+}
+
+.river-home-page .river-book-roulette-details form {
+  margin: 0;
+}
+
+.river-home-page .river-book-roulette-remove {
+  min-height: 2.55rem;
+  padding: 0.58rem 0.92rem;
 }
 
 .editorial-panel {

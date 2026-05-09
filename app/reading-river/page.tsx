@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { deleteBook } from "@/app/reading-river/actions/books";
 import { BookRoulette } from "@/components/reading-river/book-roulette";
 import { HomeReadCard } from "@/components/reading-river/home-read-card";
 import { TimeBudgetPicker, parseTimeBudgetSearchParam } from "@/components/reading-river/time-budget-picker";
@@ -22,6 +23,17 @@ export default async function ReadingRiverPage({ searchParams }: ReadingRiverPag
       userId: currentUser.id,
       timeBudgetMinutes: selectedTimeBudgetMinutes,
     });
+    const bookRoulettePick = data.bookRoulettePick;
+
+    async function removeBookRoulettePickAction() {
+      "use server";
+
+      if (!bookRoulettePick) {
+        return;
+      }
+
+      await deleteBook({ id: bookRoulettePick.id });
+    }
 
     return (
       <main className="river-home-page">
@@ -50,7 +62,7 @@ export default async function ReadingRiverPage({ searchParams }: ReadingRiverPag
 
         <TimeBudgetPicker selectedMinutes={data.selectedTimeBudgetMinutes} />
 
-        <BookRoulette book={data.bookRoulettePick} />
+        <BookRoulette book={bookRoulettePick} removeAction={removeBookRoulettePickAction} />
       </main>
     );
   });

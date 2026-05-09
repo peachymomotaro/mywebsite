@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { buildReadingRiverDailyDigestEmail } from "@/lib/reading-river/email";
+import {
+  buildReadingRiverDailyDigestEmail,
+  buildReadingRiverPasswordResetEmail,
+} from "@/lib/reading-river/email";
 
 describe("buildReadingRiverDailyDigestEmail", () => {
   const originalBaseUrl = process.env.READING_RIVER_BASE_URL;
@@ -62,5 +65,19 @@ describe("buildReadingRiverDailyDigestEmail", () => {
     expect(message.text).toContain("Small Gods");
     expect(message.text).toContain("Terry Pratchett");
     expect(message.text).toContain("A gentle nudge from the shelf.");
+  });
+
+  it("renders password reset emails with the reset link", () => {
+    process.env.READING_RIVER_BASE_URL = "https://example.com";
+
+    const message = buildReadingRiverPasswordResetEmail({
+      displayName: "River Reader",
+      token: "reset-token",
+    });
+
+    expect(message.subject).toBe("Reset your Reading River password");
+    expect(message.html).toContain("/reading-river/reset-password/reset-token");
+    expect(message.text).toContain("/reading-river/reset-password/reset-token");
+    expect(message.text).toContain("River Reader");
   });
 });

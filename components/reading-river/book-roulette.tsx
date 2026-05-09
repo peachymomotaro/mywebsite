@@ -8,9 +8,10 @@ const DEFAULT_BOOK_NOTES =
 
 type BookRouletteProps = {
   book: HomePageBook | null;
+  removeAction?: () => Promise<void>;
 };
 
-export function BookRoulette({ book }: BookRouletteProps) {
+export function BookRoulette({ book, removeAction }: BookRouletteProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const notesId = useId();
   const notes = book?.notes?.trim() || DEFAULT_BOOK_NOTES;
@@ -33,9 +34,19 @@ export function BookRoulette({ book }: BookRouletteProps) {
             {book.author ? <span className="river-book-roulette-author">{book.author}</span> : null}
           </div>
           {isExpanded ? (
-            <p className="river-book-roulette-notes" id={notesId}>
-              {notes}
-            </p>
+            <div className="river-book-roulette-details" id={notesId}>
+              <p className="river-book-roulette-notes">{notes}</p>
+              {removeAction ? (
+                <form action={removeAction}>
+                  <button
+                    type="submit"
+                    className="river-spotlight-action-button river-spotlight-action-danger river-book-roulette-remove"
+                  >
+                    Remove book
+                  </button>
+                </form>
+              ) : null}
+            </div>
           ) : null}
         </div>
       ) : (

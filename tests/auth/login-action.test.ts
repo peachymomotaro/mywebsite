@@ -45,6 +45,11 @@ const sessionMocks = vi.hoisted(() => ({
   revokeSession: vi.fn(),
 }));
 
+const resetMocks = vi.hoisted(() => ({
+  createPasswordResetToken: vi.fn(),
+  sendReadingRiverPasswordResetEmail: vi.fn(),
+}));
+
 vi.mock("next/navigation", () => ({
   redirect: actionMocks.redirect,
 }));
@@ -62,8 +67,16 @@ vi.mock("@/lib/reading-river/session", () => ({
   revokeSession: sessionMocks.revokeSession,
 }));
 
+vi.mock("@/lib/reading-river/password-resets", () => ({
+  createPasswordResetToken: resetMocks.createPasswordResetToken,
+}));
+
+vi.mock("@/lib/reading-river/email", () => ({
+  sendReadingRiverPasswordResetEmail: resetMocks.sendReadingRiverPasswordResetEmail,
+}));
+
 import { hashPassword } from "@/lib/reading-river/auth";
-import { loginAction } from "@/app/reading-river/login/actions";
+import { loginAction, requestPasswordResetAction } from "@/app/reading-river/login/actions";
 import { GET as logout } from "@/app/reading-river/logout/route";
 
 describe("login action", () => {
@@ -71,6 +84,8 @@ describe("login action", () => {
     dbMocks.getPrismaClient.mockClear();
     sessionMocks.createSession.mockReset();
     sessionMocks.revokeSession.mockReset();
+    resetMocks.createPasswordResetToken.mockReset();
+    resetMocks.sendReadingRiverPasswordResetEmail.mockReset();
     actionMocks.resetCookieStore();
   });
 
@@ -223,6 +238,72 @@ describe("login action", () => {
     await expect(loginAction(formData)).rejects.toThrow("redirect:/reading-river");
 
     expect(sessionMocks.createSession).toHaveBeenCalledWith("user-1");
+  });
+
+  it("sends a password reset email for an active account and redirects with generic feedback", async () => {
+    const userFindUnique = vi.fn(async () => ({
+      id: "user-1",
+      email: "reader@example.com",
+      displayName: "River Reader",
+      passwordHash: "hash",
+      status: "active",
+      isAdmin: false,
+      createdAt: new Date("2026-04-01T12:00:00Z"),
+      updatedAt: new Date("2026-04-01T12:00:00Z"),
+    }));
+
+    dbMocks.setPrismaMock({
+      user: {
+        findUnique: userFindUnique,
+      },
+    });
+    resetMocks.createPasswordResetToken.mockResolvedValue({
+      token: "reset-token",
+      resetToken: {
+        id: "reset-1",
+      },
+    });
+
+    const formData = new FormData();
+    formData.set("email", " Reader@Example.com ");
+
+    await expect(requestPasswordResetAction(formData)).rejects.toThrow(
+      "redirect:/reading-river/login?reset=requested",
+    );
+
+    expect(userFindUnique).toHaveBeenCalledWith({
+      where: {
+        email: "reader@example.com",
+      },
+    });
+    expect(resetMocks.createPasswordResetToken).toHaveBeenCalledWith({
+      userId: "user-1",
+    });
+    expect(resetMocks.sendReadingRiverPasswordResetEmail).toHaveBeenCalledWith({
+      email: "reader@example.com",
+      displayName: "River Reader",
+      token: "reset-token",
+    });
+  });
+
+  it("does not reveal missing accounts during password reset requests", async () => {
+    const userFindUnique = vi.fn(async () => null);
+
+    dbMocks.setPrismaMock({
+      user: {
+        findUnique: userFindUnique,
+      },
+    });
+
+    const formData = new FormData();
+    formData.set("email", "missing@example.com");
+
+    await expect(requestPasswordResetAction(formData)).rejects.toThrow(
+      "redirect:/reading-river/login?reset=requested",
+    );
+
+    expect(resetMocks.createPasswordResetToken).not.toHaveBeenCalled();
+    expect(resetMocks.sendReadingRiverPasswordResetEmail).not.toHaveBeenCalled();
   });
 
   it("revokes the current session on logout", async () => {

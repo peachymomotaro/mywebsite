@@ -18,6 +18,10 @@ export function getReadingRiverInviteUrl(token: string) {
   return getReadingRiverUrl(readingRiverPath(`/invite/${encodeURIComponent(token)}`));
 }
 
+export function getReadingRiverPasswordResetUrl(token: string) {
+  return getReadingRiverUrl(readingRiverPath(`/reset-password/${encodeURIComponent(token)}`));
+}
+
 export function getReadingRiverHomeUrl() {
   return getReadingRiverUrl();
 }

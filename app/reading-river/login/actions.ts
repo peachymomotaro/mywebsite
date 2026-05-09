@@ -9,6 +9,8 @@ import {
   verifyPassword,
 } from "@/lib/reading-river/auth";
 import { getPrismaClient } from "@/lib/reading-river/db";
+import { sendReadingRiverPasswordResetEmail } from "@/lib/reading-river/email";
+import { createPasswordResetToken } from "@/lib/reading-river/password-resets";
 import { createSession } from "@/lib/reading-river/session";
 import { readingRiverPath } from "@/lib/reading-river/routes";
 
@@ -51,4 +53,38 @@ export async function loginAction(formData: FormData) {
   cookieStore.set(getSessionCookieName(), token, getSessionCookieOptions());
 
   redirect(readingRiverPath());
+}
+
+export async function requestPasswordResetAction(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const redirectPath = readingRiverPath("/login?reset=requested");
+
+  if (!email) {
+    redirect(redirectPath);
+  }
+
+  const prisma = getPrismaClient();
+  const user = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
+
+  if (user?.status === UserStatus.active) {
+    try {
+      const { token } = await createPasswordResetToken({
+        userId: user.id,
+      });
+
+      await sendReadingRiverPasswordResetEmail({
+        email: user.email,
+        displayName: user.displayName ?? user.email,
+        token,
+      });
+    } catch (error) {
+      console.error("Failed to send Reading River password reset email.", error);
+    }
+  }
+
+  redirect(redirectPath);
 }

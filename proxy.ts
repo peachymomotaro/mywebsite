@@ -12,7 +12,8 @@ function isPublicReadingRiverPath(pathname: string) {
     pathname === readingRiverPath("/invite") ||
     pathname === readingRiverPath("/login") ||
     pathname === readingRiverPath("/logout") ||
-    pathname.startsWith(`${readingRiverPath("/invite")}/`)
+    pathname.startsWith(`${readingRiverPath("/invite")}/`) ||
+    pathname.startsWith(`${readingRiverPath("/reset-password")}/`)
   );
 }
 

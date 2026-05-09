@@ -1,8 +1,9 @@
 import { AuthActions } from "@/components/reading-river/auth-actions";
 import { AuthField } from "@/components/reading-river/auth-field";
 import { AuthShell } from "@/components/reading-river/auth-shell";
+import { ForgotPasswordForm } from "@/components/reading-river/forgot-password-form";
 import { measureReadingRiverTiming } from "@/lib/reading-river/timing";
-import { loginAction } from "./actions";
+import { loginAction, requestPasswordResetAction } from "./actions";
 
 type LoginPageProps = {
   searchParams?:
@@ -21,12 +22,24 @@ function getErrorMessage(error: string | null) {
   }
 }
 
+function getResetMessage(reset: string | null) {
+  switch (reset) {
+    case "requested":
+      return "If that email has a Reading River account, a reset link has been sent.";
+    default:
+      return null;
+  }
+}
+
 export default async function LoginPage({ searchParams }: LoginPageProps = {}) {
   return measureReadingRiverTiming("page.reading-river-login.render", async () => {
     const resolvedSearchParams = (await searchParams) ?? {};
     const error =
       typeof resolvedSearchParams.error === "string" ? resolvedSearchParams.error : null;
+    const reset =
+      typeof resolvedSearchParams.reset === "string" ? resolvedSearchParams.reset : null;
     const errorMessage = getErrorMessage(error);
+    const resetMessage = getResetMessage(reset);
 
     return (
       <AuthShell
@@ -36,9 +49,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps = {}) {
           <p className="auth-description">Use your invite email and password to continue.</p>
         }
         feedback={
-          errorMessage ? (
+          errorMessage || resetMessage ? (
             <p aria-live="polite" role="alert" className="auth-feedback-copy">
-              {errorMessage}
+              {errorMessage ?? resetMessage}
             </p>
           ) : null
         }
@@ -68,6 +81,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps = {}) {
             </button>
           </AuthActions>
         </form>
+        <ForgotPasswordForm action={requestPasswordResetAction} />
       </AuthShell>
     );
   });

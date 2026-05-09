@@ -38,6 +38,15 @@ describe("reading river middleware", () => {
     expect(getCurrentUserFromSessionToken).not.toHaveBeenCalled();
   });
 
+  it("allows anonymous users to open password reset links", async () => {
+    const response = await proxy(
+      new NextRequest("https://example.com/reading-river/reset-password/reset-token"),
+    );
+
+    expect(getRedirectLocation(response)).toBeNull();
+    expect(getCurrentUserFromSessionToken).not.toHaveBeenCalled();
+  });
+
   it("skips auth middleware for server action requests", async () => {
     getCurrentUserFromSessionToken.mockResolvedValue(null);
 

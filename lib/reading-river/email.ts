@@ -3,6 +3,7 @@ import {
   getReadingRiverHomeUrl,
   getReadingRiverInviteUrl,
   getReadingRiverItemUrl,
+  getReadingRiverPasswordResetUrl,
 } from "@/lib/reading-river/public-url";
 
 type DailyDigestEmailItem = {
@@ -73,6 +74,73 @@ export async function sendReadingRiverInviteEmail({
 
   if (error) {
     throw new Error(error.message || "Resend did not send the invite email.");
+  }
+
+  return data;
+}
+
+export function buildReadingRiverPasswordResetEmail({
+  displayName,
+  token,
+}: {
+  displayName: string;
+  token: string;
+}) {
+  const resetUrl = getReadingRiverPasswordResetUrl(token);
+  const recipientName = displayName.trim() || "there";
+
+  return {
+    subject: "Reset your Reading River password",
+    html: [
+      "<!doctype html>",
+      "<html>",
+      "<body style=\"margin: 0; padding: 32px; font-family: Arial, sans-serif; color: #111827; background: #f8fafc;\">",
+      `<div style=\"max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 20px; padding: 32px;\">`,
+      `<p style=\"margin: 0 0 12px; text-transform: uppercase; letter-spacing: 0.2em; font-size: 12px; color: #6b7280;\">Reading River</p>`,
+      `<h1 style=\"margin: 0 0 16px; font-size: 28px; line-height: 1.1;\">Reset your password</h1>`,
+      `<p style=\"margin: 0 0 20px; font-size: 16px; line-height: 1.6;\">Hi ${escapeHtml(recipientName)}, use this link to set a new Reading River password.</p>`,
+      `<p style=\"margin: 0 0 20px; font-size: 16px; line-height: 1.6;\"><a href=\"${escapeHtml(resetUrl)}\">Reset your password</a></p>`,
+      `<p style=\"margin: 0; color: #667085; font-size: 14px; line-height: 1.6;\">This link expires in one hour. If you did not request it, you can ignore this email.</p>`,
+      "</div>",
+      "</body>",
+      "</html>",
+    ].join(""),
+    text: [
+      "Reading River",
+      "Reset your password",
+      "",
+      `Hi ${recipientName}, use this link to set a new Reading River password:`,
+      resetUrl,
+      "",
+      "This link expires in one hour. If you did not request it, you can ignore this email.",
+    ].join("\n"),
+  };
+}
+
+export async function sendReadingRiverPasswordResetEmail({
+  email,
+  displayName,
+  token,
+}: {
+  email: string;
+  displayName: string;
+  token: string;
+}) {
+  const message = buildReadingRiverPasswordResetEmail({
+    displayName,
+    token,
+  });
+  const resend = getResendClient();
+  const { data, error } = await resend.emails.send({
+    from: getResendFromEmail(),
+    to: email,
+    subject: message.subject,
+    html: message.html,
+    text: message.text,
+  });
+
+  if (error) {
+    throw new Error(error.message || "Resend did not send the password reset email.");
   }
 
   return data;

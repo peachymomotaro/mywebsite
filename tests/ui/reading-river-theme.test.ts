@@ -28,11 +28,14 @@ describe("Reading River theme stylesheet", () => {
 
     expect(stylesheet).toContain(".editorial-shell::before {");
     expect(stylesheet).toContain("background-image: url(\"/ReadingRiverBackground.png\");");
-    expect(stylesheet).toContain("opacity: 0.08;");
+    expect(stylesheet).toContain("opacity: 0.72;");
+    expect(stylesheet).toContain("filter: contrast(1.24) saturate(1.12);");
+    expect(stylesheet).toContain("z-index: 0;");
     expect(stylesheet).toContain("pointer-events: none;");
     expect(stylesheet).toContain(".editorial-shell-frame > :not(.editorial-shell-rule) {");
     expect(stylesheet).toContain("position: relative;");
     expect(stylesheet).toContain("z-index: 1;");
+    expect(stylesheet).toContain(".auth-page {\n  min-height: 100vh;\n  padding: 4rem 1.5rem;\n  background: transparent;");
   });
 
   it("keeps the preferences panel compact but left aligned", () => {

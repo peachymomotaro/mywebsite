@@ -7,14 +7,23 @@ import LoginPage from "@/app/reading-river/login/page";
 
 const mocks = vi.hoisted(() => ({
   getInviteRedemptionState: vi.fn(),
+  getPasswordResetState: vi.fn(),
 }));
 
 vi.mock("@/lib/reading-river/invites", () => ({
   getInviteRedemptionState: mocks.getInviteRedemptionState,
 }));
 
+vi.mock("@/lib/reading-river/password-resets", () => ({
+  getPasswordResetState: mocks.getPasswordResetState,
+}));
+
 vi.mock("@/app/reading-river/invite/[token]/actions", () => ({
   redeemInviteAction: vi.fn(async () => {}),
+}));
+
+vi.mock("@/app/reading-river/reset-password/[token]/actions", () => ({
+  resetPasswordAction: vi.fn(async () => {}),
 }));
 
 describe("Reading River auth entry pages", () => {
@@ -31,6 +40,7 @@ describe("Reading River auth entry pages", () => {
     expect(screen.getByLabelText("Email address")).toBeInTheDocument();
     expect(screen.getByLabelText("Password")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
+    expect(screen.getByText("Forgot password?")).toBeInTheDocument();
     expect(container.querySelector('[data-slot="auth-shell"]')).toBeInTheDocument();
   });
 
@@ -67,6 +77,32 @@ describe("Reading River auth entry pages", () => {
     expect(screen.getByLabelText("Display name")).toBeInTheDocument();
     expect(screen.getByLabelText("Password")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Create account" })).toBeInTheDocument();
+    expect(container.querySelector('[data-slot="auth-shell"]')).toBeInTheDocument();
+  });
+
+  it("renders the valid password reset flow through the shared auth shell", async () => {
+    mocks.getPasswordResetState.mockResolvedValue({
+      status: "valid",
+      resetToken: {
+        user: {
+          email: "reader@example.com",
+        },
+      },
+    });
+
+    const { default: ResetPasswordPage } = await import("@/app/reading-river/reset-password/[token]/page");
+    const page = await ResetPasswordPage({
+      params: Promise.resolve({
+        token: "reset-token",
+      }),
+    });
+
+    const { container } = render(page);
+
+    expect(screen.getByRole("heading", { name: "Set a new password" })).toBeInTheDocument();
+    expect(screen.getByDisplayValue("reader@example.com")).toBeDisabled();
+    expect(screen.getByLabelText("New password")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reset password" })).toBeInTheDocument();
     expect(container.querySelector('[data-slot="auth-shell"]')).toBeInTheDocument();
   });
 

@@ -32,6 +32,17 @@ describe("auth schema", () => {
     expect(Prisma.ExtensionTokenScalarFieldEnum.lastUsedAt).toBe("lastUsedAt");
   });
 
+  it("defines password reset tokens as one-time user-owned tokens", () => {
+    expect(schema).toContain("model PasswordResetToken");
+    expect(schema).toMatch(/passwordResetTokens\s+PasswordResetToken\[\]/);
+    expect(schema).toMatch(/tokenHash\s+String\s+@unique/);
+    expect(schema).toMatch(/expiresAt\s+DateTime/);
+    expect(schema).toMatch(/usedAt\s+DateTime\?/);
+    expect(schema).toMatch(
+      /user\s+User\s+@relation\(fields: \[userId\], references: \[id\], onDelete: Cascade\)/,
+    );
+  });
+
   it("keeps read events tied to the owning user", () => {
     expect(schema).toMatch(
       /readingItem\s+ReadingItem\s+@relation\(fields: \[userId, readingItemId\], references: \[userId, id\], onDelete: Cascade\)/,

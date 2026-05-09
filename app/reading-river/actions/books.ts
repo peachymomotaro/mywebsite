@@ -36,3 +36,26 @@ export async function createBook(input: BookInput) {
 
   return result;
 }
+
+export async function deleteBook(input: { id: string }) {
+  const prisma = getPrismaClient();
+  const currentUser = await requireCurrentUser();
+  const bookId = input.id.trim();
+
+  if (!bookId) {
+    throw new Error("Book id is required.");
+  }
+
+  const result = await prisma.book.deleteMany({
+    where: {
+      id: bookId,
+      userId: currentUser.id,
+    },
+  });
+
+  if (result.count === 0) {
+    throw new Error(`Book ${bookId} was not found.`);
+  }
+
+  revalidatePath(STREAM_PATH);
+}
