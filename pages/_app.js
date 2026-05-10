@@ -15,11 +15,11 @@ const mono = Fira_Code({
 });
 
 export default function App({ Component, pageProps }) {
+  const page = <Component {...pageProps} />;
+
   return (
     <div className={`${serif.variable} ${mono.variable} app`}>
-      <Layout>
-        <Component {...pageProps} />
-      </Layout>
+      {Component.hideSiteLayout ? page : <Layout>{page}</Layout>}
     </div>
   );
 }

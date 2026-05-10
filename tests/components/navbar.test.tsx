@@ -30,4 +30,11 @@ describe("NavBar", () => {
       "/reading-river"
     );
   });
+
+  it("does not expose the Bayesian optimisation game in the main navigation", () => {
+    render(<NavBar />);
+
+    expect(screen.queryByRole("link", { name: /Bayesian optimisation game/i })).toBeNull();
+    expect(screen.queryByRole("link", { name: /Bayes/i })).toBeNull();
+  });
 });

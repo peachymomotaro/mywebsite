@@ -41,3 +41,23 @@ rg -F "Changed manual items to books"
 
 Search TypeScript/React files only:
 rg "Book Roulette" -g "*.ts" -g "*.tsx"
+
+Run local servers: From Peter Website:
+
+npm run dev
+
+http://localhost:3000
+
+http://localhost:3000/reading-river/login
+
+Shows everything listening on local ports:
+
+lsof -iTCP -sTCP:LISTEN -n -P
+
+To kill a specific port, e.g. 3000:
+
+lsof -ti :3000 | xargs kill
+
+If it refuses to die:
+
+lsof -ti :3000 | xargs kill -9

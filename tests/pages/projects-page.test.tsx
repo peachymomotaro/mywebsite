@@ -22,6 +22,34 @@ vi.mock("next/link", () => ({
 }));
 
 describe("Projects page", () => {
+  it("links the CapstoneBO+ project to the hidden Bayesian optimisation game", () => {
+    render(<Projects />);
+
+    expect(
+      screen.getByRole("heading", { name: "CapstoneBO+" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Bayesian optimisation and Gaussian Processes/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/black-box optimisation \(BBO\) challenge/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Go to the Model Card" })
+    ).toHaveAttribute(
+      "href",
+      "https://github.com/peachymomotaro/capstone/blob/main/docs/Model_Card.md"
+    );
+    expect(
+      screen.getByRole("img", { name: "Bayesian optimisation game preview" })
+    ).toHaveAttribute("src", "/BayesianOptimiser.png");
+    expect(
+      screen.getByRole("link", {
+        name: "Play the Bayesian optimisation game",
+      })
+    ).toHaveAttribute("href", "/bayesgame");
+  });
+
   it("presents Reading River as a project with its philosophy, links, and image", () => {
     render(<Projects />);
 

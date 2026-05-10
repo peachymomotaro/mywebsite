@@ -258,6 +258,114 @@ export default function Projects() {
         </div>
       </section>
 
+      <section className="capstone-project" id="capstone-bo">
+        <div className="partner-label">Machine learning capstone</div>
+        <h2>CapstoneBO+</h2>
+        <p className="lead">
+          Bayesian optimisation and Gaussian Processes.
+        </p>
+        <p>
+          From 2025 to 2026, I completed a Machine Learning course at Imperial College 
+          in order to develop my ML skills. One of the required outputs was a black-box 
+          optimisation (BBO) challenge, which involved optimising eight functions. Each 
+          function took a continuous input vector and returned a single score. We had no 
+          information on the functions except for a series of previous inputs and output. 
+          I could not inspect their equations, gradients, or internal structure. 
+        </p>
+        <p>
+          In Algorithms to Live By, Brian Christian and Tom Griffiths discuss the 
+          exploit-explore trade-off. Is it worth listening to a new album that you 
+          might enjoy, or relistening to an old album that you know you do? One part of 
+          this project was essentially a gamified way of looking at that trade-off. 
+          Should we explore new areas or exploit areas that already seemed promising? 
+          How do you make concrete decisions about those sorts of processes? 
+        </p>
+        <p>
+          In ordinary supervised learning we often ask the question: "Does my model fit 
+          this data well?" In black-box optimisation, because we're dealing with an unknown 
+          search space, the more germane question is: "Is my model collecting data from the
+          right places?"
+        </p>
+        <p>
+          Our model is doing two things. Firstly, it predicts which regions might have 
+          high values, and secondly, it estimates where the model is still uncertain. 
+          The optimiser can then use both signals when choosing the next sample.
+        </p>
+        <p className="lead">
+          Play the Game.
+        </p>
+        <p>
+          If you're interested in the technical side, you can read the notes below or you 
+          can see the{" "}
+          <a
+            href="https://github.com/peachymomotaro/capstone/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            entire code on my GitHub
+          </a>. 
+          But to make this more fun, I also built a small browser game where you too can 
+          try to beat a Bayesian Optimiser. The player and a toy Gaussian-process optimiser 
+          search the same hidden two-dimensional landscape. The player chooses points 
+          manually. The optimiser chooses points using a portfolio of acquisition strategies. 
+          At the end, the true landscape is revealed.
+        </p>
+        <p>
+          This demo is obviously simpler than what a real project in this space might involve. 
+          It is two-dimensional, and uses a lightweight Gaussian process rather than a full 
+          BoTorch workflow. But hopefully it helps to explain the process - what exactly were 
+          we trying to achieve? 
+        </p>
+        <p>
+          There are plenty of scenarios where these decisions matter in the real world - 
+          drug design, robotics and engineering, and also designing ML pipelines themselves. 
+          For instance, choosing the hyperparameter settings of a neural network can be 
+          modelled as a Bayesian optimisation problem.
+        </p>
+        <Link className="button capstone-game-link" href="/bayesgame">
+          Play the Bayesian optimisation game
+        </Link>
+        <img
+          className="capstone-game-preview"
+          src="/BayesianOptimiser.png"
+          alt="Bayesian optimisation game preview"
+          loading="lazy"
+        />
+        <div className="capstone-technical-note">
+          <h3>Technical note</h3>
+          <p>
+            The preferred modelling path uses a Gaussian process with an additive 
+            linear plus Matérn kernel, and output transformations such as Box-Cox, 
+            sign-flipped Box-Cox, or Yeo-Johnson where useful. The functions were 
+            small-data, continuous, and expensive to query, so a Gaussian process 
+            was a natural starting point.
+          </p>
+          <p>
+            Once the surrogate is fitted, the pipeline generates a mixed pool of 
+            candidate points. The candidates were a mix global Sobol samples, 
+            designed to preserve broad coverage of the search space. Some are 
+            trust-region candidates, sampled locally around historically strong areas. 
+            Some are elite-region candidates, drawn from boxes around the best observed 
+            points.
+          </p>
+          <p>
+            Each candidate is then scored using several acquisition-style signals, 
+            including expected improvement (EI), log expected improvement (logEI), 
+            probability of improvement (PI), upper confidence bound set with a range 
+            of betas (UCB), Thompson-style scores, posterior uncertainty, and novelty. 
+          </p>
+          <p>
+            <a
+              href="https://github.com/peachymomotaro/capstone/blob/main/docs/Model_Card.md"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Go to the Model Card
+            </a>
+          </p>
+        </div>
+      </section>
+
       <section className="reading-river-project" id="reading-river">
         <div className="reading-river-project-copy">
           <div className="partner-label">Personal tool</div>

@@ -601,6 +601,55 @@ p {
   margin-top: 40px;
 }
 
+.capstone-project {
+  margin-top: 44px;
+  padding-top: 40px;
+  border-top: 1px solid var(--border);
+}
+
+.capstone-project h2 {
+  margin-top: 0;
+}
+
+.capstone-technical-note {
+  margin: 24px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+}
+
+.capstone-technical-note h3 {
+  margin-top: 0;
+}
+
+.capstone-technical-note p {
+  margin: 0 0 16px;
+  color: var(--muted);
+}
+
+.capstone-technical-note p:last-child {
+  margin-bottom: 0;
+}
+
+.capstone-game-link {
+  width: fit-content;
+  margin: 8px 0 24px;
+  padding: 14px 24px;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.capstone-game-preview {
+  display: block;
+  width: 100%;
+  margin: 0 0 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
 .generator-actions {
   display: flex;
   flex-wrap: wrap;
@@ -677,6 +726,390 @@ p {
   cursor: pointer;
 }
 
+.bayes-game-page {
+  --bayes-bg: #10141d;
+  --bayes-panel: #171c28;
+  --bayes-panel-soft: #202637;
+  --bayes-text: #f6f7fb;
+  --bayes-muted: #c1cad9;
+  --bayes-border: rgba(255, 255, 255, 0.12);
+  --bayes-accent: #f5c542;
+  min-height: 100vh;
+  width: 100%;
+  padding: 18px;
+  background: var(--bayes-bg);
+  color: var(--bayes-text);
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 14px;
+}
+
+.bayes-game-page h1,
+.bayes-game-page p {
+  color: var(--bayes-text);
+}
+
+.bayes-return-link {
+  width: fit-content;
+  border: 1px solid var(--bayes-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--bayes-text);
+  padding: 8px 12px;
+  font-size: 0.9rem;
+}
+
+.bayes-return-link:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--bayes-text);
+}
+
+.bayes-game-intro {
+  max-width: 980px;
+}
+
+.bayes-game-intro .partner-label {
+  margin-bottom: 8px;
+  color: var(--bayes-muted);
+}
+
+.bayes-game-intro h1 {
+  margin-bottom: 8px;
+}
+
+.bayes-game-intro .lead {
+  margin-bottom: 0;
+  color: var(--bayes-muted);
+}
+
+.bayes-game-shell {
+  min-height: 0;
+  border: 1px solid var(--bayes-border);
+  border-radius: var(--radius);
+  background: var(--bayes-bg);
+  color: var(--bayes-text);
+  padding: 18px;
+  box-shadow: var(--shadow);
+}
+
+.bayes-game-shell p {
+  color: var(--bayes-muted);
+}
+
+.bayes-mode-fieldset {
+  border: 1px solid var(--bayes-border);
+  border-radius: var(--radius);
+  background: var(--bayes-panel);
+  padding: 16px;
+}
+
+.bayes-mode-fieldset legend {
+  padding: 0 8px;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bayes-muted);
+}
+
+.bayes-mode-fieldset p {
+  margin: 12px 0 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.bayes-segmented-control,
+.bayes-overlay-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bayes-segmented-control button,
+.bayes-overlay-buttons button,
+.bayes-game-actions button {
+  border: 1px solid var(--bayes-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--bayes-text);
+  padding: 8px 12px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.bayes-segmented-control button:hover,
+.bayes-overlay-buttons button:hover,
+.bayes-game-actions button:hover {
+  border-color: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.bayes-segmented-control button.is-active,
+.bayes-overlay-buttons button.is-active,
+.bayes-game-actions button:last-child {
+  border-color: var(--bayes-text);
+  background: var(--bayes-text);
+  color: var(--bayes-bg);
+}
+
+.bayes-segmented-control button:disabled,
+.bayes-overlay-buttons button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.bayes-game-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  gap: 18px;
+  height: 100%;
+  min-height: 0;
+}
+
+.bayes-game-grid > div:first-child {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 0;
+}
+
+.bayes-map-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: var(--bayes-muted);
+  font-size: 0.9rem;
+}
+
+.bayes-map {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+  aspect-ratio: auto;
+  overflow: hidden;
+  border: 1px solid var(--bayes-border);
+  border-radius: var(--radius);
+  background: #111827;
+  cursor: crosshair;
+  padding: 0;
+  text-align: inherit;
+}
+
+.bayes-map.is-locked {
+  cursor: default;
+}
+
+.bayes-game-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.bayes-map-point,
+.bayes-map-optimum {
+  position: absolute;
+  z-index: 3;
+  display: block;
+  border: 2px solid;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  transition: width 0.2s ease, height 0.2s ease, box-shadow 0.2s ease;
+}
+
+.bayes-map-point-gp {
+  border-width: 3px;
+}
+
+.bayes-map-optimum {
+  z-index: 4;
+  width: 20px;
+  height: 20px;
+  border-color: #ffffff;
+  background: var(--bayes-accent);
+  box-shadow: 0 0 28px rgba(245, 197, 66, 0.85);
+}
+
+.bayes-map-message {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  z-index: 5;
+  border: 1px solid var(--bayes-border);
+  border-radius: var(--radius);
+  background: rgba(10, 14, 22, 0.84);
+  color: var(--bayes-text);
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  pointer-events: none;
+}
+
+.bayes-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 12px;
+  color: var(--bayes-muted);
+  font-size: 0.85rem;
+}
+
+.bayes-map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.bayes-map-legend i {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 1px solid #ffffff;
+}
+
+.bayes-legend-player {
+  background: #7c3aed;
+}
+
+.bayes-legend-gp {
+  background: #ffffff;
+}
+
+.bayes-legend-optimum {
+  background: var(--bayes-accent);
+}
+
+.bayes-score-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  border: 1px solid var(--bayes-border);
+  border-radius: var(--radius);
+  background: var(--bayes-panel);
+  padding: 18px;
+}
+
+.bayes-score-panel h2 {
+  margin: 0;
+  color: var(--bayes-text);
+  font-size: 1.2rem;
+}
+
+.bayes-score-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.bayes-score-grid div,
+.bayes-sparkline-card,
+.bayes-result {
+  border: 1px solid var(--bayes-border);
+  border-radius: var(--radius);
+  background: var(--bayes-panel-soft);
+  padding: 12px;
+}
+
+.bayes-score-grid span {
+  display: block;
+  min-height: 2.4em;
+  color: var(--bayes-muted);
+  font-size: 0.85rem;
+  line-height: 1.2;
+}
+
+.bayes-score-grid strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--bayes-text);
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.bayes-result {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.bayes-sparkline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--bayes-muted);
+  font-size: 0.82rem;
+}
+
+.bayes-sparkline {
+  display: block;
+  width: 100%;
+  height: 52px;
+  margin-top: 10px;
+  overflow: visible;
+}
+
+.bayes-sparkline line {
+  stroke: rgba(255, 255, 255, 0.12);
+}
+
+.bayes-sparkline path {
+  fill: none;
+  stroke: var(--bayes-text);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.bayes-sparkline-hidden {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  margin-top: 10px;
+  border: 1px dashed var(--bayes-border);
+  border-radius: 8px;
+  color: var(--bayes-muted);
+  font-size: 0.85rem;
+}
+
+.bayes-game-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 900px) {
+  .bayes-game-page {
+    min-height: 100vh;
+    padding: 14px;
+  }
+
+  .bayes-game-grid {
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .bayes-map-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .bayes-map {
+    height: auto;
+    min-height: 0;
+    aspect-ratio: 1 / 1;
+  }
+}
+
 .site-footer {
   border-top: 1px solid var(--border);
   padding: 28px 0 40px;
@@ -736,5 +1169,22 @@ p {
 
   .chatham-logo {
     width: min(280px, 100%);
+  }
+
+  .bayes-game-shell {
+    padding: 14px;
+  }
+
+  .bayes-game-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bayes-map-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .bayes-game-actions {
+    grid-template-columns: 1fr;
   }
 }
