@@ -26,5 +26,18 @@ describe("Bayes game page", () => {
     expect(
       screen.getByRole("link", { name: "Return to my website" })
     ).toHaveAttribute("href", "/projects");
+    expect(screen.getByRole("heading", { name: "How to play" })).toBeInTheDocument();
+    expect(screen.getByText(/The goal is to score more than the Optimiser, an evil AI nemesis/i)).toBeInTheDocument();
+    expect(screen.getByText(/You get a score by clicking in the grid/i)).toBeInTheDocument();
+    expect(screen.getByText(/The lowest score is 0 and the highest is 1/i)).toBeInTheDocument();
+    expect(screen.getByText(/Green is good and blue is bad/i)).toBeInTheDocument();
+    expect(screen.getByText(/Good luck/i)).toBeInTheDocument();
+    expect(screen.getByText("Latest score")).toBeInTheDocument();
+    expect(screen.getByText("Best score")).toBeInTheDocument();
+    expect(screen.queryByText("Your best-so-far")).toBeNull();
+    expect(screen.queryByText("GP best-so-far")).toBeNull();
+    expect(screen.queryByRole("button", { name: /GP uncertainty/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /GP belief/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /GP score/i })).toBeNull();
   });
 });

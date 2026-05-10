@@ -30,7 +30,7 @@ type Landscape = {
 };
 
 type OverlayMode = "unknown" | "belief" | "uncertainty" | "acquisition" | "truth";
-type OptimiserMode = "portfolio" | "balanced" | "greedy" | "curious";
+type OptimiserMode = "portfolio" | "greedy" | "curious";
 
 type GPModel = {
   observations: Sample[];
@@ -479,18 +479,14 @@ function colourFromValue(value: number, alpha = 1): string {
   return `hsla(${hue}, 78%, ${lightness}%, ${alpha})`;
 }
 
-function labelForMode(mode: OptimiserMode): string {
-  if (mode === "portfolio") return "Portfolio GP";
-  if (mode === "greedy") return "Greedy GP";
-  if (mode === "curious") return "Curious GP";
-  return "Balanced GP";
+function labelForMode(_mode: OptimiserMode): string {
+  return "Optimiser";
 }
 
 function explanationForMode(mode: OptimiserMode): string {
-  if (mode === "portfolio") return "Combines expected improvement, UCB, posterior mean, local search, uncertainty, and novelty.";
-  if (mode === "greedy") return "Picks where the predicted score is highest. Strong when the model is right, brittle when early data misleads it.";
-  if (mode === "curious") return "Picks where uncertainty is highest. It learns the map quickly, but can waste turns away from good regions.";
-  return "Uses an upper-confidence-bound score: predicted value plus uncertainty. It explores early and exploits later.";
+  if (mode === "portfolio") return "Balanced mixes several search strategies to hunt for good regions without getting stuck too early.";
+  if (mode === "greedy") return "Picks where the predicted score is highest. Strong when the model is right early on, but weak if it doesn't.";
+  return "Picks where uncertainty is highest. It learns the map quickly, but doesn't spend a lot of time in the good regions.";
 }
 
 function hslToRgb(h: number, s: number, l: number): [number, number, number] {
@@ -757,6 +753,7 @@ export default function BayesGame() {
   useEffect(() => () => clearPendingMove(), []);
 
   const ended = turn >= TURNS_PER_GAME;
+  const playerLatest = playerSamples[playerSamples.length - 1];
   const playerBest = bestSample(playerSamples);
   const gpBest = bestSample(gpSamples);
   const winner = !ended
@@ -827,9 +824,6 @@ export default function BayesGame() {
 
   const overlayOptions: { value: OverlayMode; label: string; disabled?: boolean }[] = [
     { value: "unknown", label: "Hidden surface" },
-    { value: "uncertainty", label: "GP uncertainty" },
-    { value: "belief", label: ended ? "GP belief" : "GP belief locked", disabled: !ended },
-    { value: "acquisition", label: ended ? "GP portfolio score" : "GP score locked", disabled: !ended },
     { value: "truth", label: ended ? "True landscape" : "True landscape locked", disabled: !ended },
   ];
 
@@ -892,10 +886,21 @@ export default function BayesGame() {
         </div>
 
         <aside className="bayes-score-panel">
+          <section className="bayes-how-to-play" aria-labelledby="bayes-how-to-play-title">
+            <h2 id="bayes-how-to-play-title">How to play</h2>
+            <ol>
+              <li>The goal is to score more than the Optimiser, an evil AI nemesis.</li>
+              <li>You get a score by clicking in the grid.</li>
+              <li>The lowest score is 0 and the highest is 1.</li>
+              <li>You can see your most recent score and your highest score. Green is good and blue is bad.</li>
+              <li>Good luck!</li>
+            </ol>
+          </section>
+
           <fieldset className="bayes-mode-fieldset" aria-label="Optimiser personality">
             <legend>Optimiser personality</legend>
             <div className="bayes-segmented-control">
-              {(["portfolio", "balanced", "greedy", "curious"] as OptimiserMode[]).map((mode) => (
+              {(["portfolio", "greedy", "curious"] as OptimiserMode[]).map((mode) => (
                 <button
                   key={mode}
                   type="button"
@@ -903,7 +908,7 @@ export default function BayesGame() {
                   disabled={turn > 0 || isAnimating}
                   className={optimiserMode === mode ? "is-active" : ""}
                 >
-                  {mode === "portfolio" ? "Portfolio" : mode === "balanced" ? "UCB" : mode === "greedy" ? "Greedy" : "Curious"}
+                  {mode === "portfolio" ? "Balanced" : mode === "greedy" ? "Greedy" : "Curious"}
                 </button>
               ))}
             </div>
@@ -911,25 +916,49 @@ export default function BayesGame() {
           </fieldset>
 
           <h2>Scoreboard</h2>
+
           <div className="bayes-score-grid">
-            <div>
-              <span>You</span>
+            <div className="bayes-score-card bayes-score-card-player">
+              <span>Latest score</span>
+              <strong>{formatScore(playerLatest?.value)}</strong>
+            </div>
+
+            <div className="bayes-score-card bayes-score-card-player">
+              <span>Best score</span>
               <strong>{formatScore(playerBest?.value)}</strong>
             </div>
-            <div>
+
+            <div className="bayes-score-card bayes-score-card-optimiser">
               <span>{labelForMode(optimiserMode)}</span>
               <strong>{ended ? formatScore(gpBest?.value) : "hidden"}</strong>
+            </div>
+
+            <div
+              className={[
+                "bayes-score-card",
+                ended && winner === "player" ? "bayes-score-card-player" : "",
+                ended && winner === "gp" ? "bayes-score-card-optimiser" : "",
+                !ended || winner === "draw" ? "bayes-score-card-neutral" : "",
+              ].join(" ")}
+            >
+              <span>{ended ? "Winner" : "Rounds left"}</span>
+              <strong>
+                {ended
+                  ? winner === "player"
+                    ? "You"
+                    : winner === "gp"
+                      ? "Optimiser"
+                      : "Draw"
+                  : TURNS_PER_GAME - turn}
+              </strong>
             </div>
           </div>
           <p className="bayes-result">
             {ended && winner === "player" ? "You won. Your search found a better experiment than the optimiser." : null}
-            {ended && winner === "gp" ? "The optimiser won. Its acquisition portfolio found the better region." : null}
+            {ended && winner === "gp" ? "The optimiser won. It found the better point." : null}
             {ended && winner === "draw" ? "Draw. You and the optimiser ended with the same best score." : null}
             {!ended ? "The optimiser's values are hidden during play, so its samples cannot be used as free scouting information." : null}
           </p>
-
-          <ScoreSparkline samples={playerSamples} label="Your best-so-far" />
-          <ScoreSparkline samples={gpSamples} label="GP best-so-far" hidden={!ended} />
 
           <div className="bayes-game-actions">
             <button type="button" onClick={restartCurrentGame}>Restart same map</button>

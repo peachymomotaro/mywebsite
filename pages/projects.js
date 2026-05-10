@@ -268,28 +268,22 @@ export default function Projects() {
           From 2025 to 2026, I completed a Machine Learning course at Imperial College 
           in order to develop my ML skills. One of the required outputs was a black-box 
           optimisation (BBO) challenge, which involved optimising eight functions. Each 
-          function took a continuous input vector and returned a single score. We had no 
+          function took a continuous input vector and returned a single output score. We had no 
           information on the functions except for a series of previous inputs and output. 
-          I could not inspect their equations, gradients, or internal structure. 
         </p>
         <p>
           In Algorithms to Live By, Brian Christian and Tom Griffiths discuss the 
           exploit-explore trade-off. Is it worth listening to a new album that you 
-          might enjoy, or relistening to an old album that you know you do? One part of 
-          this project was essentially a gamified way of looking at that trade-off. 
-          Should we explore new areas or exploit areas that already seemed promising? 
-          How do you make concrete decisions about those sorts of processes? 
+          might enjoy, or relistening to an old album that you know you do? One way of
+          thinking about this project is that it was essentially a gamified way of 
+          looking at that trade-off. Should we explore new areas or exploit areas that 
+          already seemed promising?
         </p>
         <p>
-          In ordinary supervised learning we often ask the question: "Does my model fit 
-          this data well?" In black-box optimisation, because we're dealing with an unknown 
-          search space, the more germane question is: "Is my model collecting data from the
-          right places?"
-        </p>
-        <p>
-          Our model is doing two things. Firstly, it predicts which regions might have 
-          high values, and secondly, it estimates where the model is still uncertain. 
-          The optimiser can then use both signals when choosing the next sample.
+          There are plenty of scenarios where these decisions matter in the real world. 
+          Let's say we can send a robot to Mars because we want to drill and collect a sample.
+          Where should we land the robot? To give another example, choosing the 
+          hyperparameter settings of a neural network can be modelled in this way. 
         </p>
         <p className="lead">
           Play the Game.
@@ -305,7 +299,7 @@ export default function Projects() {
             entire code on my GitHub
           </a>. 
           But to make this more fun, I also built a small browser game where you too can 
-          try to beat a Bayesian Optimiser. The player and a toy Gaussian-process optimiser 
+          try to beat a Bayesian Optimiser. The player and a Gaussian-process optimiser 
           search the same hidden two-dimensional landscape. The player chooses points 
           manually. The optimiser chooses points using a portfolio of acquisition strategies. 
           At the end, the true landscape is revealed.
@@ -314,13 +308,7 @@ export default function Projects() {
           This demo is obviously simpler than what a real project in this space might involve. 
           It is two-dimensional, and uses a lightweight Gaussian process rather than a full 
           BoTorch workflow. But hopefully it helps to explain the process - what exactly were 
-          we trying to achieve? 
-        </p>
-        <p>
-          There are plenty of scenarios where these decisions matter in the real world - 
-          drug design, robotics and engineering, and also designing ML pipelines themselves. 
-          For instance, choosing the hyperparameter settings of a neural network can be 
-          modelled as a Bayesian optimisation problem.
+          we trying to achieve?
         </p>
         <Link className="button capstone-game-link" href="/bayesgame">
           Play the Bayesian optimisation game

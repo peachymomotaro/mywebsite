@@ -765,6 +765,64 @@ p {
   color: var(--bayes-text);
 }
 
+.bayes-how-to-play {
+  border: 1px solid var(--bayes-border);
+  border-radius: var(--radius);
+  background: var(--bayes-panel-soft);
+  color: var(--bayes-text);
+  padding: 14px 16px;
+}
+
+.bayes-how-to-play h2 {
+  margin: 0 0 8px;
+  color: var(--bayes-text);
+  font-size: 1rem;
+}
+
+.bayes-how-to-play ol {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+}
+
+.bayes-how-to-play li {
+  color: var(--bayes-muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.bayes-colour-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+  color: var(--bayes-muted);
+  font-size: 0.88rem;
+}
+
+.bayes-colour-key span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bayes-colour-key i {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  border-radius: 999px;
+}
+
+.bayes-key-good {
+  background: #1bdd31;
+}
+
+.bayes-key-bad {
+  background: #105683;
+}
+
 .bayes-game-intro {
   max-width: 980px;
 }
@@ -1010,7 +1068,7 @@ p {
   gap: 10px;
 }
 
-.bayes-score-grid div,
+.bayes-score-card,
 .bayes-sparkline-card,
 .bayes-result {
   border: 1px solid var(--bayes-border);
@@ -1019,20 +1077,56 @@ p {
   padding: 12px;
 }
 
-.bayes-score-grid span {
+.bayes-score-card {
+  min-height: 4.75rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 10px 24px rgba(0, 0, 0, 0.16);
+}
+
+.bayes-score-card span {
   display: block;
   min-height: 2.4em;
-  color: var(--bayes-muted);
+  color: rgba(255, 255, 255, 0.76);
   font-size: 0.85rem;
   line-height: 1.2;
 }
 
-.bayes-score-grid strong {
+.bayes-score-card strong {
   display: block;
   margin-top: 8px;
   color: var(--bayes-text);
   font-size: 1.45rem;
   line-height: 1;
+}
+
+.bayes-score-card-player {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(220, 255, 225, 0.26), transparent 34%),
+    linear-gradient(
+      135deg,
+      rgba(34, 145, 82, 0.98),
+      rgba(13, 82, 48, 0.98) 48%,
+      rgba(63, 190, 104, 0.94)
+    );
+  border-color: rgba(144, 255, 179, 0.38);
+}
+
+.bayes-score-card-optimiser {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255, 210, 210, 0.28), transparent 34%),
+    linear-gradient(
+      135deg,
+      rgba(118, 28, 42, 0.98),
+      rgba(62, 14, 26, 0.98) 48%,
+      rgba(166, 54, 62, 0.94)
+    );
+  border-color: rgba(255, 143, 143, 0.35);
+}
+
+.bayes-score-card-neutral {
+  background:
+    linear-gradient(135deg, rgba(31, 38, 56, 0.96), rgba(23, 28, 42, 0.96));
 }
 
 .bayes-result {

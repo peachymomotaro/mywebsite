@@ -20,10 +20,9 @@ function BayesGamePage() {
           <p className="partner-label">Interactive capstone demo</p>
           <h1>Beat the Bayesian optimiser</h1>
           <p className="lead">
-            The player and a toy Gaussian-process optimiser search the same hidden
-            two-dimensional landscape. You choose experiments by hand; the
-            optimiser chooses its own points using a small portfolio of acquisition
-            strategies. At the end, the true landscape is revealed.
+            The player and a nefarious AI known as the Optimiser search the same hidden
+            landscape for the highest point. Click anywhere in the grid, and try to
+            score higher than the AI.
           </p>
         </div>
         <BayesGame />
