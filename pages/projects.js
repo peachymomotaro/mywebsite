@@ -120,8 +120,8 @@ export default function Projects() {
         <div className="project-hero-text">
           <h1>Projects</h1>
           <p className="lead">
-            I am currently working with a group that includes the
-            Sustainability Accelerator at Chatham House on a project to create
+            I am currently working with The Fizz, a start-up that have partnered with the
+            Sustainability Accelerator at Chatham House. We're working on a project to create
             positive visions of future worlds. If you'd like to read more about
             the project, you can find write-ups from both Chatham House's
             Sustainability Accelerator{" "}
@@ -272,18 +272,17 @@ export default function Projects() {
           information on the functions except for a series of previous inputs and output. 
         </p>
         <p>
-          In Algorithms to Live By, Brian Christian and Tom Griffiths discuss the 
-          exploit-explore trade-off. Is it worth listening to a new album that you 
-          might enjoy, or relistening to an old album that you know you do? One way of
-          thinking about this project is that it was essentially a gamified way of 
-          looking at that trade-off. Should we explore new areas or exploit areas that 
-          already seemed promising?
+          A classic problem in both machine learning and life is the explore-exploiit trade-off.
+          Is it worth listening to a new album that you might enjoy, or relistening to an old album 
+          that you know you love? This project offered a gamified way of thinking about that trade-off. 
+          Should we explore new areas or exploit areas that already seemed promising?
         </p>
         <p>
           There are plenty of scenarios where these decisions matter in the real world. 
-          Let's say we can send a robot to Mars because we want to drill and collect a sample.
-          Where should we land the robot? To give another example, choosing the 
-          hyperparameter settings of a neural network can be modelled in this way. 
+          Let's say we could send ten robots to Mars because we want to drill and collect a sample.
+          Where should we land these robots so that our last robot gives us the highest
+          possible yield of our sample? To give a more concrete example, choosing the hyperparameter 
+          settings of a neural network can be modelled in this way. 
         </p>
         <p className="lead">
           Play the Game.
@@ -299,16 +298,18 @@ export default function Projects() {
             entire code on my GitHub
           </a>. 
           But to make this more fun, I also built a small browser game where you too can 
-          try to beat a Bayesian Optimiser. The player and a Gaussian-process optimiser 
-          search the same hidden two-dimensional landscape. The player chooses points 
-          manually. The optimiser chooses points using a portfolio of acquisition strategies. 
-          At the end, the true landscape is revealed.
+          try to beat a Bayesian Optimiser. 
         </p>
         <p>
-          This demo is obviously simpler than what a real project in this space might involve. 
-          It is two-dimensional, and uses a lightweight Gaussian process rather than a full 
-          BoTorch workflow. But hopefully it helps to explain the process - what exactly were 
-          we trying to achieve?
+          In the game, the player and a Gaussian-process optimiser search the same hidden 
+          two-dimensional landscape. The player chooses points manually. The optimiser chooses 
+          points using different strategies. At the end, the shape of the landscape is revealed.
+        </p>
+        <p>
+          This demo is simpler than what a real project in this space might involve. 
+          Firstly, it's two-dimensional, so you can actually see the landscape - everything is 
+          harder in more dimensions! Secondly, it uses a lightweight Gaussian process rather 
+          than a full BoTorch workflow. But the game is just to give you a flavour of the project.
         </p>
         <Link className="button capstone-game-link" href="/bayesgame">
           Play the Bayesian optimisation game
@@ -322,20 +323,20 @@ export default function Projects() {
         <div className="capstone-technical-note">
           <h3>Technical note</h3>
           <p>
-            The preferred modelling path uses a Gaussian process with an additive 
-            linear plus Matérn kernel, and output transformations such as Box-Cox, 
-            sign-flipped Box-Cox, or Yeo-Johnson where useful. The functions were 
-            small-data, continuous, and expensive to query, so a Gaussian process 
-            was a natural starting point.
+            The model uses a Gaussian process with an additive linear plus Matérn kernel, 
+            and output transformations such as Box-Cox, sign-flipped Box-Cox, or Yeo-Johnson 
+            where useful. The functions were small-data, continuous, and expensive to query, 
+            so a Gaussian process was a natural starting point.
           </p>
           <p>
-            Once the surrogate is fitted, the pipeline generates a mixed pool of 
-            candidate points. The candidates were a mix global Sobol samples, 
-            designed to preserve broad coverage of the search space. Some are 
-            trust-region candidates, sampled locally around historically strong areas. 
-            Some are elite-region candidates, drawn from boxes around the best observed 
-            points.
+            Once the surrogate is fitted, the pipeline generates a mixed pool of
+            candidate points:
           </p>
+          <ul>
+            <li>Global Sobol samples, designed to preserve broad coverage of the search space.</li>
+            <li>Trust-region candidates, concentrating search around the current most promising area.</li>
+            <li>Elite-region candidates, which look around several of the best observed points, preserving promising alternatives.</li>
+          </ul>
           <p>
             Each candidate is then scored using several acquisition-style signals, 
             including expected improvement (EI), log expected improvement (logEI), 

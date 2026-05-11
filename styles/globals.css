@@ -633,6 +633,16 @@ p {
   margin-bottom: 0;
 }
 
+.capstone-technical-note ul {
+  margin: 0 0 16px;
+  padding-left: 22px;
+  color: var(--muted);
+}
+
+.capstone-technical-note li {
+  margin-bottom: 8px;
+}
+
 .capstone-game-link {
   width: fit-content;
   margin: 8px 0 24px;
