@@ -27,3 +27,11 @@ To make the idea easier to feel, I built a small browser game where you too can 
 This demo is obviously simpler than what a real project in this space might involve. It is two-dimensional, and uses a lightweight Gaussian process rather than a full BoTorch workflow. But hopefully it helps to explain the process - what exactly were we trying to achieve? 
 
 There are plenty of scenarios where these decisions matter in the real world - drug design, robotics and engineering, and also designing ML pipelines themselves. For instance, choosing the hyperparameter settings of a neural network can be modelled as a Bayesian optimisation problem.
+
+        //<p>
+          In ordinary supervised learning we often ask the question: "Does my model fit 
+          this data well?" In black-box optimisation, because we're dealing with an unknown 
+          search space, the more germane question is: "Is my model collecting data from the
+          right places?"
+        </p>
+        */ 

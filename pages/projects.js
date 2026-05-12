@@ -260,7 +260,7 @@ export default function Projects() {
 
       <section className="capstone-project" id="capstone-bo">
         <div className="partner-label">Machine learning capstone</div>
-        <h2>CapstoneBO+</h2>
+        <h2>Exploring Bayesian Optimisers</h2>
         <p className="lead">
           Bayesian optimisation and Gaussian Processes.
         </p>

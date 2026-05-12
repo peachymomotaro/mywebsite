@@ -485,7 +485,7 @@ function labelForMode(_mode: OptimiserMode): string {
 
 function explanationForMode(mode: OptimiserMode): string {
   if (mode === "portfolio") return "Balanced mixes several search strategies to hunt for good regions without getting stuck too early.";
-  if (mode === "greedy") return "Picks where the predicted score is highest. Strong when the model is right early on, but weak if it doesn't.";
+  if (mode === "greedy") return "Picks where the predicted score is highest. Strong when the model is right early on, but weak if it isn't.";
   return "Picks where uncertainty is highest. It learns the map quickly, but doesn't spend a lot of time in the good regions.";
 }
 
@@ -891,8 +891,8 @@ export default function BayesGame() {
             <ol>
               <li>The goal is to score more than the Optimiser, an evil AI nemesis.</li>
               <li>You get a score by clicking in the grid.</li>
-              <li>The lowest score is 0 and the highest is 1.</li>
-              <li>You can see your most recent score and your highest score. Green is good and blue is bad.</li>
+              <li> Green is good and blue is bad. The lowest score is 0 and the highest is 1.</li>
+              <li>You can see your most recent score and your highest score.</li>
               <li>Good luck!</li>
             </ol>
           </section>
@@ -957,7 +957,7 @@ export default function BayesGame() {
             {ended && winner === "player" ? "You won. Your search found a better experiment than the optimiser." : null}
             {ended && winner === "gp" ? "The optimiser won. It found the better point." : null}
             {ended && winner === "draw" ? "Draw. You and the optimiser ended with the same best score." : null}
-            {!ended ? "The optimiser's values are hidden during play, so its samples cannot be used as free scouting information." : null}
+            {!ended ? "The optimiser's values are hidden during play." : null}
           </p>
 
           <div className="bayes-game-actions">
