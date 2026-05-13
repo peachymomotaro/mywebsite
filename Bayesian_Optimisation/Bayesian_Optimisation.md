@@ -1,6 +1,6 @@
 Bayesian optimisation is a general attitude to a problem. 
 
-We start with a belief about what the world looks like, then we test that belief, and then we update our belief based on that test. In this case, using the Gaussian process is a way of doing that.
+We start with a belief about what the world looks like, then we test that belief, and then we update our belief based on that test. In this case, using a Gaussian process is a way of doing that.
 
 One way to think about Gaussian processes is to imagine you're in a big flat field, which is 1km x 1km. You know that at some point, below the field is gold, that if you dig a big hole you can get at. You really want the gold because you want to buy a big shiny pair of boots in Goldtown, next door.
 
