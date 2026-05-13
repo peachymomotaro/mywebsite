@@ -812,6 +812,27 @@ p {
   gap: 14px;
 }
 
+.bayes-explanation-link {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 20;
+  border: 1px solid var(--bayes-border);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--bayes-text);
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(12px);
+}
+
+.bayes-explanation-link:hover {
+  border-color: rgba(255, 255, 255, 0.38);
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--bayes-text);
+}
+
 .bayes-game-page h1,
 .bayes-game-page p {
   color: var(--bayes-text);
@@ -1236,6 +1257,40 @@ p {
   border-radius: 8px;
   color: var(--bayes-muted);
   font-size: 0.85rem;
+}
+
+.bayes-explanation-section {
+  scroll-margin-top: 28px;
+  max-width: 900px;
+  margin: 18px auto 0;
+  border: 1px solid var(--bayes-border);
+  border-radius: var(--radius);
+  background: var(--bayes-panel);
+  color: var(--bayes-text);
+  padding: 28px;
+  box-shadow: var(--shadow);
+}
+
+.bayes-explanation-section h2 {
+  margin: 0 0 18px;
+  color: var(--bayes-text);
+  font-size: 1.7rem;
+}
+
+.bayes-explanation-section p {
+  margin: 0 0 18px;
+  color: var(--bayes-muted);
+  line-height: 1.72;
+}
+
+.bayes-explanation-section p:last-child {
+  margin-bottom: 0;
+}
+
+.bayes-explanation-section hr {
+  margin: 24px 0;
+  border: 0;
+  border-top: 1px solid var(--bayes-border);
 }
 
 .bayes-game-actions {

@@ -8,11 +8,22 @@ vi.mock("next/head", () => ({
 
 describe("Bayes game page", () => {
   it("renders the hidden Bayesian optimisation game route", () => {
-    render(<BayesGamePage />);
+    render(
+      <BayesGamePage
+        explanationMarkdown={`CapstoneBO+: Bayesian optimisation under scarce feedback
+
+In black-box optimisation, because you are fitting a surrogate model to an unknown search space, the more germane question is: "What kind of data is my model causing me to collect?"
+`}
+      />
+    );
 
     expect(
       screen.getByRole("heading", { name: "Beat the Bayesian optimiser" })
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "What’s going on?" })).toHaveAttribute(
+      "href",
+      "#whats-going-on"
+    );
     expect(
       screen.getByText(/The player and a nefarious AI known as the Optimiser search/i)
     ).toBeInTheDocument();
@@ -43,5 +54,13 @@ describe("Bayes game page", () => {
     expect(screen.queryByRole("button", { name: /GP uncertainty/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /GP belief/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /GP score/i })).toBeNull();
+    expect(
+      screen.getByRole("heading", {
+        name: "CapstoneBO+: Bayesian optimisation under scarce feedback",
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/What kind of data is my model causing me to collect/i)
+    ).toBeInTheDocument();
   });
 });
