@@ -22,11 +22,33 @@ vi.mock("next/link", () => ({
 }));
 
 describe("Projects page", () => {
-  it("links the CapstoneBO+ project to the hidden Bayesian optimisation game", () => {
+  it("links to the top-level projects from the contents section", () => {
     render(<Projects />);
 
     expect(
-      screen.getByRole("heading", { name: "CapstoneBO+" })
+      screen.getByRole("navigation", { name: "Project contents" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Chatham House future worlds" })
+    ).toHaveAttribute("href", "#chatham-house");
+    expect(
+      screen.getByRole("link", { name: "Exploring Bayesian Optimisers" })
+    ).toHaveAttribute("href", "#exploring-bayesian-optimisers");
+    expect(screen.getByRole("link", { name: "Reading River" })).toHaveAttribute(
+      "href",
+      "#reading-river"
+    );
+    expect(
+      document.getElementById("exploring-bayesian-optimisers")
+    ).not.toBeNull();
+    expect(document.getElementById("capstone-bo")).not.toBeNull();
+  });
+
+  it("links the Bayesian Optimisers project to the hidden Bayesian optimisation game", () => {
+    render(<Projects />);
+
+    expect(
+      screen.getByRole("heading", { name: "Exploring Bayesian Optimisers" })
     ).toBeInTheDocument();
     expect(
       screen.getByText(/Bayesian optimisation and Gaussian Processes/i)

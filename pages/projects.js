@@ -23,6 +23,20 @@ const TOOL_IMAGES = [
 const CHATHAM_LOGO = "/chatham-house-logo.png";
 const READING_RIVER_IMAGE = "/ReadingRiver.png";
 const TYPE_SPEED_MS = 18;
+const PROJECT_LINKS = [
+  {
+    label: "Chatham House future worlds",
+    href: "#chatham-house",
+  },
+  {
+    label: "Exploring Bayesian Optimisers",
+    href: "#exploring-bayesian-optimisers",
+  },
+  {
+    label: "Reading River",
+    href: "#reading-river",
+  },
+];
 
 const buildStoryText = (story) => {
   const lines = [];
@@ -176,6 +190,17 @@ export default function Projects() {
         </aside>
       </section>
 
+      <nav className="project-contents" aria-label="Project contents">
+        <div className="partner-label">Contents</div>
+        <ul>
+          {PROJECT_LINKS.map((project) => (
+            <li key={project.href}>
+              <a href={project.href}>{project.label}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
       <section>
         <h2>Scenario builder</h2>
         <p className="lead">
@@ -258,7 +283,8 @@ export default function Projects() {
         </div>
       </section>
 
-      <section className="capstone-project" id="capstone-bo">
+      <section className="capstone-project" id="exploring-bayesian-optimisers">
+        <span id="capstone-bo" className="legacy-anchor" aria-hidden="true" />
         <div className="partner-label">Machine learning capstone</div>
         <h2>Exploring Bayesian Optimisers</h2>
         <p className="lead">
