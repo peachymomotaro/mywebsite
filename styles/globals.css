@@ -404,6 +404,10 @@ p {
   cursor: zoom-in;
 }
 
+.project-page-header {
+  margin-bottom: 20px;
+}
+
 .project-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
@@ -430,8 +434,8 @@ p {
 
 .project-contents ul {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px 16px;
+  flex-direction: column;
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -456,6 +460,14 @@ p {
   position: relative;
   top: -88px;
   visibility: hidden;
+}
+
+.chatham-project {
+  margin-top: 40px;
+}
+
+.scenario-builder-preview {
+  margin-top: 32px;
 }
 
 .partner-label {

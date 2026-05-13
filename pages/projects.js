@@ -130,9 +130,25 @@ export default function Projects() {
           content="AI scenario short stories created for a Chatham House project, plus a live sample generator."
         />
       </Head>
-      <section className="project-hero" id="chatham-house">
-        <div className="project-hero-text">
-          <h1>Projects</h1>
+      <header className="project-page-header">
+        <h1>Projects</h1>
+      </header>
+
+      <nav className="project-contents" aria-label="Project contents">
+        <div className="partner-label">Contents</div>
+        <ul>
+          {PROJECT_LINKS.map((project) => (
+            <li key={project.href}>
+              <a href={project.href}>{project.label}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <section className="chatham-project" id="chatham-house">
+        <div className="project-hero">
+          <div className="project-hero-text">
+            <h2>Scenario builder</h2>
           <p className="lead">
             I am currently working with The Fizz, a start-up that have partnered with the
             Sustainability Accelerator at Chatham House. We're working on a project to create
@@ -176,110 +192,99 @@ export default function Projects() {
               here
             </a>.
           </p>
-        </div>
-        <aside className="project-hero-panel">
-          <div className="partner-label">In collaboration with</div>
-          <img
-            className="chatham-logo"
-            src={CHATHAM_LOGO}
-            alt="Chatham House logo"
-          />
-          <div className="partner-meta">
-            Sustainability Accelerator · London, UK
           </div>
-        </aside>
-      </section>
-
-      <nav className="project-contents" aria-label="Project contents">
-        <div className="partner-label">Contents</div>
-        <ul>
-          {PROJECT_LINKS.map((project) => (
-            <li key={project.href}>
-              <a href={project.href}>{project.label}</a>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      <section>
-        <h2>Scenario builder</h2>
-        <p className="lead">
-          A preview of the tool and the output.
-        </p>
-        <div className="snapshot-stack">
-          {TOOL_IMAGES.map((image) => (
-            <article className="snapshot-card" key={image.src}>
-              <button
-                className="media-button snapshot-image"
-                type="button"
-                onClick={() => setActiveImage(image)}
-                aria-label={`Expand ${image.alt}`}
-              >
-                <img src={image.src} alt={image.alt} loading="lazy" />
-              </button>
-              <div className="snapshot-content">
-                <div className="snapshot-label">{image.label}</div>
-                <h3 className="card-title">{image.title}</h3>
-                <p className="card-meta">{image.caption}</p>
-              </div>
-            </article>
-          ))}
-        </div>
-        {activeImage ? (
-          <div
-            className="lightbox"
-            role="dialog"
-            aria-modal="true"
-            onClick={() => setActiveImage(null)}
-          >
-            <div
-              className="lightbox-content"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <button
-                className="lightbox-close"
-                type="button"
-                onClick={() => setActiveImage(null)}
-              >
-                Close
-              </button>
-              <img
-                className="lightbox-image"
-                src={activeImage.src}
-                alt={activeImage.alt}
-              />
+          <aside className="project-hero-panel">
+            <div className="partner-label">In collaboration with</div>
+            <img
+              className="chatham-logo"
+              src={CHATHAM_LOGO}
+              alt="Chatham House logo"
+            />
+            <div className="partner-meta">
+              Sustainability Accelerator · London, UK
             </div>
-          </div>
-        ) : null}
-      </section>
-
-      <section className="generator-section">
-        <h2>Generate a sample short story</h2>
-        <p className="lead">
-          Press the button to watch the tool draft a story from a future world.
-        </p>
-        <div className="generator-actions">
-          <button
-            className="button"
-            type="button"
-            onClick={handleGenerate}
-            disabled={isTyping}
-          >
-            Generate
-          </button>
-          <span className="generator-status">{isTyping ? "Writing..." : ""}</span>
+          </aside>
         </div>
-        <div className="card typewriter-card" aria-live="polite">
-          {isTyping && activeStyleLabel ? (
-            <div className="style-chip-inline">{activeStyleLabel}</div>
+
+        <div className="scenario-builder-preview">
+          <p className="lead">
+            A preview of the tool and the output.
+          </p>
+          <div className="snapshot-stack">
+            {TOOL_IMAGES.map((image) => (
+              <article className="snapshot-card" key={image.src}>
+                <button
+                  className="media-button snapshot-image"
+                  type="button"
+                  onClick={() => setActiveImage(image)}
+                  aria-label={`Expand ${image.alt}`}
+                >
+                  <img src={image.src} alt={image.alt} loading="lazy" />
+                </button>
+                <div className="snapshot-content">
+                  <div className="snapshot-label">{image.label}</div>
+                  <h3 className="card-title">{image.title}</h3>
+                  <p className="card-meta">{image.caption}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+          {activeImage ? (
+            <div
+              className="lightbox"
+              role="dialog"
+              aria-modal="true"
+              onClick={() => setActiveImage(null)}
+            >
+              <div
+                className="lightbox-content"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <button
+                  className="lightbox-close"
+                  type="button"
+                  onClick={() => setActiveImage(null)}
+                >
+                  Close
+                </button>
+                <img
+                  className="lightbox-image"
+                  src={activeImage.src}
+                  alt={activeImage.alt}
+                />
+              </div>
+            </div>
           ) : null}
-          {output ? (
-            <div className="typewriter-output">{output}</div>
-          ) : (
-            <p className="card-meta">
-              Click the button to generate a sample scenario.
-            </p>
-          )}
+        </div>
+
+        <div className="generator-section">
+          <h2>Generate a sample short story</h2>
+          <p className="lead">
+            Press the button to watch the tool draft a story from a future world.
+          </p>
+          <div className="generator-actions">
+            <button
+              className="button"
+              type="button"
+              onClick={handleGenerate}
+              disabled={isTyping}
+            >
+              Generate
+            </button>
+            <span className="generator-status">{isTyping ? "Writing..." : ""}</span>
+          </div>
+          <div className="card typewriter-card" aria-live="polite">
+            {isTyping && activeStyleLabel ? (
+              <div className="style-chip-inline">{activeStyleLabel}</div>
+            ) : null}
+            {output ? (
+              <div className="typewriter-output">{output}</div>
+            ) : (
+              <p className="card-meta">
+                Click the button to generate a sample scenario.
+              </p>
+            )}
+          </div>
         </div>
       </section>
 

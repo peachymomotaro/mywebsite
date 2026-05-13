@@ -25,9 +25,25 @@ describe("Projects page", () => {
   it("links to the top-level projects from the contents section", () => {
     render(<Projects />);
 
+    const projectsHeading = screen.getByRole("heading", { name: "Projects" });
+    const contentsNav = screen.getByRole("navigation", {
+      name: "Project contents",
+    });
+    const chathamProject = document.getElementById("chatham-house");
+    const chathamHeading = screen.getByRole("heading", {
+      name: "Scenario builder",
+    });
+
+    expect(chathamProject).not.toBeNull();
     expect(
-      screen.getByRole("navigation", { name: "Project contents" })
-    ).toBeInTheDocument();
+      projectsHeading.compareDocumentPosition(contentsNav) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(
+      contentsNav.compareDocumentPosition(chathamProject as HTMLElement) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(chathamProject).toContainElement(chathamHeading);
     expect(
       screen.getByRole("link", { name: "Chatham House future worlds" })
     ).toHaveAttribute("href", "#chatham-house");
@@ -42,6 +58,14 @@ describe("Projects page", () => {
       document.getElementById("exploring-bayesian-optimisers")
     ).not.toBeNull();
     expect(document.getElementById("capstone-bo")).not.toBeNull();
+    expect(
+      screen.getByText(/I am currently working with The Fizz/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText("In collaboration with")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Chatham House logo" })).toHaveAttribute(
+      "src",
+      "/chatham-house-logo.png"
+    );
   });
 
   it("links the Bayesian Optimisers project to the hidden Bayesian optimisation game", () => {
