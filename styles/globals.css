@@ -424,6 +424,8 @@ p {
 }
 
 .project-contents {
+  width: fit-content;
+  max-width: 100%;
   margin-top: 28px;
   padding: 18px 20px;
   border: 1px solid var(--border);
@@ -464,6 +466,10 @@ p {
 
 .chatham-project {
   margin-top: 40px;
+}
+
+.chatham-project .project-hero-panel {
+  margin-top: 48px;
 }
 
 .scenario-builder-preview {
@@ -1056,11 +1062,7 @@ p {
 }
 
 .bayes-map-message {
-  position: absolute;
-  left: 14px;
-  right: 14px;
-  bottom: 14px;
-  z-index: 5;
+  margin: 12px 0 0;
   border: 1px solid var(--bayes-border);
   border-radius: var(--radius);
   background: rgba(10, 14, 22, 0.84);
@@ -1068,7 +1070,6 @@ p {
   padding: 10px 12px;
   font-size: 0.95rem;
   line-height: 1.45;
-  pointer-events: none;
 }
 
 .bayes-map-legend {

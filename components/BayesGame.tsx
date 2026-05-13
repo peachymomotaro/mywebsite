@@ -875,8 +875,9 @@ export default function BayesGame() {
             ) : null}
             <PointLayer samples={playerSamples} kind="player" revealValues />
             <PointLayer samples={gpSamples.slice(STARTING_POINTS.length)} kind="gp" revealValues={ended} initialCount={0} />
-            <span className="bayes-map-message">{message}</span>
           </button>
+
+          <span className="bayes-map-message">{message}</span>
 
           <div className="bayes-map-legend">
             <span><i className="bayes-legend-player" /> Your samples</span>

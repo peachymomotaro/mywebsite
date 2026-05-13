@@ -17,7 +17,6 @@ function BayesGamePage() {
           Return to my website
         </Link>
         <div className="bayes-game-intro">
-          <p className="partner-label">Interactive capstone demo</p>
           <h1>Beat the Bayesian optimiser</h1>
           <p className="lead">
             The player and a nefarious AI known as the Optimiser search the same hidden

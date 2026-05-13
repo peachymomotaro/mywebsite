@@ -31,7 +31,7 @@ describe("Projects page", () => {
     });
     const chathamProject = document.getElementById("chatham-house");
     const chathamHeading = screen.getByRole("heading", {
-      name: "Scenario builder",
+      name: "Scenario Builder",
     });
 
     expect(chathamProject).not.toBeNull();
@@ -45,7 +45,7 @@ describe("Projects page", () => {
     ).toBeTruthy();
     expect(chathamProject).toContainElement(chathamHeading);
     expect(
-      screen.getByRole("link", { name: "Chatham House future worlds" })
+      screen.getByRole("link", { name: "Scenario Builder" })
     ).toHaveAttribute("href", "#chatham-house");
     expect(
       screen.getByRole("link", { name: "Exploring Bayesian Optimisers" })

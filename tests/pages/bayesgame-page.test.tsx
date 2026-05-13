@@ -14,14 +14,18 @@ describe("Bayes game page", () => {
       screen.getByRole("heading", { name: "Beat the Bayesian optimiser" })
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/The player and a toy Gaussian-process optimiser search/i)
+      screen.getByText(/The player and a nefarious AI known as the Optimiser search/i)
     ).toBeInTheDocument();
+    expect(screen.getByText("Click the map to run your first experiment.")).toBeInTheDocument();
     expect(
       screen.getByRole("group", { name: "Optimiser personality" })
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Experiment map" })
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Experiment map" })).not.toContainElement(
+      screen.getByText("Click the map to run your first experiment.")
+    );
     expect(screen.getByText("Scoreboard")).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Return to my website" })

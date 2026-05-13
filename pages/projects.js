@@ -25,7 +25,7 @@ const READING_RIVER_IMAGE = "/ReadingRiver.png";
 const TYPE_SPEED_MS = 18;
 const PROJECT_LINKS = [
   {
-    label: "Chatham House future worlds",
+    label: "Scenario Builder",
     href: "#chatham-house",
   },
   {
@@ -148,7 +148,7 @@ export default function Projects() {
       <section className="chatham-project" id="chatham-house">
         <div className="project-hero">
           <div className="project-hero-text">
-            <h2>Scenario builder</h2>
+            <h2>Scenario Builder</h2>
           <p className="lead">
             I am currently working with The Fizz, a start-up that have partnered with the
             Sustainability Accelerator at Chatham House. We're working on a project to create
