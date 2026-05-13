@@ -10,6 +10,25 @@
   --focus: #1b4e7b;
   --content-width: 720px;
   --radius: 12px;
+  --font-body: 1.5rem;
+  --font-h1: 3rem;
+  --font-h1-mobile: 2.4rem;
+  --font-h2: 2rem;
+  --font-h3: 1.55rem;
+  --font-lead: 1.65rem;
+  --font-title: 1.45rem;
+  --font-card-title: 1.32rem;
+  --font-ui: 1.25rem;
+  --font-ui-small: 1.15rem;
+  --font-meta: 1.12rem;
+  --font-small: 1.05rem;
+  --font-tiny: 0.98rem;
+  --font-bayes-heading: 1.42rem;
+  --font-bayes-ui: 1.08rem;
+  --font-bayes-small: 1rem;
+  --font-bayes-tiny: 0.95rem;
+  --font-bayes-score: 1.65rem;
+  --font-bayes-explanation-heading: 2rem;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -52,7 +71,7 @@ body {
 }
 
 body {
-  font-size: 1.08rem;
+  font-size: var(--font-body);
   line-height: 1.7;
   letter-spacing: 0.01em;
 }
@@ -129,7 +148,7 @@ img {
 }
 
 .nav-title {
-  font-size: 1.1rem;
+  font-size: var(--font-title);
   font-weight: 600;
   letter-spacing: 0.02em;
 }
@@ -138,7 +157,7 @@ img {
   display: flex;
   align-items: center;
   gap: 18px;
-  font-size: 1rem;
+  font-size: var(--font-ui-small);
 }
 
 .nav-links a {
@@ -157,7 +176,7 @@ img {
   color: var(--text);
   border-radius: 999px;
   padding: 6px 12px;
-  font-size: 0.95rem;
+  font-size: var(--font-small);
   cursor: pointer;
 }
 
@@ -175,16 +194,16 @@ h4 {
 }
 
 h1 {
-  font-size: 2.6rem;
+  font-size: var(--font-h1);
 }
 
 h2 {
-  font-size: 1.6rem;
+  font-size: var(--font-h2);
   margin-top: 40px;
 }
 
 h3 {
-  font-size: 1.2rem;
+  font-size: var(--font-h3);
   margin-top: 28px;
 }
 
@@ -194,13 +213,13 @@ p {
 }
 
 .small {
-  font-size: 0.95rem;
+  font-size: var(--font-small);
   color: var(--muted);
   font-style: italic;
 }
 
 .lead {
-  font-size: 1.2rem;
+  font-size: var(--font-lead);
   color: var(--muted);
 }
 
@@ -230,7 +249,7 @@ p {
   padding: 18px 20px;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  font-size: 1.3rem;
+  font-size: var(--font-title);
   font-weight: 600;
   line-height: 1.25;
   text-align: center;
@@ -271,12 +290,12 @@ p {
 }
 
 .card-title {
-  font-size: 1.05rem;
+  font-size: var(--font-card-title);
   margin-bottom: 6px;
 }
 
 .card-meta {
-  font-size: 0.98rem;
+  font-size: var(--font-meta);
   color: var(--muted);
   margin-bottom: 10px;
 }
@@ -296,14 +315,14 @@ p {
   padding: 10px 18px;
   border: 1px solid var(--accent);
   color: var(--accent);
-  font-size: 1rem;
+  font-size: var(--font-ui-small);
   background: transparent;
   transition: all 0.2s ease;
 }
 
 .button.button-small {
   padding: 8px 14px;
-  font-size: 0.95rem;
+  font-size: var(--font-small);
 }
 
 .button:hover {
@@ -324,7 +343,7 @@ p {
 }
 
 .podcast-role {
-  font-size: 0.95rem;
+  font-size: var(--font-small);
   color: var(--muted);
   margin-bottom: 10px;
 }
@@ -364,13 +383,13 @@ p {
 
 .episode-meta {
   display: block;
-  font-size: 0.85rem;
+  font-size: var(--font-tiny);
   color: var(--muted);
 }
 
 .episode-source {
   display: inline-block;
-  font-size: 0.85rem;
+  font-size: var(--font-tiny);
   margin-top: 4px;
 }
 
@@ -450,7 +469,7 @@ p {
   min-height: 36px;
   border-bottom: 1px solid currentColor;
   color: var(--text);
-  font-size: 0.98rem;
+  font-size: var(--font-ui-small);
   line-height: 1.25;
 }
 
@@ -478,7 +497,7 @@ p {
 }
 
 .partner-label {
-  font-size: 0.75rem;
+  font-size: var(--font-tiny);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -488,7 +507,7 @@ p {
 .partner-meta {
   margin-top: 14px;
   color: var(--muted);
-  font-size: 0.95rem;
+  font-size: var(--font-small);
 }
 
 .reading-river-project {
@@ -555,7 +574,7 @@ p {
 }
 
 .reading-river-source-list a {
-  font-size: 0.98rem;
+  font-size: var(--font-ui-small);
   font-weight: 600;
   color: var(--text);
   text-decoration: underline;
@@ -587,7 +606,7 @@ p {
   border-radius: 999px;
   color: var(--text);
   padding: 10px 18px;
-  font-size: 0.95rem;
+  font-size: var(--font-ui-small);
   transition: background 0.2s ease, color 0.2s ease;
 }
 
@@ -649,7 +668,7 @@ p {
 }
 
 .snapshot-label {
-  font-size: 0.75rem;
+  font-size: var(--font-tiny);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -705,7 +724,7 @@ p {
   width: fit-content;
   margin: 8px 0 24px;
   padding: 14px 24px;
-  font-size: 1.05rem;
+  font-size: var(--font-card-title);
   font-weight: 600;
 }
 
@@ -727,7 +746,7 @@ p {
 }
 
 .generator-status {
-  font-size: 0.9rem;
+  font-size: var(--font-small);
   color: var(--muted);
 }
 
@@ -749,7 +768,7 @@ p {
   color: var(--muted);
   padding: 6px 12px;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: var(--font-tiny);
   letter-spacing: 0.02em;
 }
 
@@ -822,7 +841,7 @@ p {
   background: rgba(255, 255, 255, 0.1);
   color: var(--bayes-text);
   padding: 10px 14px;
-  font-size: 0.95rem;
+  font-size: var(--font-bayes-ui);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
   backdrop-filter: blur(12px);
 }
@@ -845,7 +864,7 @@ p {
   background: rgba(255, 255, 255, 0.07);
   color: var(--bayes-text);
   padding: 8px 12px;
-  font-size: 0.9rem;
+  font-size: var(--font-bayes-small);
 }
 
 .bayes-return-link:hover {
@@ -865,7 +884,7 @@ p {
 .bayes-how-to-play h2 {
   margin: 0 0 8px;
   color: var(--bayes-text);
-  font-size: 1rem;
+  font-size: var(--font-bayes-heading);
 }
 
 .bayes-how-to-play ol {
@@ -877,7 +896,7 @@ p {
 
 .bayes-how-to-play li {
   color: var(--bayes-muted);
-  font-size: 0.9rem;
+  font-size: var(--font-bayes-small);
   line-height: 1.4;
 }
 
@@ -887,7 +906,7 @@ p {
   gap: 10px;
   margin-top: 10px;
   color: var(--bayes-muted);
-  font-size: 0.88rem;
+  font-size: var(--font-bayes-tiny);
 }
 
 .bayes-colour-key span {
@@ -953,7 +972,7 @@ p {
 
 .bayes-mode-fieldset legend {
   padding: 0 8px;
-  font-size: 0.78rem;
+  font-size: var(--font-bayes-tiny);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--bayes-muted);
@@ -961,7 +980,7 @@ p {
 
 .bayes-mode-fieldset p {
   margin: 12px 0 0;
-  font-size: 0.95rem;
+  font-size: var(--font-bayes-ui);
   line-height: 1.55;
 }
 
@@ -982,7 +1001,7 @@ p {
   padding: 8px 12px;
   cursor: pointer;
   font: inherit;
-  font-size: 0.9rem;
+  font-size: var(--font-bayes-small);
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
@@ -1028,7 +1047,7 @@ p {
   gap: 12px;
   margin-bottom: 12px;
   color: var(--bayes-muted);
-  font-size: 0.9rem;
+  font-size: var(--font-bayes-small);
 }
 
 .bayes-map {
@@ -1090,7 +1109,7 @@ p {
   background: rgba(10, 14, 22, 0.84);
   color: var(--bayes-text);
   padding: 10px 12px;
-  font-size: 0.95rem;
+  font-size: var(--font-bayes-ui);
   line-height: 1.45;
 }
 
@@ -1100,7 +1119,7 @@ p {
   gap: 14px;
   margin-top: 12px;
   color: var(--bayes-muted);
-  font-size: 0.85rem;
+  font-size: var(--font-bayes-tiny);
 }
 
 .bayes-map-legend span {
@@ -1143,7 +1162,7 @@ p {
 .bayes-score-panel h2 {
   margin: 0;
   color: var(--bayes-text);
-  font-size: 1.2rem;
+  font-size: var(--font-bayes-heading);
 }
 
 .bayes-score-grid {
@@ -1172,7 +1191,7 @@ p {
   display: block;
   min-height: 2.4em;
   color: rgba(255, 255, 255, 0.76);
-  font-size: 0.85rem;
+  font-size: var(--font-bayes-tiny);
   line-height: 1.2;
 }
 
@@ -1180,7 +1199,7 @@ p {
   display: block;
   margin-top: 8px;
   color: var(--bayes-text);
-  font-size: 1.45rem;
+  font-size: var(--font-bayes-score);
   line-height: 1;
 }
 
@@ -1215,7 +1234,7 @@ p {
 
 .bayes-result {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: var(--font-bayes-ui);
   line-height: 1.55;
 }
 
@@ -1225,7 +1244,7 @@ p {
   justify-content: space-between;
   gap: 10px;
   color: var(--bayes-muted);
-  font-size: 0.82rem;
+  font-size: var(--font-bayes-tiny);
 }
 
 .bayes-sparkline {
@@ -1256,7 +1275,7 @@ p {
   border: 1px dashed var(--bayes-border);
   border-radius: 8px;
   color: var(--bayes-muted);
-  font-size: 0.85rem;
+  font-size: var(--font-bayes-tiny);
 }
 
 .bayes-explanation-section {
@@ -1274,7 +1293,7 @@ p {
 .bayes-explanation-section h2 {
   margin: 0 0 18px;
   color: var(--bayes-text);
-  font-size: 1.7rem;
+  font-size: var(--font-bayes-explanation-heading);
 }
 
 .bayes-explanation-section p {
@@ -1326,7 +1345,7 @@ p {
   border-top: 1px solid var(--border);
   padding: 28px 0 40px;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: var(--font-small);
 }
 
 .footer-links {
@@ -1341,7 +1360,7 @@ p {
 
 @media (max-width: 600px) {
   h1 {
-    font-size: 2.1rem;
+    font-size: var(--font-h1-mobile);
   }
 
   .nav {
