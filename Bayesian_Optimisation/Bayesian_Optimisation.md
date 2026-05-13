@@ -1,37 +1,15 @@
-CapstoneBO+: Bayesian optimisation under scarce feedback
+Bayesian optimisation is a general attitude to a problem. 
 
-I did a Machine Learning course at Imperial College in order to develop my ML skills. One of the required outputs was a black-box optimisation (BBO) challenge, which involved optimising eight functions. Each function took a continuous input vector and returned a single score. We had no information on the functions except for a series of previous inputs and output. I could not inspect their equations, gradients, or internal structure. 
+We start with a belief about what the world looks like, then we test that belief, and then we update our belief based on that test. In this case, using the Gaussian process is a way of doing that.
 
-In Algorithms to Live By, Brian Christian and Tom Griffiths discuss the exploit-explore trade-off. Is it worth listening to a new album that you might enjoy, or relistening to an old album that you know you do? This trade-off is complex and multifacted in any field it is applied to. This project was that trade-off writ large - should we explore new areas or exploit areas that already seemed promising? How do you make concrete decisions about those sorts of processes? 
+One way to think about Gaussian processes is to imagine you're in a big flat field, which is 1km x 1km. You know that at some point, below the field is gold, that if you dig a big hole you can get at. You really want the gold because you want to buy a big shiny pair of boots in Goldtown, next door.
 
-In ordinary supervised learning you might often ask yourself the question: "How well does my model fit this data?" In black-box optimisation, because you are fitting a surrogate model to an unknown search space, the more germane question is: "What kind of data is my model causing me to collect?"
+We're trying to answer the question: Where should you dig? You don't really want to dig everywhere, because that's far too much work and you might not hit anything if you dig in a really bad spot.
 
-The surrogate model is doing two things. Firstly, it predicts which regions might have high values, and secondly, it estimates where the model is still uncertain. The optimiser can then use both signals when choosing the next experiment.
+But if you dig in too few places, then you might not find the places where the gold is closest to the surface. Your friend has already dug in three random spots, and they tell you how far down the gold is there.
 
-If you're really interested in the technical part (you can safely skip this!):
+Before we dig at all, we make an assumption.
 
----
-The preferred modelling path uses a Gaussian process with an additive linear plus Matérn kernel, and output transformations such as Box-Cox, sign-flipped Box-Cox, or Yeo-Johnson where useful. The functions were small-data, continuous, and expensive to query, so a Gaussian process was a natural starting point.
+We assume the gold is going to be distributed in a relatively even way, i.e. we will find areas with clumps of gold and some areas with no gold. This assumption can be changed, and our assumption of the distribution of the gold we model with something using a kernel. But for now, just imagine we are making a guess what the distribution of gold is like underground.
 
-Once the surrogate is fitted, the pipeline generates a mixed pool of candidate points. The candidates were a mix global Sobol samples, designed to preserve broad coverage of the search space. Some are trust-region candidates, sampled locally around historically strong areas. Some are elite-region candidates, drawn from boxes around the best observed points.
-
-Each candidate is then scored using several acquisition-style signals, including expected improvement (EI), log expected improvement (logEI), probability of improvement (PI), upper confidence bound set with a range of betas (UCB), Thompson-style scores, posterior uncertainty, and novelty. 
----
-
-For the less technically minded, essentially, early on, exploration is valuable. Later, once strong regions have been found, exploitation becomes more effective.
-
-Interactive demo
-
-To make the idea easier to feel, I built a small browser game where you too can try to beat a Bayesian Optimiser. The player and a toy Gaussian-process optimiser search the same hidden two-dimensional landscape. The player chooses points manually. The optimiser chooses points using a portfolio of acquisition strategies. At the end, the true landscape is revealed.
-
-This demo is obviously simpler than what a real project in this space might involve. It is two-dimensional, and uses a lightweight Gaussian process rather than a full BoTorch workflow. But hopefully it helps to explain the process - what exactly were we trying to achieve? 
-
-There are plenty of scenarios where these decisions matter in the real world - drug design, robotics and engineering, and also designing ML pipelines themselves. For instance, choosing the hyperparameter settings of a neural network can be modelled as a Bayesian optimisation problem.
-
-        //<p>
-          In ordinary supervised learning we often ask the question: "Does my model fit 
-          this data well?" In black-box optimisation, because we're dealing with an unknown 
-          search space, the more germane question is: "Is my model collecting data from the
-          right places?"
-        </p>
-        */ 
+What we then do is use a computer to imagine this as a surface, where we draw hundreds of possible distributions of the gold and take an average of those. And then that helps us guess where we should dig, before we do any work at all! Gold is just a more visual example, but there are many other applications.
