@@ -88,7 +88,7 @@ function BayesGamePage({ explanationMarkdown }: BayesGamePageProps) {
         <title>Bayesian Optimisation Game - Peter Curry</title>
         <meta
           name="description"
-          content="Play a small browser game about Bayesian optimisation, exploration, exploitation, and scarce feedback."
+          content="Browser game about Bayesian optimisation."
         />
       </Head>
       <section className="bayes-game-page">
