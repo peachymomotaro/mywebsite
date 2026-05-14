@@ -269,7 +269,7 @@ export default function About() {
               {role.note ? <p className="small">{role.note}</p> : null}
               {role.organisation === "Chatham House" ? (
                 <div className="button-row">
-                  <Link className="button button-small" href="/projects#chatham-house">
+                  <Link className="button button-small" href="/projects#scenario-builder">
                     View Chatham House projects
                   </Link>
                 </div>

@@ -29,7 +29,7 @@ describe("Projects page", () => {
     const contentsNav = screen.getByRole("navigation", {
       name: "Project contents",
     });
-    const chathamProject = document.getElementById("chatham-house");
+    const chathamProject = document.getElementById("scenario-builder");
     const chathamHeading = screen.getByRole("heading", {
       name: "Scenario Builder",
     });
@@ -46,7 +46,7 @@ describe("Projects page", () => {
     expect(chathamProject).toContainElement(chathamHeading);
     expect(
       screen.getByRole("link", { name: "Scenario Builder" })
-    ).toHaveAttribute("href", "#chatham-house");
+    ).toHaveAttribute("href", "#scenario-builder");
     expect(
       screen.getByRole("link", { name: "Exploring Bayesian Optimisers" })
     ).toHaveAttribute("href", "#exploring-bayesian-optimisers");

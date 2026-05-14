@@ -26,7 +26,7 @@ const TYPE_SPEED_MS = 18;
 const PROJECT_LINKS = [
   {
     label: "Scenario Builder",
-    href: "#chatham-house",
+    href: "#scenario-builder",
   },
   {
     label: "Exploring Bayesian Optimisers",
@@ -145,7 +145,7 @@ export default function Projects() {
         </ul>
       </nav>
 
-      <section className="chatham-project" id="chatham-house">
+      <section className="chatham-project" id="scenario-builder">
         <div className="project-hero">
           <div className="project-hero-text">
             <h2>Scenario Builder</h2>
