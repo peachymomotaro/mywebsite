@@ -237,21 +237,115 @@ function getVisiblePageTextForReadingEstimate() {
   return clone.textContent || "";
 }
 
-async function estimateActiveTabReadingTime(tabId) {
+function isYouTubeVideoUrl(url) {
+  try {
+    const parsedUrl = new URL(url);
+    const hostname = parsedUrl.hostname.replace(/^www\./, "");
+
+    if (hostname === "youtube.com" || hostname === "m.youtube.com") {
+      return parsedUrl.pathname === "/watch" && parsedUrl.searchParams.has("v");
+    }
+
+    if (hostname === "youtu.be") {
+      return parsedUrl.pathname.length > 1;
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+function getYouTubeVideoMinutesFromPage() {
+  function minutesFromSeconds(seconds) {
+    return Number.isFinite(seconds) && seconds > 0 ? Math.max(1, Math.ceil(seconds / 60)) : null;
+  }
+
+  function parseIsoDuration(value) {
+    if (typeof value !== "string") {
+      return null;
+    }
+
+    const match = value.match(/^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/);
+
+    if (!match) {
+      return null;
+    }
+
+    const days = Number(match[1] || 0);
+    const hours = Number(match[2] || 0);
+    const minutes = Number(match[3] || 0);
+    const seconds = Number(match[4] || 0);
+
+    return minutesFromSeconds(days * 86400 + hours * 3600 + minutes * 60 + seconds);
+  }
+
+  function parseClockDuration(value) {
+    if (typeof value !== "string") {
+      return null;
+    }
+
+    const parts = value
+      .trim()
+      .split(":")
+      .map((part) => Number(part));
+
+    if (parts.length < 2 || parts.length > 3 || parts.some((part) => !Number.isFinite(part))) {
+      return null;
+    }
+
+    const seconds =
+      parts.length === 3
+        ? parts[0] * 3600 + parts[1] * 60 + parts[2]
+        : parts[0] * 60 + parts[1];
+
+    return minutesFromSeconds(seconds);
+  }
+
+  const metaDuration = document
+    .querySelector('meta[itemprop="duration"]')
+    ?.getAttribute("content");
+
+  const metaMinutes = parseIsoDuration(metaDuration);
+
+  if (metaMinutes) {
+    return metaMinutes;
+  }
+
+  const playerSeconds = Number(globalThis.ytInitialPlayerResponse?.videoDetails?.lengthSeconds);
+  const playerMinutes = minutesFromSeconds(playerSeconds);
+
+  if (playerMinutes) {
+    return playerMinutes;
+  }
+
+  const clockText = document.querySelector(".ytp-time-duration")?.textContent;
+  return parseClockDuration(clockText);
+}
+
+async function estimateActiveTabReadingTime(tabId, url = "") {
   if (!Number.isInteger(tabId) || !globalThis.browser?.scripting?.executeScript) {
     return null;
   }
+
+  const func = isYouTubeVideoUrl(url)
+    ? getYouTubeVideoMinutesFromPage
+    : getVisiblePageTextForReadingEstimate;
 
   try {
     const results = await globalThis.browser.scripting.executeScript({
       target: {
         tabId,
       },
-      func: getVisiblePageTextForReadingEstimate,
+      func,
     });
-    const pageText = results?.[0]?.result;
+    const result = results?.[0]?.result;
 
-    return typeof pageText === "string" ? estimateReadingMinutes(pageText) : null;
+    if (isYouTubeVideoUrl(url)) {
+      return Number.isInteger(result) && result > 0 ? result : null;
+    }
+
+    return typeof result === "string" ? estimateReadingMinutes(result) : null;
   } catch {
     return null;
   }
@@ -285,10 +379,11 @@ async function getActiveTabSnapshot() {
   });
   const activeTab = tabs?.[0] ?? {};
   const tabId = typeof activeTab.id === "number" ? activeTab.id : null;
-  const estimatedMinutes = await estimateActiveTabReadingTime(tabId);
+  const url = String(activeTab.url ?? "");
+  const estimatedMinutes = await estimateActiveTabReadingTime(tabId, url);
 
   return {
-    url: String(activeTab.url ?? ""),
+    url,
     title: String(activeTab.title ?? ""),
     estimatedMinutes,
   };
@@ -530,10 +625,14 @@ function renderSignedIn(root, activeTab, token, message = "", role = "status") {
             label: "No priority (stream only)",
             value: "none",
           },
-          ...Array.from({ length: 11 }, (_, value) => ({
-            label: String(value),
-            value: String(value),
-          })),
+          ...Array.from({ length: 10 }, (_, index) => {
+            const value = index + 1;
+
+            return {
+              label: String(value),
+              value: String(value),
+            };
+          }),
         ],
         "No priority keeps an item in the stream only, so it never appears in the left column.",
       ),

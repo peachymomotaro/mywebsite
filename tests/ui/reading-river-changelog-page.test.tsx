@@ -11,7 +11,7 @@ describe("ReadingRiverChangelogPage", () => {
 
     expect(screen.getByRole("heading", { name: "Changelog" })).toBeInTheDocument();
     expect(screen.getByText("A record of changes to Reading River.")).toBeInTheDocument();
-    expect(screen.getByText("26 April 2026")).toBeInTheDocument();
+    expect(screen.getByText("27 April 2026")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Book Roulette and priority tuning" })).toBeInTheDocument();
     expect(
       screen.getByText(

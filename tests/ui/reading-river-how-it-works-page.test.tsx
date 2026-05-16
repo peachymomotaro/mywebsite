@@ -16,11 +16,11 @@ describe("ReadingRiverHowItWorksPage", () => {
     ).toBeInTheDocument();
     expect(container.querySelector(".editorial-page-kicker")).not.toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Philosophy and More on How It Works" }),
+      screen.getByRole("heading", { name: "The Philosophy and How It Works" }),
     ).toBeInTheDocument();
 
     const howItWorksHeading = screen.getByRole("heading", { name: "How It Works" });
-    const philosophyHeading = screen.getByRole("heading", { name: "Philosophy and More on How It Works" });
+    const philosophyHeading = screen.getByRole("heading", { name: "The Philosophy and How It Works" });
 
     expect(
       howItWorksHeading.compareDocumentPosition(philosophyHeading) &

@@ -20,7 +20,7 @@ function createBrowserMock({
     url: string;
     title: string;
   };
-  pageText?: string | null;
+  pageText?: string | number | null;
   getReject?: Error | null;
   queryReject?: Error | null;
 }) {
@@ -35,14 +35,17 @@ function createBrowserMock({
       [key]: key === storageKey ? currentToken : undefined,
     };
   });
+
   const set = vi.fn(async (value: Record<string, string>) => {
     currentToken = value[storageKey] ?? null;
   });
+
   const remove = vi.fn(async (key: string) => {
     if (key === storageKey) {
       currentToken = null;
     }
   });
+
   const query = vi.fn(async () => {
     if (queryReject) {
       throw queryReject;
@@ -50,6 +53,7 @@ function createBrowserMock({
 
     return [activeTab];
   });
+
   const executeScript = vi.fn(async () => [
     {
       result: pageText,
@@ -98,7 +102,7 @@ async function loadPopupModule({
     url: string;
     title: string;
   };
-  pageText: string | null;
+  pageText: string | number | null;
   getReject: Error | null;
   queryReject: Error | null;
 }> = {}) {
