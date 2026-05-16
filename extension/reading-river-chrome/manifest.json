@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Reading River",
+  "version": "0.1.1",
+  "description": "Save articles from Chrome into Reading River.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Reading River"
+  },
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["https://petercurry.org/*"]
+}

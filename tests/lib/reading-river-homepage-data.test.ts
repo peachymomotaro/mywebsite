@@ -68,6 +68,7 @@ describe("getHomePageData", () => {
       priorityRead: null,
       streamRead: null,
       bookRoulettePick: null,
+      bookRouletteBooks: [],
       selectedTimeBudgetMinutes: null,
     });
 

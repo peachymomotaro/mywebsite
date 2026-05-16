@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import type { HomePageBook } from "@/lib/reading-river/homepage-data";
 
 const DEFAULT_BOOK_NOTES =
@@ -8,18 +8,55 @@ const DEFAULT_BOOK_NOTES =
 
 type BookRouletteProps = {
   book: HomePageBook | null;
-  removeAction?: () => Promise<void>;
+  books?: HomePageBook[];
+  removeAction?: (formData: FormData) => Promise<void>;
 };
 
-export function BookRoulette({ book, removeAction }: BookRouletteProps) {
+function pickAnotherBook(books: HomePageBook[], currentBookId?: string) {
+  const candidates = books.filter((book) => book.id !== currentBookId);
+
+  if (candidates.length === 0) {
+    return null;
+  }
+
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+export function BookRoulette({ book, books = [], removeAction }: BookRouletteProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<HomePageBook | null>(book);
   const notesId = useId();
-  const notes = book?.notes?.trim() || DEFAULT_BOOK_NOTES;
+
+  const rouletteBooks = useMemo(() => {
+    if (books.length > 0) {
+      return books;
+    }
+
+    return book ? [book] : [];
+  }, [book, books]);
+
+  useEffect(() => {
+    setSelectedBook(book);
+  }, [book?.id, book]);
+
+  const notes = selectedBook?.notes?.trim() || DEFAULT_BOOK_NOTES;
+  const canPickAnotherBook = rouletteBooks.length > 1;
+
+  function handlePickAnotherBook() {
+    const nextBook = pickAnotherBook(rouletteBooks, selectedBook?.id);
+
+    if (!nextBook) {
+      return;
+    }
+
+    setSelectedBook(nextBook);
+    setIsExpanded(true);
+  }
 
   return (
     <section className="river-book-roulette" aria-label="Book Roulette">
       <p className="river-section-label">Book Roulette</p>
-      {book ? (
+      {selectedBook ? (
         <div className="river-book-roulette-selection">
           <div className="river-book-roulette-pick">
             <button
@@ -29,23 +66,40 @@ export function BookRoulette({ book, removeAction }: BookRouletteProps) {
               aria-controls={notesId}
               onClick={() => setIsExpanded((current) => !current)}
             >
-              {book.title}
+              {selectedBook.title}
             </button>
-            {book.author ? <span className="river-book-roulette-author">{book.author}</span> : null}
+            {selectedBook.author ? (
+              <span className="river-book-roulette-author">{selectedBook.author}</span>
+            ) : null}
           </div>
+
           {isExpanded ? (
             <div className="river-book-roulette-details" id={notesId}>
               <p className="river-book-roulette-notes">{notes}</p>
-              {removeAction ? (
-                <form action={removeAction}>
+
+              <div className="river-book-roulette-detail-actions">
+                {canPickAnotherBook ? (
                   <button
-                    type="submit"
-                    className="river-spotlight-action-button river-spotlight-action-danger river-book-roulette-remove"
+                    type="button"
+                    className="river-spotlight-action-button river-book-roulette-another"
+                    onClick={handlePickAnotherBook}
                   >
-                    Remove book
+                    Another random book
                   </button>
-                </form>
-              ) : null}
+                ) : null}
+
+                {removeAction ? (
+                  <form action={removeAction}>
+                    <input type="hidden" name="bookId" value={selectedBook.id} />
+                    <button
+                      type="submit"
+                      className="river-spotlight-action-button river-spotlight-action-danger river-book-roulette-remove"
+                    >
+                      Remove book
+                    </button>
+                  </form>
+                ) : null}
+              </div>
             </div>
           ) : null}
         </div>

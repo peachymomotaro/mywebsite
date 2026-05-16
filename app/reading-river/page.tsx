@@ -25,14 +25,16 @@ export default async function ReadingRiverPage({ searchParams }: ReadingRiverPag
     });
     const bookRoulettePick = data.bookRoulettePick;
 
-    async function removeBookRoulettePickAction() {
+    async function removeBookRoulettePickAction(formData: FormData) {
       "use server";
 
-      if (!bookRoulettePick) {
+      const bookId = String(formData.get("bookId") || "").trim();
+
+      if (!bookId) {
         return;
       }
 
-      await deleteBook({ id: bookRoulettePick.id });
+      await deleteBook({ id: bookId });
     }
 
     return (
@@ -62,7 +64,11 @@ export default async function ReadingRiverPage({ searchParams }: ReadingRiverPag
 
         <TimeBudgetPicker selectedMinutes={data.selectedTimeBudgetMinutes} />
 
-        <BookRoulette book={bookRoulettePick} removeAction={removeBookRoulettePickAction} />
+        <BookRoulette
+          book={bookRoulettePick}
+          books={data.bookRouletteBooks}
+          removeAction={removeBookRoulettePickAction}
+        />
       </main>
     );
   });

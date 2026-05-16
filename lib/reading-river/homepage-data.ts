@@ -58,6 +58,7 @@ export type HomePageData = {
   priorityRead: HomePageFeaturedItem | null;
   streamRead: HomePageFeaturedItem | null;
   bookRoulettePick: HomePageBook | null;
+  bookRouletteBooks: HomePageBook[];
   selectedTimeBudgetMinutes: number | null;
 };
 
@@ -338,12 +339,15 @@ export function buildHomePageData(
   const streamItems = resolveStreamItems(articleItems, selectedTimeBudgetMinutes);
   const priorityItem = pickPriorityItem(suggestedItems, dayKey, settings);
   const streamItem = pickDailyStreamItem(streamItems, dayKey, priorityItem?.id);
-  const bookRoulettePick = pickDailyBook(options.books ?? [], dayKey);
+  const books = options.books ?? [];
+  const bookRoulettePick = pickDailyBook(books, dayKey);
+  const bookRouletteBooks = books.map(toHomePageBook);
 
   return {
     priorityRead: priorityItem ? toFeaturedItem(priorityItem) : null,
     streamRead: streamItem ? toFeaturedItem(streamItem) : null,
     bookRoulettePick: bookRoulettePick ? toHomePageBook(bookRoulettePick) : null,
+    bookRouletteBooks,
     selectedTimeBudgetMinutes,
   };
 }
