@@ -908,8 +908,19 @@ summary.auth-text-button::-webkit-details-marker {
   justify-items: start;
 }
 
+.river-home-page .river-book-roulette-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .river-home-page .river-book-roulette-details form {
   margin: 0;
+}
+
+.river-home-page .river-book-roulette-detail-actions form {
+  display: contents;
 }
 
 .river-home-page .river-book-roulette-remove {

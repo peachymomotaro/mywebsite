@@ -79,4 +79,26 @@ describe("Reading River theme stylesheet", () => {
     expect(stylesheet).toContain("-webkit-box-orient: vertical;");
     expect(stylesheet).toContain("overflow: hidden;");
   });
+
+  it("keeps book roulette detail actions inline in the route stylesheet", () => {
+    const readingRiverStylesheet = readFileSync(
+      path.resolve(process.cwd(), "app/reading-river/reading-river.css"),
+      "utf8",
+    );
+    const globalStylesheet = readFileSync(
+      path.resolve(process.cwd(), "styles/globals.css"),
+      "utf8",
+    );
+
+    expect(readingRiverStylesheet).toContain(
+      ".river-home-page .river-book-roulette-detail-actions {",
+    );
+    expect(readingRiverStylesheet).toContain("display: flex;");
+    expect(readingRiverStylesheet).toContain("flex-wrap: wrap;");
+    expect(readingRiverStylesheet).toContain(
+      ".river-home-page .river-book-roulette-detail-actions form {",
+    );
+    expect(readingRiverStylesheet).toContain("display: contents;");
+    expect(globalStylesheet).not.toContain("river-book-roulette-detail-actions");
+  });
 });
