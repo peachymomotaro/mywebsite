@@ -12,6 +12,7 @@ const actionMocks = vi.hoisted(() => {
       throw new Error(`redirect:${url}`);
     }),
     cookies: vi.fn(async () => cookieStore),
+    headers: vi.fn(async () => new Headers({ "x-forwarded-for": "203.0.113.10" })),
     setCookieStore(nextCookieStore: {
       set: ReturnType<typeof vi.fn>;
       delete: ReturnType<typeof vi.fn>;
@@ -50,12 +51,18 @@ const resetMocks = vi.hoisted(() => ({
   sendReadingRiverPasswordResetEmail: vi.fn(),
 }));
 
+const rateLimitMocks = vi.hoisted(() => ({
+  consumeFailedLoginRateLimit: vi.fn(),
+  consumePasswordResetRateLimit: vi.fn(),
+}));
+
 vi.mock("next/navigation", () => ({
   redirect: actionMocks.redirect,
 }));
 
 vi.mock("next/headers", () => ({
   cookies: actionMocks.cookies,
+  headers: actionMocks.headers,
 }));
 
 vi.mock("@/lib/reading-river/db", () => ({
@@ -75,6 +82,11 @@ vi.mock("@/lib/reading-river/email", () => ({
   sendReadingRiverPasswordResetEmail: resetMocks.sendReadingRiverPasswordResetEmail,
 }));
 
+vi.mock("@/lib/reading-river/rate-limit", () => ({
+  consumeFailedLoginRateLimit: rateLimitMocks.consumeFailedLoginRateLimit,
+  consumePasswordResetRateLimit: rateLimitMocks.consumePasswordResetRateLimit,
+}));
+
 import { hashPassword } from "@/lib/reading-river/auth";
 import { loginAction, requestPasswordResetAction } from "@/app/reading-river/login/actions";
 import { GET as logout } from "@/app/reading-river/logout/route";
@@ -86,6 +98,10 @@ describe("login action", () => {
     sessionMocks.revokeSession.mockReset();
     resetMocks.createPasswordResetToken.mockReset();
     resetMocks.sendReadingRiverPasswordResetEmail.mockReset();
+    rateLimitMocks.consumeFailedLoginRateLimit.mockReset();
+    rateLimitMocks.consumeFailedLoginRateLimit.mockResolvedValue({ allowed: true });
+    rateLimitMocks.consumePasswordResetRateLimit.mockReset();
+    rateLimitMocks.consumePasswordResetRateLimit.mockResolvedValue({ allowed: true });
     actionMocks.resetCookieStore();
   });
 
@@ -167,6 +183,47 @@ describe("login action", () => {
       "redirect:/reading-river/login?error=invalid_credentials",
     );
 
+    expect(rateLimitMocks.consumeFailedLoginRateLimit).toHaveBeenCalledWith({
+      email: "reader@example.com",
+      ipAddress: "203.0.113.10",
+    });
+    expect(sessionMocks.createSession).not.toHaveBeenCalled();
+  });
+
+  it("blocks login attempts after the failed-login rate limit is exceeded", async () => {
+    const passwordHash = await hashPassword("reader-password");
+    const userFindUnique = vi.fn(async () => ({
+      id: "user-1",
+      email: "reader@example.com",
+      displayName: "River Reader",
+      passwordHash,
+      status: "active",
+      isAdmin: false,
+      createdAt: new Date("2026-04-01T12:00:00Z"),
+      updatedAt: new Date("2026-04-01T12:00:00Z"),
+    }));
+
+    dbMocks.setPrismaMock({
+      user: {
+        findUnique: userFindUnique,
+      },
+    });
+    rateLimitMocks.consumeFailedLoginRateLimit.mockResolvedValueOnce({
+      allowed: false,
+      limit: 5,
+      count: 6,
+      name: "failed_login_email_ip_15m",
+    });
+
+    const formData = new FormData();
+    formData.set("email", "reader@example.com");
+    formData.set("password", "wrong-password");
+
+    await expect(loginAction(formData)).rejects.toThrow(
+      "redirect:/reading-river/login?error=invalid_credentials",
+    );
+
+    expect(userFindUnique).toHaveBeenCalled();
     expect(sessionMocks.createSession).not.toHaveBeenCalled();
   });
 
@@ -271,6 +328,9 @@ describe("login action", () => {
       "redirect:/reading-river/login?reset=requested",
     );
 
+    expect(rateLimitMocks.consumePasswordResetRateLimit).toHaveBeenCalledWith(
+      "reader@example.com",
+    );
     expect(userFindUnique).toHaveBeenCalledWith({
       where: {
         email: "reader@example.com",
@@ -302,6 +362,33 @@ describe("login action", () => {
       "redirect:/reading-river/login?reset=requested",
     );
 
+    expect(resetMocks.createPasswordResetToken).not.toHaveBeenCalled();
+    expect(resetMocks.sendReadingRiverPasswordResetEmail).not.toHaveBeenCalled();
+  });
+
+  it("keeps password reset feedback generic when the email exceeds the reset rate limit", async () => {
+    const userFindUnique = vi.fn();
+
+    dbMocks.setPrismaMock({
+      user: {
+        findUnique: userFindUnique,
+      },
+    });
+    rateLimitMocks.consumePasswordResetRateLimit.mockResolvedValueOnce({
+      allowed: false,
+      limit: 3,
+      count: 4,
+      name: "password_reset_email_hour",
+    });
+
+    const formData = new FormData();
+    formData.set("email", "reader@example.com");
+
+    await expect(requestPasswordResetAction(formData)).rejects.toThrow(
+      "redirect:/reading-river/login?reset=requested",
+    );
+
+    expect(userFindUnique).not.toHaveBeenCalled();
     expect(resetMocks.createPasswordResetToken).not.toHaveBeenCalled();
     expect(resetMocks.sendReadingRiverPasswordResetEmail).not.toHaveBeenCalled();
   });

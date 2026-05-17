@@ -38,6 +38,13 @@ import {
   assertSafePublicHttpUrl,
   readLimitedResponseText,
 } from "@/lib/reading-river/safe-url-fetch";
+import {
+  consumeItemCreateRateLimit,
+  consumeUrlFetchRateLimit,
+  isRateLimitExceededError,
+  RateLimitExceededError,
+} from "@/lib/reading-river/rate-limit";
+import { getUrlLogFields, logSecurityEvent } from "@/lib/reading-river/security-log";
 
 const STREAM_PATH = readingRiverPath();
 const FETCHED_DETAILS_REVIEW_MESSAGE =
@@ -353,7 +360,7 @@ async function fetchEstimatedArticleFromUrl(url: string, wordsPerMinute: number)
 
     if (!response.ok) {
       console.warn("Reading time estimation fetch returned a non-OK response.", {
-        url,
+        ...getUrlLogFields(url),
         status: response.status,
         statusText: response.statusText,
       });
@@ -369,7 +376,7 @@ async function fetchEstimatedArticleFromUrl(url: string, wordsPerMinute: number)
 
     if (estimation.confidence === "low" || estimation.confidence === "unknown") {
       console.warn("Reading time estimation needs manual confirmation.", {
-        url,
+        ...getUrlLogFields(url),
         confidence: estimation.confidence,
         method: estimation.method,
         wordCount: estimation.wordCount,
@@ -380,7 +387,7 @@ async function fetchEstimatedArticleFromUrl(url: string, wordsPerMinute: number)
     return estimation;
   } catch (error) {
     console.warn("Reading time estimation fetch failed.", {
-      url,
+      ...getUrlLogFields(url),
       ...getFetchErrorDetails(error),
     });
     return null;
@@ -400,7 +407,7 @@ async function fetchEstimatedArticleFromSubstackFeed(url: string, wordsPerMinute
 
     if (!response.ok) {
       console.warn("Reading time estimation Substack feed returned a non-OK response.", {
-        feedUrl,
+        ...getUrlLogFields(feedUrl),
         status: response.status,
         statusText: response.statusText,
       });
@@ -436,7 +443,7 @@ async function fetchEstimatedArticleFromSubstackFeed(url: string, wordsPerMinute
     };
   } catch (error) {
     console.warn("Reading time estimation Substack feed failed.", {
-      feedUrl,
+      ...getUrlLogFields(feedUrl),
       ...getFetchErrorDetails(error),
     });
     return null;
@@ -476,6 +483,22 @@ async function fetchExtractedArticle(url: string, userId: string) {
 export async function ingestUrl(input: IngestUrlInput, userId?: string) {
   const prisma = getPrismaClient();
   const currentUserId = userId ?? (await requireCurrentUser()).id;
+  const createRateLimit = await consumeItemCreateRateLimit(currentUserId);
+
+  if (!createRateLimit.allowed) {
+    logSecurityEvent(
+      "rate_limit_hit",
+      {
+        limitName: createRateLimit.name,
+        userId: currentUserId,
+        count: createRateLimit.count,
+        limit: createRateLimit.limit,
+      },
+      "warn",
+    );
+    throw new RateLimitExceededError(createRateLimit);
+  }
+
   const url = normalizeLimitedString(input.url, READING_RIVER_LIMITS.urlLength);
   const estimation = input.estimation ?? null;
   const fallbackTitle =
@@ -612,6 +635,30 @@ export async function submitUrlIntake(
       };
     }
 
+    const fetchRateLimit = await consumeUrlFetchRateLimit(currentUser.id);
+
+    if (!fetchRateLimit.allowed) {
+      logSecurityEvent(
+        "rate_limit_hit",
+        {
+          limitName: fetchRateLimit.name,
+          userId: currentUser.id,
+          count: fetchRateLimit.count,
+          limit: fetchRateLimit.limit,
+        },
+        "warn",
+      );
+      return buildReviewState({
+        draftValues,
+        message: FETCH_FAILED_REVIEW_MESSAGE,
+        estimation: null,
+        fetchSucceeded: false,
+        estimatedMinutesRequired: true,
+        previousReviewMetadata:
+          previousState.status === "review" ? previousState.reviewMetadata : undefined,
+      });
+    }
+
     const estimation = await fetchExtractedArticle(url, currentUser.id);
 
     if (estimation === null) {
@@ -650,8 +697,17 @@ export async function submitUrlIntake(
       return buildDuplicateUrlState(previousState, draftValues);
     }
 
+    if (isRateLimitExceededError(error)) {
+      return {
+        status: "error",
+        message: "You've added a lot today. Try again tomorrow.",
+        draftValues,
+        submittedAt: Date.now(),
+      };
+    }
+
     console.error("Reading River URL intake failed.", {
-      url,
+      ...getUrlLogFields(url),
       ...getFetchErrorDetails(error),
     });
 

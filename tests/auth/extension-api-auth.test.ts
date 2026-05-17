@@ -12,6 +12,7 @@ const routeMocks = vi.hoisted(() => {
     verifyPassword: vi.fn(),
     createExtensionToken: vi.fn(),
     revokeExtensionToken: vi.fn(),
+    consumeFailedLoginRateLimit: vi.fn(),
   };
 });
 
@@ -27,6 +28,10 @@ vi.mock("@/lib/reading-river/auth", () => ({
 vi.mock("@/lib/reading-river/extension-auth", () => ({
   createExtensionToken: routeMocks.createExtensionToken,
   revokeExtensionToken: routeMocks.revokeExtensionToken,
+}));
+
+vi.mock("@/lib/reading-river/rate-limit", () => ({
+  consumeFailedLoginRateLimit: routeMocks.consumeFailedLoginRateLimit,
 }));
 
 import { POST as login } from "@/app/reading-river/api/extension/login/route";
@@ -53,6 +58,8 @@ describe("reading river extension api auth", () => {
     routeMocks.verifyPassword.mockReset();
     routeMocks.createExtensionToken.mockReset();
     routeMocks.revokeExtensionToken.mockReset();
+    routeMocks.consumeFailedLoginRateLimit.mockReset();
+    routeMocks.consumeFailedLoginRateLimit.mockResolvedValue({ allowed: true });
   });
 
   it("returns an extension token and user info for valid login credentials", async () => {

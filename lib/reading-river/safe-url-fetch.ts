@@ -1,6 +1,7 @@
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 import { READING_RIVER_LIMITS } from "@/lib/reading-river/input-limits";
+import { getUrlLogFields, logSecurityEvent } from "@/lib/reading-river/security-log";
 
 const FETCHED_HTML_TOO_LARGE_ERROR = "fetched_html_too_large";
 const BLOCKED_FETCH_TARGET_ERROR = "blocked_fetch_target";
@@ -91,17 +92,34 @@ export async function assertSafePublicHttpUrl(url: string) {
   const parsed = new URL(url);
 
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    logSecurityEvent("blocked_url_fetch", getUrlLogFields(url), "warn");
     throw new Error(BLOCKED_FETCH_TARGET_ERROR);
   }
 
   const hostname = parsed.hostname.replace(/^\[|\]$/g, "").toLowerCase();
 
   if (!hostname || hostname === "localhost" || hostname.endsWith(".localhost")) {
+    logSecurityEvent(
+      "blocked_url_fetch",
+      {
+        ...getUrlLogFields(url),
+        reason: "localhost",
+      },
+      "warn",
+    );
     throw new Error(BLOCKED_FETCH_TARGET_ERROR);
   }
 
   if (isIP(hostname)) {
     if (isBlockedAddress(hostname)) {
+      logSecurityEvent(
+        "blocked_url_fetch",
+        {
+          ...getUrlLogFields(url),
+          reason: "blocked_ip",
+        },
+        "warn",
+      );
       throw new Error(BLOCKED_FETCH_TARGET_ERROR);
     }
 
@@ -111,6 +129,14 @@ export async function assertSafePublicHttpUrl(url: string) {
   const addresses = await lookup(hostname, { all: true });
 
   if (addresses.length === 0 || addresses.some(({ address }) => isBlockedAddress(address))) {
+    logSecurityEvent(
+      "blocked_url_fetch",
+      {
+        ...getUrlLogFields(url),
+        reason: addresses.length === 0 ? "dns_no_addresses" : "dns_private_address",
+      },
+      "warn",
+    );
     throw new Error(BLOCKED_FETCH_TARGET_ERROR);
   }
 }
@@ -122,6 +148,14 @@ export async function readLimitedResponseText(
   const contentLength = response.headers?.get("content-length") ?? null;
 
   if (contentLength !== null && Number(contentLength) > maxBytes) {
+    logSecurityEvent(
+      "oversized_fetch_blocked",
+      {
+        contentLength: Number(contentLength),
+        maxBytes,
+      },
+      "warn",
+    );
     throw new Error(FETCHED_HTML_TOO_LARGE_ERROR);
   }
 
@@ -145,6 +179,14 @@ export async function readLimitedResponseText(
 
     if (bytesRead > maxBytes) {
       await reader.cancel();
+      logSecurityEvent(
+        "oversized_fetch_blocked",
+        {
+          bytesRead,
+          maxBytes,
+        },
+        "warn",
+      );
       throw new Error(FETCHED_HTML_TOO_LARGE_ERROR);
     }
 

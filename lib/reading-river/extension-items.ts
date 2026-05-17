@@ -6,7 +6,12 @@ import {
   normalizeTagNames,
   READING_RIVER_LIMITS,
 } from "@/lib/reading-river/input-limits";
+import {
+  consumeItemCreateRateLimit,
+  RateLimitExceededError,
+} from "@/lib/reading-river/rate-limit";
 import { readingRiverPath } from "@/lib/reading-river/routes";
+import { logSecurityEvent } from "@/lib/reading-river/security-log";
 import { assertNoDuplicateReadingItemSourceUrl } from "@/lib/reading-river/source-url";
 
 const STREAM_PATH = readingRiverPath();
@@ -66,6 +71,22 @@ export async function createReadingItemForUser(
 ) {
   const prisma = getPrismaClient();
   const { tagNames, sourceUrl, ...data } = input;
+  const createRateLimit = await consumeItemCreateRateLimit(userId);
+
+  if (!createRateLimit.allowed) {
+    logSecurityEvent(
+      "rate_limit_hit",
+      {
+        limitName: createRateLimit.name,
+        userId,
+        count: createRateLimit.count,
+        limit: createRateLimit.limit,
+      },
+      "warn",
+    );
+    throw new RateLimitExceededError(createRateLimit);
+  }
+
   const normalizedTagNames = normalizeTagNames(tagNames ?? []);
   const normalizedSourceUrl = await assertNoDuplicateReadingItemSourceUrl(
     prisma,

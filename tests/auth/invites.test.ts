@@ -226,6 +226,7 @@ describe("invites", () => {
     const context = createPrismaMock();
     mocks.setPrismaMock(context.prisma);
     const now = new Date("2026-04-01T12:00:00Z");
+    const consoleInfoMock = vi.spyOn(console, "info").mockImplementation(() => {});
 
     await expect(
       redeemInvite({
@@ -242,6 +243,14 @@ describe("invites", () => {
       },
     });
     expect(context.transaction).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(consoleInfoMock.mock.calls)).not.toContain("raw-token");
+    expect(consoleInfoMock).toHaveBeenCalledWith(
+      "Reading River security event",
+      expect.objectContaining({
+        event: "invite_redeemed",
+        userId: "user-1",
+      }),
+    );
 
     await expect(
       redeemInvite({

@@ -9,6 +9,10 @@ const revalidatePathMock = vi.fn();
 const requireCurrentUserMock = vi.fn();
 const unstableRethrowMock = vi.fn();
 const dnsLookupMock = vi.hoisted(() => vi.fn());
+const rateLimitMocks = vi.hoisted(() => ({
+  consumeUrlFetchRateLimit: vi.fn(),
+  consumeItemCreateRateLimit: vi.fn(),
+}));
 
 vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
@@ -39,6 +43,19 @@ vi.mock("@/lib/reading-river/db", () => ({
 
 vi.mock("@/lib/reading-river/current-user", () => ({
   requireCurrentUser: requireCurrentUserMock,
+}));
+
+vi.mock("@/lib/reading-river/rate-limit", () => ({
+  consumeUrlFetchRateLimit: rateLimitMocks.consumeUrlFetchRateLimit,
+  consumeItemCreateRateLimit: rateLimitMocks.consumeItemCreateRateLimit,
+  RateLimitExceededError: class RateLimitExceededError extends Error {
+    constructor() {
+      super("rate_limit_exceeded");
+      this.name = "RateLimitExceededError";
+    }
+  },
+  isRateLimitExceededError: (error: unknown) =>
+    error instanceof Error && error.name === "RateLimitExceededError",
 }));
 
 function buildUrlFormData(
@@ -188,6 +205,10 @@ describe("submitUrlIntake", () => {
     requireCurrentUserMock.mockResolvedValue(createCurrentUser());
     dnsLookupMock.mockReset();
     dnsLookupMock.mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
+    rateLimitMocks.consumeUrlFetchRateLimit.mockReset();
+    rateLimitMocks.consumeUrlFetchRateLimit.mockResolvedValue({ allowed: true });
+    rateLimitMocks.consumeItemCreateRateLimit.mockReset();
+    rateLimitMocks.consumeItemCreateRateLimit.mockResolvedValue({ allowed: true });
     vi.doUnmock("jsdom");
     vi.restoreAllMocks();
     vi.resetModules();
@@ -208,6 +229,7 @@ describe("submitUrlIntake", () => {
 
     await submitUrlIntake(initialIntakeFormState, formData);
 
+    expect(rateLimitMocks.consumeUrlFetchRateLimit).toHaveBeenCalledWith("user-1");
     expect(fetchMock).toHaveBeenCalledWith(
       "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2033231",
       expect.objectContaining({
@@ -215,6 +237,42 @@ describe("submitUrlIntake", () => {
           "User-Agent": "Reading River/0.1 (+https://reading-river.local)",
         },
         redirect: "manual",
+      }),
+    );
+  });
+
+  it("returns a manual review state when the user exceeds the daily URL fetch limit", async () => {
+    const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
+    const formData = buildUrlFormData();
+    const fetchMock = vi.fn();
+    const consoleWarnMock = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    rateLimitMocks.consumeUrlFetchRateLimit.mockResolvedValueOnce({
+      allowed: false,
+      limit: 100,
+      count: 101,
+      name: "url_fetch_user_day",
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await submitUrlIntake(initialIntakeFormState, formData);
+
+    expect(result).toMatchObject({
+      status: "review",
+      message:
+        "I couldn't fetch this page. Review the title and add a reading time before saving it manually.",
+      reviewMetadata: {
+        fetchSucceeded: false,
+        estimatedMinutesRequired: true,
+      },
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(consoleWarnMock).toHaveBeenCalledWith(
+      "Reading River security event",
+      expect.objectContaining({
+        event: "rate_limit_hit",
+        limitName: "url_fetch_user_day",
+        userId: "user-1",
       }),
     );
   });
@@ -383,7 +441,7 @@ describe("submitUrlIntake", () => {
     expect(consoleWarnMock).toHaveBeenCalledWith(
       "Reading time estimation fetch failed.",
       expect.objectContaining({
-        url: "https://example.com/essay",
+        urlHostname: "example.com",
         errorMessage: "blocked",
       }),
     );
@@ -406,7 +464,7 @@ describe("submitUrlIntake", () => {
       "Reading River URL intake failed.",
       expect.objectContaining({
         errorMessage: "session lookup failed",
-        url: "https://example.com/essay",
+        urlHostname: "example.com",
       }),
     );
   });
@@ -905,7 +963,7 @@ describe("submitUrlIntake", () => {
     expect(consoleWarnMock).toHaveBeenCalledWith(
       "Reading time estimation needs manual confirmation.",
       expect.objectContaining({
-        url: "https://example.com/essay",
+        urlHostname: "example.com",
         confidence: "unknown",
         method: "unknown",
       }),

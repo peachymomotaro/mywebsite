@@ -1,7 +1,7 @@
 "use server";
 
 import { UserStatus } from "@prisma/client";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   getSessionCookieName,
@@ -13,9 +13,52 @@ import { sendReadingRiverPasswordResetEmail } from "@/lib/reading-river/email";
 import { createPasswordResetToken } from "@/lib/reading-river/password-resets";
 import { createSession } from "@/lib/reading-river/session";
 import { readingRiverPath } from "@/lib/reading-river/routes";
+import {
+  consumeFailedLoginRateLimit,
+  consumePasswordResetRateLimit,
+} from "@/lib/reading-river/rate-limit";
+import { hashSecurityValue, logSecurityEvent } from "@/lib/reading-river/security-log";
 
 function redirectWithError(error: "invalid_credentials" | "account_disabled"): never {
   return redirect(readingRiverPath(`/login?error=${error}`));
+}
+
+async function getClientIpAddress() {
+  const headerStore = await headers();
+  const forwardedFor = headerStore.get("x-forwarded-for")?.split(",")[0]?.trim();
+
+  return forwardedFor || headerStore.get("x-real-ip")?.trim() || "unknown";
+}
+
+async function recordFailedLogin(email: string) {
+  const ipAddress = await getClientIpAddress();
+  const result = await consumeFailedLoginRateLimit({ email, ipAddress });
+
+  if (!result.allowed) {
+    logSecurityEvent(
+      "rate_limit_hit",
+      {
+        limitName: result.name,
+        emailHash: hashSecurityValue(email),
+        ipHash: hashSecurityValue(ipAddress),
+        count: result.count,
+        limit: result.limit,
+      },
+      "warn",
+    );
+    logSecurityEvent(
+      "repeated_failed_login_burst",
+      {
+        emailHash: hashSecurityValue(email),
+        ipHash: hashSecurityValue(ipAddress),
+        count: result.count,
+        limit: result.limit,
+      },
+      "warn",
+    );
+  }
+
+  return result;
 }
 
 export async function loginAction(formData: FormData) {
@@ -34,6 +77,7 @@ export async function loginAction(formData: FormData) {
   });
 
   if (!user) {
+    await recordFailedLogin(email);
     redirectWithError("invalid_credentials");
   }
 
@@ -44,6 +88,12 @@ export async function loginAction(formData: FormData) {
   const isValidPassword = await verifyPassword(password, user.passwordHash);
 
   if (!isValidPassword) {
+    const rateLimit = await recordFailedLogin(email);
+
+    if (!rateLimit.allowed) {
+      redirectWithError("invalid_credentials");
+    }
+
     redirectWithError("invalid_credentials");
   }
 
@@ -60,6 +110,22 @@ export async function requestPasswordResetAction(formData: FormData) {
   const redirectPath = readingRiverPath("/login?reset=requested");
 
   if (!email) {
+    redirect(redirectPath);
+  }
+
+  const resetRateLimit = await consumePasswordResetRateLimit(email);
+
+  if (!resetRateLimit.allowed) {
+    logSecurityEvent(
+      "rate_limit_hit",
+      {
+        limitName: resetRateLimit.name,
+        emailHash: hashSecurityValue(email),
+        count: resetRateLimit.count,
+        limit: resetRateLimit.limit,
+      },
+      "warn",
+    );
     redirect(redirectPath);
   }
 

@@ -69,6 +69,7 @@ describe("Reading River admin actions", () => {
   it("redirects with sent status when the invite email succeeds", async () => {
     const { createInviteAction } = await import("@/app/reading-river/admin/actions");
     const formData = new FormData();
+    const consoleInfoMock = vi.spyOn(console, "info").mockImplementation(() => {});
 
     formData.set("email", "reader@example.com");
     inviteMocks.createInvite.mockResolvedValue({
@@ -90,6 +91,15 @@ describe("Reading River admin actions", () => {
       email: "reader@example.com",
       token: "invite-token",
     });
+    expect(JSON.stringify(consoleInfoMock.mock.calls)).not.toContain("invite-token");
+    expect(consoleInfoMock).toHaveBeenCalledWith(
+      "Reading River security event",
+      expect.objectContaining({
+        event: "admin_action",
+        action: "create_invite",
+        userId: "admin-1",
+      }),
+    );
     expect(actionMocks.revalidatePath).toHaveBeenCalledWith("/reading-river/admin");
   });
 
@@ -166,6 +176,46 @@ describe("Reading River admin actions", () => {
       },
     });
     expect(actionMocks.revalidatePath).toHaveBeenCalledWith("/reading-river/admin");
+  });
+
+  it("logs user deactivation without including secrets", async () => {
+    const userFindUnique = vi.fn(async () => ({
+      id: "user-2",
+      isAdmin: false,
+    }));
+    const userUpdate = vi.fn(async () => ({}));
+    const consoleInfoMock = vi.spyOn(console, "info").mockImplementation(() => {});
+
+    dbMocks.setPrismaMock({
+      user: {
+        findUnique: userFindUnique,
+        update: userUpdate,
+      },
+    });
+
+    const { deactivateUserAction } = await import("@/app/reading-river/admin/actions");
+    const formData = new FormData();
+    formData.set("userId", "user-2");
+
+    await expect(deactivateUserAction(formData)).rejects.toThrow("redirect:/reading-river/admin");
+
+    expect(userUpdate).toHaveBeenCalledWith({
+      where: {
+        id: "user-2",
+      },
+      data: {
+        status: "deactivated",
+      },
+    });
+    expect(JSON.stringify(consoleInfoMock.mock.calls)).not.toContain("password");
+    expect(consoleInfoMock).toHaveBeenCalledWith(
+      "Reading River security event",
+      expect.objectContaining({
+        event: "user_deactivated",
+        userId: "admin-1",
+        targetUserId: "user-2",
+      }),
+    );
   });
 
   it("does not revoke redeemed or already revoked invites", async () => {

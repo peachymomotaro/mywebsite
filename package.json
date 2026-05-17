@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "next lint",
     "harvest:apple-credits": "tsx scripts/harvestAppleCredits.ts",
+    "backup:reading-river": "pg_dump \"$DATABASE_URL\" --format=custom --file \"reading-river-backup-$(date +%F).dump\"",
     "test": "vitest run"
   },
   "dependencies": {

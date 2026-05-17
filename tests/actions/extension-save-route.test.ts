@@ -13,6 +13,10 @@ const routeMocks = vi.hoisted(() => {
   };
 });
 
+const rateLimitMocks = vi.hoisted(() => ({
+  consumeItemCreateRateLimit: vi.fn(),
+}));
+
 vi.mock("next/cache", () => ({
   revalidatePath: routeMocks.revalidatePath,
 }));
@@ -23,6 +27,18 @@ vi.mock("@/lib/reading-river/db", () => ({
 
 vi.mock("@/lib/reading-river/extension-auth", () => ({
   getCurrentUserFromExtensionToken: routeMocks.getCurrentUserFromExtensionToken,
+}));
+
+vi.mock("@/lib/reading-river/rate-limit", () => ({
+  consumeItemCreateRateLimit: rateLimitMocks.consumeItemCreateRateLimit,
+  RateLimitExceededError: class RateLimitExceededError extends Error {
+    constructor() {
+      super("rate_limit_exceeded");
+      this.name = "RateLimitExceededError";
+    }
+  },
+  isRateLimitExceededError: (error: unknown) =>
+    error instanceof Error && error.name === "RateLimitExceededError",
 }));
 
 import { POST } from "@/app/reading-river/api/extension/save/route";
@@ -46,6 +62,8 @@ describe("reading river extension save route", () => {
     routeMocks.getPrismaClient.mockClear();
     routeMocks.getCurrentUserFromExtensionToken.mockReset();
     routeMocks.revalidatePath.mockClear();
+    rateLimitMocks.consumeItemCreateRateLimit.mockReset();
+    rateLimitMocks.consumeItemCreateRateLimit.mockResolvedValue({ allowed: true });
   });
 
   it("creates an unread url item with a nullable estimated minutes value and stream-only priority", async () => {
@@ -85,6 +103,7 @@ describe("reading river extension save route", () => {
       title: "https://example.com/article",
     });
     expect(routeMocks.getCurrentUserFromExtensionToken).toHaveBeenCalledWith("extension-token");
+    expect(rateLimitMocks.consumeItemCreateRateLimit).toHaveBeenCalledWith("user-1");
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -320,6 +339,44 @@ describe("reading river extension save route", () => {
     expect(await response.json()).toEqual({
       error: "save_failed",
     });
+  });
+
+  it("returns a rate-limited response when the user exceeds the daily item create limit", async () => {
+    const create = vi.fn();
+
+    routeMocks.setPrismaMock({
+      readingItem: {
+        create,
+      },
+    });
+    routeMocks.getCurrentUserFromExtensionToken.mockResolvedValue(createUser());
+    rateLimitMocks.consumeItemCreateRateLimit.mockResolvedValueOnce({
+      allowed: false,
+      limit: 300,
+      count: 301,
+      name: "item_create_user_day",
+    });
+
+    const request = new Request("https://example.com/reading-river/api/extension/save", {
+      method: "POST",
+      headers: {
+        authorization: "Bearer extension-token",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        url: "https://example.com/article",
+        title: "Read later",
+        priorityScore: 5,
+      }),
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(429);
+    expect(await response.json()).toEqual({
+      error: "rate_limited",
+    });
+    expect(create).not.toHaveBeenCalled();
   });
 
   it("rejects malformed JSON bodies as invalid payload", async () => {

@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { UserStatus } from "@prisma/client";
 import { hashPassword } from "@/lib/reading-river/auth";
 import { getPrismaClient } from "@/lib/reading-river/db";
+import { hashSecurityValue, logSecurityEvent } from "@/lib/reading-river/security-log";
 
 const INVITE_TOKEN_BYTES = 32;
 const DEFAULT_INVITE_EXPIRY_DAYS = 7;
@@ -185,6 +186,12 @@ export async function redeemInvite({
     });
 
     return createdUser;
+  });
+
+  logSecurityEvent("invite_redeemed", {
+    userId: user.id,
+    emailHash: hashSecurityValue(email),
+    inviteId: redemptionState.invite.id,
   });
 
   return {

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createReadingItemForUser } from "@/lib/reading-river/extension-items";
 import { getCurrentUserFromExtensionToken } from "@/lib/reading-river/extension-auth";
 import { READING_RIVER_LIMITS } from "@/lib/reading-river/input-limits";
+import { isRateLimitExceededError } from "@/lib/reading-river/rate-limit";
 import { isDuplicateReadingItemUrlError } from "@/lib/reading-river/source-url";
 
 const saveExtensionItemSchema = z.object({
@@ -66,6 +67,17 @@ function duplicateUrl() {
   );
 }
 
+function rateLimited() {
+  return NextResponse.json(
+    {
+      error: "rate_limited",
+    },
+    {
+      status: 429,
+    },
+  );
+}
+
 export async function POST(request: Request) {
   const token = getBearerToken(request.headers.get("authorization"));
 
@@ -109,6 +121,10 @@ export async function POST(request: Request) {
   } catch (error) {
     if (isDuplicateReadingItemUrlError(error)) {
       return duplicateUrl();
+    }
+
+    if (isRateLimitExceededError(error)) {
+      return rateLimited();
     }
 
     return saveFailed();
