@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { updateReadingItem } from "@/app/reading-river/actions/reading-items";
+import { READING_RIVER_LIMITS } from "@/lib/reading-river/input-limits";
 import { readingRiverItemEditPath, readingRiverPath } from "@/lib/reading-river/routes";
 import { isDuplicateReadingItemUrlError } from "@/lib/reading-river/source-url";
 
@@ -31,7 +32,7 @@ function parseTagNames(value: string) {
 function normalizeSubmittedUrl(value: string) {
   const trimmed = value.trim();
 
-  if (!trimmed) {
+  if (!trimmed || trimmed.length > READING_RIVER_LIMITS.urlLength) {
     return null;
   }
 
@@ -66,6 +67,7 @@ export async function saveReadingItemEditAction(formData: FormData) {
   if (
     !id ||
     !title ||
+    title.length > READING_RIVER_LIMITS.titleLength ||
     estimatedMinutes === null ||
     estimatedMinutes <= 0 ||
     (priorityScore !== null && (priorityScore < 0 || priorityScore > 10))

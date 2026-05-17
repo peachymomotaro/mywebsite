@@ -7,6 +7,7 @@ const findExistingReadingItemMock = vi.fn();
 const revalidatePathMock = vi.fn();
 const requireCurrentUserMock = vi.fn();
 const unstableRethrowMock = vi.fn();
+const dnsLookupMock = vi.hoisted(() => vi.fn());
 
 vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
@@ -14,6 +15,13 @@ vi.mock("next/cache", () => ({
 
 vi.mock("next/navigation", () => ({
   unstable_rethrow: unstableRethrowMock,
+}));
+
+vi.mock("node:dns/promises", () => ({
+  default: {
+    lookup: dnsLookupMock,
+  },
+  lookup: dnsLookupMock,
 }));
 
 vi.mock("@/lib/reading-river/db", () => ({
@@ -72,6 +80,8 @@ describe("submitUrlIntake jsdom runtime failures", () => {
     unstableRethrowMock.mockReset();
     requireCurrentUserMock.mockReset();
     requireCurrentUserMock.mockResolvedValue(createCurrentUser());
+    dnsLookupMock.mockReset();
+    dnsLookupMock.mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
     vi.doUnmock("jsdom");
     vi.restoreAllMocks();
     vi.resetModules();

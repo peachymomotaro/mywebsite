@@ -1,13 +1,15 @@
 import { revalidatePath } from "next/cache";
 import { getPrismaClient } from "@/lib/reading-river/db";
+import {
+  normalizeLimitedString,
+  normalizeOptionalLimitedString,
+  normalizeTagNames,
+  READING_RIVER_LIMITS,
+} from "@/lib/reading-river/input-limits";
 import { readingRiverPath } from "@/lib/reading-river/routes";
 import { assertNoDuplicateReadingItemSourceUrl } from "@/lib/reading-river/source-url";
 
 const STREAM_PATH = readingRiverPath();
-
-function normalizeTagNames(tagNames: string[]) {
-  return [...new Set(tagNames.map((tagName) => tagName.trim()).filter(Boolean))];
-}
 
 export function buildTagWrite(userId: string, tagNames: string[]) {
   return {
@@ -70,11 +72,49 @@ export async function createReadingItemForUser(
     userId,
     sourceUrl,
   );
+  const normalizedBookId = data.bookId?.trim() || null;
+
+  if (normalizedBookId) {
+    const book = await prisma.book.findFirst({
+      where: {
+        userId,
+        id: normalizedBookId,
+      },
+      select: { id: true },
+    });
+
+    if (!book) {
+      throw new Error(`Book ${normalizedBookId} was not found.`);
+    }
+  }
 
   const item = await prisma.readingItem.create({
     data: {
       userId,
       ...data,
+      title: normalizeLimitedString(data.title, READING_RIVER_LIMITS.titleLength),
+      ...(data.author !== undefined
+        ? {
+            author: normalizeOptionalLimitedString(
+              data.author,
+              READING_RIVER_LIMITS.authorLength,
+            ),
+          }
+        : {}),
+      ...(data.notes !== undefined
+        ? {
+            notes: normalizeOptionalLimitedString(data.notes, READING_RIVER_LIMITS.notesLength),
+          }
+        : {}),
+      ...(data.extractedText !== undefined
+        ? {
+            extractedText: normalizeOptionalLimitedString(
+              data.extractedText,
+              READING_RIVER_LIMITS.extractedTextLength,
+            ),
+          }
+        : {}),
+      ...(data.bookId !== undefined ? { bookId: normalizedBookId } : {}),
       ...(sourceUrl !== undefined ? { sourceUrl: normalizedSourceUrl } : {}),
       ...(normalizedTagNames.length > 0 ? { tags: buildTagWrite(userId, normalizedTagNames) } : {}),
     },

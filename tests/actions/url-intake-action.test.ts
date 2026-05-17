@@ -8,6 +8,7 @@ const findExistingReadingItemMock = vi.fn();
 const revalidatePathMock = vi.fn();
 const requireCurrentUserMock = vi.fn();
 const unstableRethrowMock = vi.fn();
+const dnsLookupMock = vi.hoisted(() => vi.fn());
 
 vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
@@ -15,6 +16,13 @@ vi.mock("next/cache", () => ({
 
 vi.mock("next/navigation", () => ({
   unstable_rethrow: unstableRethrowMock,
+}));
+
+vi.mock("node:dns/promises", () => ({
+  default: {
+    lookup: dnsLookupMock,
+  },
+  lookup: dnsLookupMock,
 }));
 
 vi.mock("@/lib/reading-river/db", () => ({
@@ -178,6 +186,8 @@ describe("submitUrlIntake", () => {
     unstableRethrowMock.mockReset();
     requireCurrentUserMock.mockReset();
     requireCurrentUserMock.mockResolvedValue(createCurrentUser());
+    dnsLookupMock.mockReset();
+    dnsLookupMock.mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
     vi.doUnmock("jsdom");
     vi.restoreAllMocks();
     vi.resetModules();
@@ -204,8 +214,132 @@ describe("submitUrlIntake", () => {
         headers: {
           "User-Agent": "Reading River/0.1 (+https://reading-river.local)",
         },
+        redirect: "manual",
       }),
     );
+  });
+
+  it("rejects non-http URL schemes before fetching", async () => {
+    const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
+    const formData = buildUrlFormData("file:///etc/passwd");
+    const fetchMock = vi.fn();
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await submitUrlIntake(initialIntakeFormState, formData);
+
+    expect(result).toMatchObject({
+      status: "error",
+      message: "Add a valid link before saving it.",
+    });
+    expect(dnsLookupMock).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects localhost and private IPv4 targets before fetching", async () => {
+    const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
+    const formData = buildUrlFormData("http://localhost/admin");
+    const fetchMock = vi.fn();
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await submitUrlIntake(initialIntakeFormState, formData);
+
+    expect(result).toMatchObject({
+      status: "review",
+      message:
+        "I couldn't fetch this page. Review the title and add a reading time before saving it manually.",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects private IPv6 targets before fetching", async () => {
+    const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
+    const formData = buildUrlFormData("http://[fc00::1]/admin");
+    const fetchMock = vi.fn();
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await submitUrlIntake(initialIntakeFormState, formData);
+
+    expect(result).toMatchObject({
+      status: "review",
+      message:
+        "I couldn't fetch this page. Review the title and add a reading time before saving it manually.",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects hostnames that resolve to private addresses", async () => {
+    const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
+    const formData = buildUrlFormData("https://internal.example.test/article");
+    const fetchMock = vi.fn();
+
+    dnsLookupMock.mockResolvedValueOnce([{ address: "10.0.0.5", family: 4 }]);
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await submitUrlIntake(initialIntakeFormState, formData);
+
+    expect(result).toMatchObject({
+      status: "review",
+      message:
+        "I couldn't fetch this page. Review the title and add a reading time before saving it manually.",
+    });
+    expect(dnsLookupMock).toHaveBeenCalledWith("internal.example.test", { all: true });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects redirects instead of following them to an internal URL", async () => {
+    const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
+    const formData = buildUrlFormData("https://example.com/redirect");
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 302,
+      statusText: "Found",
+      headers: new Headers({
+        location: "http://127.0.0.1/admin",
+      }),
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await submitUrlIntake(initialIntakeFormState, formData);
+
+    expect(result).toMatchObject({
+      status: "review",
+      message:
+        "I couldn't fetch this page. Review the title and add a reading time before saving it manually.",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects oversized responses without saving extracted text", async () => {
+    const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
+    const formData = buildUrlFormData("https://example.com/huge");
+    const oversizedChunk = new Uint8Array(2_000_001);
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      headers: new Headers(),
+      body: new ReadableStream({
+        start(controller) {
+          controller.enqueue(oversizedChunk);
+          controller.close();
+        },
+      }),
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await submitUrlIntake(initialIntakeFormState, formData);
+
+    expect(result).toMatchObject({
+      status: "review",
+      message:
+        "I couldn't fetch this page. Review the title and add a reading time before saving it manually.",
+    });
+    expect(createMock).not.toHaveBeenCalled();
   });
 
   it("returns a review state without saving when the page cannot be fetched", async () => {
@@ -716,7 +850,7 @@ describe("submitUrlIntake", () => {
           fetchSucceeded: true,
           estimatedMinutesRequired: true,
           extractedTitle: "Short note",
-          extractedText: expect.any(String),
+          extractedText: repeatWords(20),
           titleWasPrefilled: false,
           siteName: "example.com",
           author: null,

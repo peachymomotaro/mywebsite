@@ -182,6 +182,35 @@ describe("reading item validation", () => {
     });
   });
 
+  it("rejects creating a reading item with another user's book", async () => {
+    const create = vi.fn();
+
+    actionMocks.setPrismaMock({
+      book: {
+        findFirst: vi.fn(async () => null),
+      },
+      readingItem: {
+        create,
+      },
+    });
+    actionMocks.requireCurrentUser.mockResolvedValue({
+      id: "user-1",
+    });
+
+    await expect(
+      createReadingItem({
+        title: "Read later",
+        sourceType: "book_chapter",
+        estimatedMinutes: 12,
+        priorityScore: null,
+        status: "unread",
+        bookId: "book-owned-by-someone-else",
+      }),
+    ).rejects.toThrow("Book book-owned-by-someone-else was not found.");
+
+    expect(create).not.toHaveBeenCalled();
+  });
+
   it("updates a reading item and rewrites tags", async () => {
     const deleteMany = vi.fn(async () => ({ count: 1 }));
     const update = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
@@ -285,6 +314,35 @@ describe("reading item validation", () => {
         },
       ],
     });
+  });
+
+  it("rejects updating a reading item onto another user's book", async () => {
+    const update = vi.fn();
+
+    actionMocks.setPrismaMock({
+      book: {
+        findFirst: vi.fn(async () => null),
+      },
+      readingItem: {
+        findUnique: vi.fn(async () => ({
+          id: "item-1",
+        })),
+        update,
+      },
+      $transaction: vi.fn(),
+    });
+    actionMocks.requireCurrentUser.mockResolvedValue({
+      id: "user-1",
+    });
+
+    await expect(
+      updateReadingItem({
+        id: "item-1",
+        bookId: "book-owned-by-someone-else",
+      }),
+    ).rejects.toThrow("Book book-owned-by-someone-else was not found.");
+
+    expect(update).not.toHaveBeenCalled();
   });
 
   it("demotes skipped priority items to the bottom of the priority queue", async () => {

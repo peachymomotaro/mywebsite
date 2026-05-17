@@ -75,6 +75,31 @@ describe("createBook", () => {
     });
   });
 
+  it("rejects oversized book fields before writing", async () => {
+    mocks.requireCurrentUser.mockResolvedValue({
+      id: "user-1",
+      email: "reader@example.com",
+      displayName: "River Reader",
+      passwordHash: "hash",
+      status: "active",
+      isAdmin: false,
+      createdAt: new Date("2026-04-01T12:00:00Z"),
+      updatedAt: new Date("2026-04-01T12:00:00Z"),
+    });
+
+    const { createBook } = await import("@/app/reading-river/actions/books");
+
+    await expect(
+      createBook({
+        title: "x".repeat(301),
+        author: "A. Writer",
+        notes: "Notes",
+      }),
+    ).rejects.toThrow();
+
+    expect(mocks.bookCreate).not.toHaveBeenCalled();
+  });
+
   it("permanently deletes only a book owned by the signed-in user", async () => {
     mocks.requireCurrentUser.mockResolvedValue({
       id: "user-1",

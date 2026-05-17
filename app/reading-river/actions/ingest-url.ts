@@ -10,6 +10,12 @@ import {
   type LengthEstimationConfidence,
   type LengthEstimationMethod,
 } from "@/lib/reading-river/article-length-estimation";
+import {
+  normalizeLimitedString,
+  normalizeOptionalLimitedString,
+  normalizeTagNames,
+  READING_RIVER_LIMITS,
+} from "@/lib/reading-river/input-limits";
 import { DEFAULT_READING_SPEED_WPM } from "@/lib/reading-river/reading-config";
 import type {
   IntakeFormState,
@@ -28,6 +34,10 @@ import {
   isSubstackPostUrl,
   parseSubstackFeed,
 } from "@/lib/reading-river/substack-feed";
+import {
+  assertSafePublicHttpUrl,
+  readLimitedResponseText,
+} from "@/lib/reading-river/safe-url-fetch";
 
 const STREAM_PATH = readingRiverPath();
 const FETCHED_DETAILS_REVIEW_MESSAGE =
@@ -53,10 +63,6 @@ type IngestUrlInput = {
   lengthEstimationConfidence: LengthEstimationConfidence;
 };
 
-function normalizeTagNames(tagNames: string[]) {
-  return [...new Set(tagNames.map((tagName) => tagName.trim()).filter(Boolean))];
-}
-
 function buildTagWrite(userId: string, tagNames: string[]) {
   return {
     create: normalizeTagNames(tagNames).map((name) => ({
@@ -76,12 +82,6 @@ function buildTagWrite(userId: string, tagNames: string[]) {
       },
     })),
   };
-}
-
-function normalizeOptionalString(value: string | null | undefined) {
-  const normalized = value?.trim();
-
-  return normalized ? normalized : null;
 }
 
 function parsePriorityScore(value: string, fallback: number) {
@@ -106,11 +106,21 @@ function parseEstimatedMinutes(value: string) {
 
 function buildDraftValues(formData: FormData): UrlIntakeDraftValues {
   const priorityScore = String(formData.get("priorityScore") ?? "").trim();
+  const rawUrl = String(formData.get("url") ?? "").trim();
 
   return {
-    url: String(formData.get("url") ?? "").trim(),
-    title: String(formData.get("title") ?? "").trim(),
-    notes: String(formData.get("notes") ?? "").trim(),
+    url:
+      rawUrl.length > READING_RIVER_LIMITS.urlLength
+        ? rawUrl.slice(0, READING_RIVER_LIMITS.urlLength + 1)
+        : rawUrl,
+    title: normalizeLimitedString(
+      String(formData.get("title") ?? ""),
+      READING_RIVER_LIMITS.titleLength,
+    ),
+    notes: normalizeLimitedString(
+      String(formData.get("notes") ?? ""),
+      READING_RIVER_LIMITS.notesLength,
+    ),
     priorityScore: priorityScore || "5",
     estimatedMinutes: String(formData.get("estimatedMinutes") ?? "").trim(),
     tagNames: String(formData.get("tagNames") ?? "").trim(),
@@ -132,11 +142,17 @@ function buildReviewMetadata(
   return {
     fetchSucceeded,
     estimatedMinutesRequired,
-    extractedTitle: estimation?.title ?? null,
-    extractedText: estimation?.extractedText ?? null,
+    extractedTitle: normalizeOptionalLimitedString(
+      estimation?.title,
+      READING_RIVER_LIMITS.titleLength,
+    ),
+    extractedText: normalizeOptionalLimitedString(
+      estimation?.extractedText,
+      READING_RIVER_LIMITS.extractedTextLength,
+    ),
     titleWasPrefilled,
     siteName: estimation?.siteName ?? null,
-    author: estimation?.author ?? null,
+    author: normalizeOptionalLimitedString(estimation?.author, READING_RIVER_LIMITS.authorLength),
     wordCount: estimation?.wordCount ?? null,
     estimatedMinutes: estimation?.estimatedMinutes ?? null,
     lengthEstimationMethod: estimation?.method ?? "unknown",
@@ -213,10 +229,7 @@ function buildDuplicateUrlState(
 }
 
 function parseTagNames(value: string) {
-  return value
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter(Boolean);
+  return normalizeTagNames(value.split(","));
 }
 
 function hasUrlScheme(value: string) {
@@ -230,7 +243,7 @@ function looksLikeHostStyleUrl(value: string) {
 function normalizeSubmittedUrl(value: string) {
   const trimmed = value.trim();
 
-  if (!trimmed) {
+  if (!trimmed || trimmed.length > READING_RIVER_LIMITS.urlLength) {
     return null;
   }
 
@@ -294,6 +307,7 @@ function buildFetchOptions() {
     headers: {
       "User-Agent": "Reading River/0.1 (+https://reading-river.local)",
     },
+    redirect: "manual",
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   } as const;
 }
@@ -334,6 +348,7 @@ function buildSubstackFeedArticleHtml({
 
 async function fetchEstimatedArticleFromUrl(url: string, wordsPerMinute: number) {
   try {
+    await assertSafePublicHttpUrl(url);
     const response = await fetch(url, buildFetchOptions());
 
     if (!response.ok) {
@@ -345,7 +360,7 @@ async function fetchEstimatedArticleFromUrl(url: string, wordsPerMinute: number)
       return null;
     }
 
-    const html = await response.text();
+    const html = await readLimitedResponseText(response);
     const estimation = await estimateArticleLengthFromHtml({
       url,
       html,
@@ -380,6 +395,7 @@ async function fetchEstimatedArticleFromSubstackFeed(url: string, wordsPerMinute
   }
 
   try {
+    await assertSafePublicHttpUrl(feedUrl);
     const response = await fetch(feedUrl, buildFetchOptions());
 
     if (!response.ok) {
@@ -391,7 +407,7 @@ async function fetchEstimatedArticleFromSubstackFeed(url: string, wordsPerMinute
       return null;
     }
 
-    const xml = await response.text();
+    const xml = await readLimitedResponseText(response);
     const feed = await parseSubstackFeed(xml);
     const item = findMatchingSubstackFeedItem(feed, url);
 
@@ -460,24 +476,31 @@ async function fetchExtractedArticle(url: string, userId: string) {
 export async function ingestUrl(input: IngestUrlInput, userId?: string) {
   const prisma = getPrismaClient();
   const currentUserId = userId ?? (await requireCurrentUser()).id;
-  const url = input.url.trim();
+  const url = normalizeLimitedString(input.url, READING_RIVER_LIMITS.urlLength);
   const estimation = input.estimation ?? null;
-  const fallbackTitle = normalizeOptionalString(input.title) ?? url;
+  const fallbackTitle =
+    normalizeOptionalLimitedString(input.title, READING_RIVER_LIMITS.titleLength) ?? url;
   const normalizedSourceUrl = await assertNoDuplicateReadingItemSourceUrl(prisma, currentUserId, url);
 
   const item = await prisma.readingItem.create({
     data: {
       userId: currentUserId,
-      title: normalizeOptionalString(input.title) ?? estimation?.title ?? fallbackTitle,
+      title:
+        normalizeOptionalLimitedString(input.title, READING_RIVER_LIMITS.titleLength) ??
+        normalizeOptionalLimitedString(estimation?.title, READING_RIVER_LIMITS.titleLength) ??
+        fallbackTitle,
       sourceType: "url",
       sourceUrl: normalizedSourceUrl,
-      notes: normalizeOptionalString(input.notes),
+      notes: normalizeOptionalLimitedString(input.notes, READING_RIVER_LIMITS.notesLength),
       estimatedMinutes: input.estimatedMinutes,
       priorityScore: input.priorityScore === undefined ? 5 : input.priorityScore,
       status: "unread",
       siteName: estimation?.siteName ?? null,
-      author: estimation?.author ?? null,
-      extractedText: estimation?.extractedText ?? null,
+      author: normalizeOptionalLimitedString(estimation?.author, READING_RIVER_LIMITS.authorLength),
+      extractedText: normalizeOptionalLimitedString(
+        estimation?.extractedText,
+        READING_RIVER_LIMITS.extractedTextLength,
+      ),
       wordCount: estimation?.wordCount ?? null,
       lengthEstimationMethod: input.lengthEstimationMethod,
       lengthEstimationConfidence: input.lengthEstimationConfidence,

@@ -1,4 +1,5 @@
 import { getPrismaClient } from "@/lib/reading-river/db";
+import { READING_RIVER_LIMITS } from "@/lib/reading-river/input-limits";
 
 type ReadingRiverPrismaClient = ReturnType<typeof getPrismaClient>;
 
@@ -23,7 +24,7 @@ export function isDuplicateReadingItemUrlError(
 export function normalizeStoredSourceUrl(value: string | null | undefined) {
   const trimmed = value?.trim();
 
-  if (!trimmed) {
+  if (!trimmed || trimmed.length > READING_RIVER_LIMITS.urlLength) {
     return null;
   }
 

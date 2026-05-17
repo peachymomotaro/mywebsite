@@ -37,6 +37,22 @@ async function requireOwnedReadingItem(prisma: ReturnType<typeof getPrismaClient
   return item;
 }
 
+async function requireOwnedBook(prisma: ReturnType<typeof getPrismaClient>, userId: string, id: string) {
+  const book = await prisma.book.findFirst({
+    where: {
+      userId,
+      id,
+    },
+    select: { id: true },
+  });
+
+  if (!book) {
+    throw new Error(`Book ${id} was not found.`);
+  }
+
+  return book;
+}
+
 export async function createReadingItem(input: unknown) {
   const currentUser = await requireCurrentUser();
   const parsed = readingItemSchema.parse(input);
@@ -55,6 +71,12 @@ export async function updateReadingItem(input: unknown) {
   const { id, tagNames, ...data } = parsed;
   const { sourceUrl, ...restData } = data;
   const ownedItem = await requireOwnedReadingItem(prisma, currentUser.id, id);
+  const bookId = restData.bookId?.trim() || null;
+
+  if (bookId) {
+    await requireOwnedBook(prisma, currentUser.id, bookId);
+  }
+
   const normalizedSourceUrl =
     sourceUrl === undefined
       ? undefined
@@ -79,6 +101,7 @@ export async function updateReadingItem(input: unknown) {
       data: {
         userId: currentUser.id,
         ...restData,
+        ...(restData.bookId !== undefined ? { bookId } : {}),
         ...(sourceUrl !== undefined ? { sourceUrl: normalizedSourceUrl } : {}),
         ...(tagNames
           ? {

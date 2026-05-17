@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createReadingItemForUser } from "@/lib/reading-river/extension-items";
 import { getCurrentUserFromExtensionToken } from "@/lib/reading-river/extension-auth";
+import { READING_RIVER_LIMITS } from "@/lib/reading-river/input-limits";
 import { isDuplicateReadingItemUrlError } from "@/lib/reading-river/source-url";
 
 const saveExtensionItemSchema = z.object({
-  url: z.string().trim().url(),
-  title: z.string().optional().nullable(),
+  url: z.string().trim().url().max(READING_RIVER_LIMITS.urlLength),
+  title: z.string().max(READING_RIVER_LIMITS.titleLength).optional().nullable(),
   priorityScore: z.number().int().min(0).max(10).nullable(),
   estimatedMinutes: z.number().int().positive().optional().nullable(),
 });
