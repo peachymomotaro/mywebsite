@@ -230,6 +230,8 @@ describe("reading river firefox popup", () => {
 
     expect(await screen.findByDisplayValue("https://example.com/article")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Saved from Firefox")).toBeInTheDocument();
+    expect(screen.getByLabelText("URL")).toHaveAttribute("maxlength", "2048");
+    expect(screen.getByLabelText("Title")).toHaveAttribute("maxlength", "300");
     expect(screen.getByRole("spinbutton", { name: "Estimated minutes" })).toHaveValue(3);
     expect(screen.getByRole("combobox", { name: "Priority" })).toBeRequired();
     expect(screen.getByRole("option", { name: "No priority (stream only)" })).toBeInTheDocument();
@@ -582,5 +584,69 @@ describe("reading river firefox popup", () => {
     expect(screen.getByLabelText("URL")).toHaveValue("https://example.com/article");
     expect(screen.getByLabelText("Title")).toHaveValue("Saved from Firefox");
     expect(screen.getByRole("combobox", { name: "Priority" })).toHaveValue("none");
+  });
+
+  it("shows a specific validation message when the extension API rejects the payload", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(JSON.stringify({ error: "invalid_payload" }), {
+          status: 400,
+          headers: {
+            "content-type": "application/json",
+          },
+        }),
+      ),
+    );
+    await loadPopupModule({
+      token: "stored-token",
+      activeTab: {
+        url: "https://example.com/article",
+        title: "Saved from Firefox",
+      },
+    });
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Priority" }), {
+      target: {
+        value: "none",
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save article" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Some page details are too long or invalid. Check the URL, title, and estimated minutes.",
+    );
+  });
+
+  it("shows a specific rate-limit message when the extension API throttles saves", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(JSON.stringify({ error: "rate_limited" }), {
+          status: 429,
+          headers: {
+            "content-type": "application/json",
+          },
+        }),
+      ),
+    );
+    await loadPopupModule({
+      token: "stored-token",
+      activeTab: {
+        url: "https://example.com/article",
+        title: "Saved from Firefox",
+      },
+    });
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Priority" }), {
+      target: {
+        value: "none",
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save article" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "You have saved a lot today. Try again tomorrow.",
+    );
   });
 });

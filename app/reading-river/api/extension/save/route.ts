@@ -127,6 +127,15 @@ export async function POST(request: Request) {
       return rateLimited();
     }
 
+    console.error("Reading River extension save failed.", {
+      userId: currentUser.id,
+      url: parsedBody.data.url,
+      title,
+      errorName: error instanceof Error ? error.name : undefined,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : undefined,
+    });
+
     return saveFailed();
   }
 }

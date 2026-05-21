@@ -2,6 +2,8 @@ import { ApiError, login as loginRequest, save as saveRequest } from "./lib/api-
 import { clearToken, getToken, setToken } from "./lib/storage.js";
 
 const READING_SPEED_WORDS_PER_MINUTE = 200;
+const MAX_URL_LENGTH = 2048;
+const MAX_TITLE_LENGTH = 300;
 
 function getRoot(root) {
   if (root) {
@@ -507,6 +509,28 @@ async function handleSaveSubmit(event, popupRoot, token) {
       return;
     }
 
+    if (
+      error instanceof ApiError &&
+      error.status === 400 &&
+      error.payload?.error === "invalid_payload"
+    ) {
+      setFormStatus(
+        form,
+        "Some page details are too long or invalid. Check the URL, title, and estimated minutes.",
+        "alert",
+      );
+      return;
+    }
+
+    if (
+      error instanceof ApiError &&
+      error.status === 429 &&
+      error.payload?.error === "rate_limited"
+    ) {
+      setFormStatus(form, "You have saved a lot today. Try again tomorrow.", "alert");
+      return;
+    }
+
     setFormStatus(form, "Could not save right now. Try again.", "alert");
   } finally {
     if (form.isConnected) {
@@ -585,6 +609,7 @@ function renderSignedIn(root, activeTab, token, message = "", role = "status") {
           name: "url",
           type: "url",
           required: true,
+          maxLength: MAX_URL_LENGTH,
           value: activeTab.url,
         },
       }),
@@ -593,6 +618,7 @@ function renderSignedIn(root, activeTab, token, message = "", role = "status") {
         properties: {
           name: "title",
           type: "text",
+          maxLength: MAX_TITLE_LENGTH,
           value: activeTab.title,
         },
       }),
