@@ -31,3 +31,4 @@ worktrees/
 extension/reading-river-firefox/dist/
 
 targetselector.py
+.vercel

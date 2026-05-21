@@ -1,10 +1,27 @@
 import type { Metadata } from "next";
-import { readingRiverChangelogEntries } from "@/lib/reading-river/changelog";
+import {
+  readingRiverChangelogEntries,
+  type ReadingRiverChangelogItem,
+} from "@/lib/reading-river/changelog";
 
 export const metadata: Metadata = {
   title: "Changelog",
   description: "Recent product changes to Reading River.",
 };
+
+function renderChangelogItem(item: ReadingRiverChangelogItem) {
+  if (typeof item === "string") {
+    return item;
+  }
+
+  return (
+    <>
+      {item.text}
+      <a href={item.href}>{item.linkText}</a>
+      {item.suffix}
+    </>
+  );
+}
 
 export default function ChangelogPage() {
   return (
@@ -26,8 +43,10 @@ export default function ChangelogPage() {
               <h2 className="river-changelog-entry-title">{entry.title}</h2>
             </header>
             <ul className="river-changelog-items">
-              {entry.items.map((item) => (
-                <li key={item}>{item}</li>
+              {entry.items.map((item, index) => (
+                <li key={typeof item === "string" ? item : `${item.href}-${index}`}>
+                  {renderChangelogItem(item)}
+                </li>
               ))}
             </ul>
           </article>

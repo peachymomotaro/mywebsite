@@ -24,4 +24,23 @@ describe("ReadingRiverChangelogPage", () => {
       ),
     ).toBeInTheDocument();
   });
+
+  it("renders the Chrome extension changelog URL as a here link", async () => {
+    const { default: ChangelogPage } = await import("@/app/reading-river/changelog/page");
+    const page = await ChangelogPage();
+
+    render(page);
+
+    const link = screen.getByRole("link", { name: "here" });
+
+    expect(link).toHaveAttribute(
+      "href",
+      "https://chromewebstore.google.com/detail/reading-river/gclbpodffcebdmecehkolmejiopfjhnl",
+    );
+    expect(
+      screen.queryByText(
+        /https:\/\/chromewebstore\.google\.com\/detail\/reading-river\/gclbpodffcebdmecehkolmejiopfjhnl/,
+      ),
+    ).not.toBeInTheDocument();
+  });
 });

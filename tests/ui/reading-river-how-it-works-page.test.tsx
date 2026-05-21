@@ -86,4 +86,25 @@ describe("ReadingRiverHowItWorksPage", () => {
       "https://notes.andymatuschak.org/Spaced_repetition_systems_can_be_used_to_program_attention",
     );
   });
+
+  it("links to the Firefox and Chrome extensions in the basics", async () => {
+    const { default: HowItWorksPage } = await import("@/app/reading-river/how-it-works/page");
+    const page = await HowItWorksPage();
+
+    render(page);
+
+    expect(screen.queryByText(/I plan to add a Chrome extension soon\./i)).not.toBeInTheDocument();
+
+    const extensionLinks = screen.getAllByRole("link", { name: "here" });
+
+    expect(extensionLinks).toHaveLength(2);
+    expect(extensionLinks[0]).toHaveAttribute(
+      "href",
+      "https://addons.mozilla.org/en-GB/firefox/addon/reading-river/",
+    );
+    expect(extensionLinks[1]).toHaveAttribute(
+      "href",
+      "https://chromewebstore.google.com/detail/reading-river/gclbpodffcebdmecehkolmejiopfjhnl",
+    );
+  });
 });

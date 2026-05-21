@@ -60,7 +60,15 @@ export default function HowItWorksPage() {
                 className="text-blue-600 underline font-bold hover:text-blue-800"
               >
                 here
-              </a>, which allows you to add fiche to the stream as you browse the web. I plan to add a Chrome extension soon.
+              </a>, or the Chrome extension, found{" "}
+              <a
+                href="https://chromewebstore.google.com/detail/reading-river/gclbpodffcebdmecehkolmejiopfjhnl"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline font-bold hover:text-blue-800"
+              >
+                here
+              </a>.
             </p>
           </section>
 

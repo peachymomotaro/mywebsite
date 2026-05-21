@@ -1,11 +1,34 @@
+export type ReadingRiverChangelogItem =
+  | string
+  | {
+      text: string;
+      linkText: string;
+      href: string;
+      suffix?: string;
+    };
+
 export type ReadingRiverChangelogEntry = {
   slug: string;
   date: string;
   title: string;
-  items: string[];
+  items: ReadingRiverChangelogItem[];
 };
 
 export const readingRiverChangelogEntries: ReadingRiverChangelogEntry[] = [
+  {
+    slug: "Google Chrome Extension",
+    date: "21st May 2026",
+    title: "Excited to Announce the Google Chrome Extension!",
+    items: [
+      {
+        text: "There's a new Google Chrome extension, which can be found ",
+        linkText: "here",
+        href: "https://chromewebstore.google.com/detail/reading-river/gclbpodffcebdmecehkolmejiopfjhnl",
+        suffix: ".",
+      },
+      "Book Roulette now lets you cycle through your books if you don't want to read the first one it suggests. Just click the 'Next Book' button to see the next one in your river.",
+    ],
+  },
   {
     slug: "fiches-and-password-reset",
     date: "9th May 2026",

@@ -61,3 +61,6 @@ lsof -ti :3000 | xargs kill
 If it refuses to die:
 
 lsof -ti :3000 | xargs kill -9
+
+Reading River changelog is edited in:
+lib/reading-river/changelog.ts
