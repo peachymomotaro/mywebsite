@@ -234,7 +234,7 @@ describe("submitUrlIntake", () => {
       "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2033231",
       expect.objectContaining({
         headers: {
-          "User-Agent": "Reading River/0.1 (+https://reading-river.local)",
+          "User-Agent": "Reading River/0.1 (+https://petercurry.org/reading-river)",
         },
         redirect: "manual",
       }),
@@ -275,6 +275,22 @@ describe("submitUrlIntake", () => {
         userId: "user-1",
       }),
     );
+  });
+
+  it("rejects priority zero during URL intake", async () => {
+    const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
+    const formData = buildUrlFormData(undefined, { priorityScore: "0" });
+    const fetchMock = vi.fn();
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await submitUrlIntake(initialIntakeFormState, formData);
+
+    expect(result).toMatchObject({
+      status: "error",
+      message: "Add a valid priority setting before saving it.",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("rejects non-http URL schemes before fetching", async () => {
@@ -369,6 +385,69 @@ describe("submitUrlIntake", () => {
         "I couldn't fetch this page. Review the title and add a reading time before saving it manually.",
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("follows a public redirect before estimating article length", async () => {
+    const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
+    const formData = buildUrlFormData("https://example.com/redirect", { title: "" });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 301,
+        statusText: "Moved Permanently",
+        headers: new Headers({
+          location: "https://example.com/final",
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        headers: new Headers(),
+        text: async () =>
+          `<html><head><title>Redirected Essay</title><meta property="og:site_name" content="Example" /></head><body><article><h1>Redirected Essay</h1><p>${repeatWords(
+            220,
+          )}</p></article></body></html>`,
+      });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await submitUrlIntake(initialIntakeFormState, formData);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "https://example.com/final",
+      expect.objectContaining({
+        redirect: "manual",
+      }),
+    );
+    expect(result).toEqual({
+      status: "review",
+      message: "Fetched article details. Review the title and reading time, then save it.",
+      draftValues: {
+        url: "https://example.com/redirect",
+        title: "Redirected Essay",
+        notes: "Why this belongs in the stream",
+        priorityScore: "7",
+        estimatedMinutes: "2",
+        tagNames: "work, essays",
+      },
+      reviewMetadata: {
+        fetchSucceeded: true,
+        estimatedMinutesRequired: false,
+        extractedTitle: "Redirected Essay",
+        extractedText: expect.any(String),
+        titleWasPrefilled: true,
+        siteName: "Example",
+        author: null,
+        wordCount: 220,
+        estimatedMinutes: 2,
+        lengthEstimationMethod: "readability",
+        lengthEstimationConfidence: "medium",
+      },
+      submittedAt: expect.any(Number),
+    });
   });
 
   it("rejects oversized responses without saving extracted text", async () => {
@@ -798,7 +877,7 @@ describe("submitUrlIntake", () => {
       "https://example.com/updated",
       expect.objectContaining({
         headers: {
-          "User-Agent": "Reading River/0.1 (+https://reading-river.local)",
+          "User-Agent": "Reading River/0.1 (+https://petercurry.org/reading-river)",
         },
       }),
     );
@@ -993,7 +1072,7 @@ describe("submitUrlIntake", () => {
       "https://davidepstein.substack.com/feed",
       expect.objectContaining({
         headers: {
-          "User-Agent": "Reading River/0.1 (+https://reading-river.local)",
+          "User-Agent": "Reading River/0.1 (+https://petercurry.org/reading-river)",
         },
       }),
     );

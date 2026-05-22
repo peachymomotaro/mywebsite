@@ -98,6 +98,10 @@ describe("ReadingRiverEditItemPage", () => {
     );
     expect(screen.getByLabelText("Estimated minutes")).toHaveValue(9);
     expect(screen.getByRole("combobox", { name: "Priority" })).toHaveValue("none");
+    expect(screen.queryByRole("option", { name: "0" })).not.toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "1" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "10" })).toBeInTheDocument();
+    expect(screen.getByText("1-10, where 10 is highest priority.")).toBeInTheDocument();
     expect(screen.getByText(/stream only/i)).toBeInTheDocument();
     expect(screen.getByLabelText("Tags")).toHaveValue("focus, policy");
     expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();

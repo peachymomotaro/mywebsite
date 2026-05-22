@@ -308,6 +308,27 @@ describe("reading river extension save route", () => {
     expect(response.status).toBe(400);
   });
 
+  it("rejects requests with priority zero", async () => {
+    routeMocks.getCurrentUserFromExtensionToken.mockResolvedValue(createUser());
+
+    const request = new Request("https://example.com/reading-river/api/extension/save", {
+      method: "POST",
+      headers: {
+        authorization: "Bearer extension-token",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        url: "https://example.com/article",
+        title: "Read later",
+        priorityScore: 0,
+      }),
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+  });
+
   it("returns a controlled error response when persistence fails", async () => {
     const create = vi.fn(async () => {
       throw new Error("database unavailable");

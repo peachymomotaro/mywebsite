@@ -7,7 +7,7 @@ import { getPrismaClient } from "@/lib/reading-river/db";
 import { getKnownTagNames } from "@/lib/reading-river/known-tags";
 import { readingRiverPath } from "@/lib/reading-river/routes";
 
-const PRIORITY_OPTIONS = Array.from({ length: 11 }, (_, value) => String(value));
+const PRIORITY_OPTIONS = Array.from({ length: 10 }, (_, index) => String(index + 1));
 
 export const dynamic = "force-dynamic";
 
@@ -157,7 +157,7 @@ export default async function ReadingRiverEditItemPage({
                 No priority items stay in the stream and never appear in the left column.
               </p>
               <p id="edit-item-priority-scale" className="intake-helper-text">
-                0–10, where 10 is highest priority.
+                1-10, where 10 is highest priority.
               </p>
             </div>
           </div>

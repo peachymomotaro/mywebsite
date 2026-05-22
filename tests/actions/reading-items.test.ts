@@ -70,6 +70,24 @@ describe("reading item validation", () => {
     });
   });
 
+  it("rejects priority zero for user-submitted reading item payloads", () => {
+    expect(() =>
+      readingItemSchema.parse({
+        title: "Read later",
+        sourceType: "url",
+        sourceUrl: "https://example.com/article",
+        priorityScore: 0,
+        status: "unread",
+      }),
+    ).toThrow();
+    expect(() =>
+      readingItemUpdateSchema.parse({
+        id: "item-123",
+        priorityScore: 0,
+      }),
+    ).toThrow();
+  });
+
   it("accepts a mark-as-read action payload", () => {
     const parsed = readingItemMarkAsReadSchema.parse({
       id: "item-123",

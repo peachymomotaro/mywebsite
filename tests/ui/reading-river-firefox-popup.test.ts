@@ -235,6 +235,9 @@ describe("reading river firefox popup", () => {
     expect(screen.getByRole("spinbutton", { name: "Estimated minutes" })).toHaveValue(3);
     expect(screen.getByRole("combobox", { name: "Priority" })).toBeRequired();
     expect(screen.getByRole("option", { name: "No priority (stream only)" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "0" })).not.toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "1" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "10" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save article" })).toBeDisabled();
   });
 

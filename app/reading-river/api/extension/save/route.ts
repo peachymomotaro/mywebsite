@@ -9,7 +9,7 @@ import { isDuplicateReadingItemUrlError } from "@/lib/reading-river/source-url";
 const saveExtensionItemSchema = z.object({
   url: z.string().trim().url().max(READING_RIVER_LIMITS.urlLength),
   title: z.string().max(READING_RIVER_LIMITS.titleLength).optional().nullable(),
-  priorityScore: z.number().int().min(0).max(10).nullable(),
+  priorityScore: z.number().int().min(1).max(10).nullable(),
   estimatedMinutes: z.number().int().positive().optional().nullable(),
 });
 

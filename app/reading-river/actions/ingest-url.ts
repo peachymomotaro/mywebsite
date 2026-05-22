@@ -55,8 +55,10 @@ const FETCH_FAILED_REVIEW_MESSAGE =
   "I couldn't fetch this page. Review the title and add a reading time before saving it manually.";
 const REVIEW_ESTIMATE_REQUIRED_MESSAGE = "Add an estimated reading time before saving this article.";
 const INVALID_URL_MESSAGE = "Add a valid link before saving it.";
+const INVALID_PRIORITY_MESSAGE = "Add a valid priority setting before saving it.";
 const DUPLICATE_URL_MESSAGE = "That link is already in your stream.";
 const FETCH_TIMEOUT_MS = 10_000;
+const MAX_FETCH_REDIRECTS = 5;
 
 type IngestUrlInput = {
   url: string;
@@ -312,11 +314,38 @@ function getFetchErrorDetails(error: unknown) {
 function buildFetchOptions() {
   return {
     headers: {
-      "User-Agent": "Reading River/0.1 (+https://reading-river.local)",
+      "User-Agent": "Reading River/0.1 (+https://petercurry.org/reading-river)",
     },
     redirect: "manual",
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   } as const;
+}
+
+function isRedirectResponse(response: Response) {
+  return [301, 302, 303, 307, 308].includes(response.status);
+}
+
+async function fetchWithSafeRedirects(url: string, options: ReturnType<typeof buildFetchOptions>) {
+  let currentUrl = url;
+
+  for (let redirectCount = 0; redirectCount <= MAX_FETCH_REDIRECTS; redirectCount += 1) {
+    await assertSafePublicHttpUrl(currentUrl);
+    const response = await fetch(currentUrl, options);
+
+    if (!isRedirectResponse(response)) {
+      return response;
+    }
+
+    const location = response.headers.get("location");
+
+    if (!location) {
+      return response;
+    }
+
+    currentUrl = new URL(location, currentUrl).toString();
+  }
+
+  throw new Error("too_many_redirects");
 }
 
 function escapeHtml(value: string) {
@@ -355,8 +384,7 @@ function buildSubstackFeedArticleHtml({
 
 async function fetchEstimatedArticleFromUrl(url: string, wordsPerMinute: number) {
   try {
-    await assertSafePublicHttpUrl(url);
-    const response = await fetch(url, buildFetchOptions());
+    const response = await fetchWithSafeRedirects(url, buildFetchOptions());
 
     if (!response.ok) {
       console.warn("Reading time estimation fetch returned a non-OK response.", {
@@ -402,8 +430,7 @@ async function fetchEstimatedArticleFromSubstackFeed(url: string, wordsPerMinute
   }
 
   try {
-    await assertSafePublicHttpUrl(feedUrl);
-    const response = await fetch(feedUrl, buildFetchOptions());
+    const response = await fetchWithSafeRedirects(feedUrl, buildFetchOptions());
 
     if (!response.ok) {
       console.warn("Reading time estimation Substack feed returned a non-OK response.", {
@@ -561,6 +588,15 @@ export async function submitUrlIntake(
   const estimatedMinutes = parseEstimatedMinutes(draftValues.estimatedMinutes);
   const tagNames = parseTagNames(draftValues.tagNames);
   const fallbackTitle = titleOverride || url;
+
+  if (priorityScore !== null && (priorityScore < 1 || priorityScore > 10)) {
+    return {
+      status: "error",
+      message: INVALID_PRIORITY_MESSAGE,
+      draftValues,
+      submittedAt: Date.now(),
+    };
+  }
 
   try {
     const currentUser = await requireCurrentUser();

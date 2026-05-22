@@ -69,4 +69,20 @@ describe("saveReadingItemEditAction", () => {
       "redirect:/reading-river/items/item-1/edit?error=duplicate_url",
     );
   });
+
+  it("rejects priority zero from edited items", async () => {
+    const formData = new FormData();
+
+    formData.set("id", "item-1");
+    formData.set("sourceType", "url");
+    formData.set("title", "Updated stream article");
+    formData.set("sourceUrl", "https://example.com/updated-stream");
+    formData.set("estimatedMinutes", "12");
+    formData.set("priorityScore", "0");
+
+    await expect(saveReadingItemEditAction(formData)).rejects.toThrow(
+      "redirect:/reading-river/items/item-1/edit?error=invalid_input",
+    );
+    expect(readingItemMocks.updateReadingItem).not.toHaveBeenCalled();
+  });
 });

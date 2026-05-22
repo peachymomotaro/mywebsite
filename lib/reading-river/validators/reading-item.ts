@@ -25,6 +25,7 @@ const optionalLimitedString = (maxLength: number) =>
   z.string().trim().min(1).max(maxLength).optional().nullable();
 
 const optionalPositiveInt = z.number().int().nonnegative().optional().nullable();
+const priorityScoreSchema = z.number().int().min(1).max(10).nullable();
 
 export const readingItemSchema = z.object({
   title: z.string().trim().min(1).max(READING_RIVER_LIMITS.titleLength),
@@ -38,7 +39,7 @@ export const readingItemSchema = z.object({
   estimatedMinutes: optionalPositiveInt,
   lengthEstimationMethod: lengthEstimationMethodSchema.optional().nullable(),
   lengthEstimationConfidence: lengthEstimationConfidenceSchema.optional().nullable(),
-  priorityScore: z.number().int().min(0).max(10).nullable(),
+  priorityScore: priorityScoreSchema,
   status: readingStatusSchema,
   pinned: z.boolean().optional().default(false),
   bookId: z.string().trim().min(1).optional().nullable(),
@@ -63,7 +64,7 @@ export const readingItemUpdateSchema = z.object({
   estimatedMinutes: optionalPositiveInt,
   lengthEstimationMethod: lengthEstimationMethodSchema.optional().nullable(),
   lengthEstimationConfidence: lengthEstimationConfidenceSchema.optional().nullable(),
-  priorityScore: z.number().int().min(0).max(10).nullable().optional(),
+  priorityScore: priorityScoreSchema.optional(),
   status: readingStatusSchema.optional(),
   pinned: z.boolean().optional(),
   bookId: z.string().trim().min(1).optional().nullable(),

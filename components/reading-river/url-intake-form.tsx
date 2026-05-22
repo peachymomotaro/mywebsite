@@ -6,7 +6,7 @@ import { submitUrlIntake } from "@/app/reading-river/actions/ingest-url";
 import { initialIntakeFormState } from "@/lib/reading-river/intake-form-state";
 import { TagInput } from "@/components/reading-river/tag-input";
 
-const PRIORITY_OPTIONS = Array.from({ length: 11 }, (_, value) => String(value));
+const PRIORITY_OPTIONS = Array.from({ length: 10 }, (_, index) => String(index + 1));
 
 function SubmitButton({
   idleLabel,
@@ -93,7 +93,7 @@ export function UrlIntakeForm({ knownTagNames = [] }: { knownTagNames?: string[]
             spellCheck={false}
             required
             defaultValue={draftValues.url}
-            placeholder="https://example.com/article"
+            placeholder="https://example.com/"
             className="intake-input"
           />
         </label>
@@ -103,7 +103,7 @@ export function UrlIntakeForm({ knownTagNames = [] }: { knownTagNames?: string[]
             name="title"
             type="text"
             defaultValue={draftValues.title}
-            placeholder="Optional title"
+            placeholder="Title"
             className="intake-input"
           />
         </label>
@@ -116,7 +116,7 @@ export function UrlIntakeForm({ knownTagNames = [] }: { knownTagNames?: string[]
             required={estimatedMinutesRequired}
             autoFocus={isReview && estimatedMinutesRequired}
             defaultValue={draftValues.estimatedMinutes}
-            placeholder="12"
+            placeholder="How long will this take to read?"
             className="intake-input"
           />
         </label>
@@ -141,7 +141,7 @@ export function UrlIntakeForm({ knownTagNames = [] }: { knownTagNames?: string[]
               No priority items stay in the stream and never appear in the left column.
             </p>
             <p id="url-intake-priority-scale" className="intake-helper-text">
-              0–10, where 10 is highest priority.
+              1-10, where 10 is highest priority.
             </p>
           </div>
           <TagInput

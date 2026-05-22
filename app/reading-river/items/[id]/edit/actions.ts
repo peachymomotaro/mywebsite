@@ -70,7 +70,7 @@ export async function saveReadingItemEditAction(formData: FormData) {
     title.length > READING_RIVER_LIMITS.titleLength ||
     estimatedMinutes === null ||
     estimatedMinutes <= 0 ||
-    (priorityScore !== null && (priorityScore < 0 || priorityScore > 10))
+    (priorityScore !== null && (priorityScore < 1 || priorityScore > 10))
   ) {
     redirectToEdit(id, "invalid_input");
   }

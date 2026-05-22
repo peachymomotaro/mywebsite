@@ -56,6 +56,9 @@ describe("reading river chrome popup", () => {
 
     expect(await screen.findByLabelText("URL")).toHaveAttribute("maxlength", "2048");
     expect(screen.getByLabelText("Title")).toHaveAttribute("maxlength", "300");
+    expect(screen.queryByRole("option", { name: "0" })).not.toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "1" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "10" })).toBeInTheDocument();
   });
 
   it("shows a specific validation message when the extension API rejects the payload", async () => {
