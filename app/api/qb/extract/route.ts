@@ -50,7 +50,7 @@ Text: ${q.question_sanitized ?? ""}
 
         Rules:
         - Each question should be detailed and self-contained, around 25–45 words.
-        - Include concrete context: dates, places, named people, works, battles, institutions, dynasties, or distinctive facts where useful.
+        - Include concrete context: dates, places, named people, works, battles, institutions, dynasties, or distinctive and interesting facts where useful.
         - Each answer should be short: usually one person, place, event, work, group, or concept.
         - Prefer relationships and answerlines that appear in the QBReader results.
         - Do not use incidental clue names unless they are clearly important to the canon neighbourhood.
