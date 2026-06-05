@@ -1,0 +1,130 @@
+.page {
+  min-height: 100vh;
+  background: #f7f3eb;
+  color: #111;
+  padding: 48px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.header {
+  border-left: 18px solid #e00000;
+  padding-left: 24px;
+  margin-bottom: 40px;
+}
+
+.kicker {
+  color: #155bd6;
+  font-size: 14px;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.title {
+  font-size: 72px;
+  line-height: 0.9;
+  text-transform: uppercase;
+  font-weight: 900;
+  margin: 8px 0 0;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  border-top: 5px solid #e00000;
+  padding-top: 24px;
+  margin-bottom: 36px;
+}
+
+.input {
+  font-size: 22px;
+  padding: 14px 16px;
+  border: 3px solid #111;
+  background: white;
+  font-weight: 700;
+}
+
+.buttonBlue,
+.buttonRed {
+  border: 0;
+  color: white;
+  padding: 14px 22px;
+  font-weight: 900;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.buttonBlue {
+  background: #155bd6;
+}
+
+.buttonRed {
+  background: #e00000;
+}
+
+.buttonRed:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cards {
+  background: white;
+  border: 4px solid #111;
+  padding: 24px;
+  margin-bottom: 36px;
+  box-shadow: 12px 12px 0 #e00000;
+  white-space: pre-wrap;
+  font-size: 22px;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.count {
+  color: #155bd6;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  font-size: 14px;
+  font-weight: 800;
+  margin-bottom: 20px;
+}
+
+.result {
+  background: white;
+  border: 3px solid #111;
+  padding: 24px;
+  margin-bottom: 22px;
+  position: relative;
+}
+
+.result::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 14px;
+  height: 100%;
+  background: #e00000;
+}
+
+.meta {
+  color: #155bd6;
+  font-weight: 900;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.question {
+  font-size: 18px;
+  line-height: 1.45;
+  max-width: 95%;
+}
+
+.answer {
+  display: inline-block;
+  margin-top: 18px;
+  background: #111;
+  color: white;
+  padding: 10px 14px;
+  font-weight: 900;
+}

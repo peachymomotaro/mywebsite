@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /qb
+Disallow: /api/qb
