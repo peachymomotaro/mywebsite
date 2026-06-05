@@ -23,8 +23,16 @@ function isPublicReadingRiverPath(pathname: string) {
 function protectQB(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const authCookie = request.cookies.get("qb_auth")?.value;
+  const password = process.env.QB_PASSWORD;
 
-  if (authCookie === process.env.QB_PASSWORD) {
+  if (!password) {
+    return NextResponse.json(
+      { error: "QB password is not configured" },
+      { status: 503 }
+    );
+  }
+
+  if (authCookie === password) {
     return NextResponse.next();
   }
 
@@ -62,7 +70,12 @@ function protectReadingRiver(request: NextRequest) {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith("/qb") || pathname.startsWith("/api/qb")) {
+  if (
+    pathname === "/qb" ||
+    pathname.startsWith("/qb/") ||
+    pathname === "/api/qb" ||
+    pathname.startsWith("/api/qb/")
+  ) {
     return protectQB(request);
   }
 

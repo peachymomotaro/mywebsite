@@ -22,6 +22,7 @@ function getRedirectLocation(response: Response) {
 describe("reading river middleware", () => {
   beforeEach(() => {
     getCurrentUserFromSessionToken.mockReset();
+    process.env.QB_PASSWORD = "correct-password";
   });
 
   it("ignores public website routes", async () => {
@@ -93,5 +94,44 @@ describe("reading river middleware", () => {
 
     expect(getRedirectLocation(response)).toBeNull();
     expect(getCurrentUserFromSessionToken).not.toHaveBeenCalled();
+  });
+
+  it("keeps the QB login route public", async () => {
+    const response = await proxy(new NextRequest("https://example.com/qb-login"));
+
+    expect(getRedirectLocation(response)).toBeNull();
+  });
+
+  it("redirects anonymous QB page requests to the QB login page", async () => {
+    const response = await proxy(new NextRequest("https://example.com/qb"));
+
+    expect(getRedirectLocation(response)).toBe("https://example.com/qb-login");
+  });
+
+  it("rejects anonymous QB API requests without redirecting", async () => {
+    const response = await proxy(new NextRequest("https://example.com/api/qb/extract"));
+
+    expect(response.status).toBe(401);
+    expect(getRedirectLocation(response)).toBeNull();
+  });
+
+  it("allows QB routes through with the shared password cookie", async () => {
+    const response = await proxy(
+      new NextRequest("https://example.com/qb", {
+        headers: {
+          cookie: "qb_auth=correct-password",
+        },
+      }),
+    );
+
+    expect(getRedirectLocation(response)).toBeNull();
+  });
+
+  it("does not allow QB routes through when the shared password is not configured", async () => {
+    delete process.env.QB_PASSWORD;
+
+    const response = await proxy(new NextRequest("https://example.com/api/qb"));
+
+    expect(response.status).toBe(503);
   });
 });
