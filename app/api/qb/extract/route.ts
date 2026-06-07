@@ -29,42 +29,76 @@ Text: ${q.question_sanitized ?? ""}
     .join("\n\n");
 
     const response = await openai.responses.create({
-        model: "gpt-4.1-mini",
+        model: "gpt-5-mini",
         input: `
-        You are creating Anki-style flashcards from QBReader search results.
+        You are creating original International Culture Challenge-style quiz questions from QBReader search results.
 
         The user searched for: ${body.query ?? "the supplied term"}
 
-        Use the QBReader questions as a quiz-canon map.
+        Use the QBReader material as a quiz-canon map. It tells you which answerlines, clues, works, people, places, movements, dynasties, events, institutions, scientific concepts, and cultural objects are closely associated with the searched term.
+
         Do not copy quiz-bowl wording.
         Do not write tossups.
-        Do not include explanation, headings, source notes, numbering, or analysis.
+        Do not write Anki flashcards.
+        Do not include explanations, headings beyond the required question labels, source notes, analysis, translations, pronunciation guides, or metadata.
+        Do not mention QBReader in the questions.
+        Do not invent facts that are not supported by the QBReader material or by very basic common knowledge.
 
-        Write exactly three self-contained flashcards.
+        Write exactly three ICC-style direct-answer questions.
 
-        Card structure:
-        - Card 1: The answer must be the original searched term.
-        - Card 2: The answer should be something closely bound to the searched term, providing valuable context for it.
-        - Card 3: The answer should push one step outward into the surrounding quiz canon, while still being clearly connected to the searched term.
+        Relationship between the three questions:
 
-        Rules:
-        - Each question should be detailed and self-contained, around 25–45 words.
-        - Include concrete context: dates, places, named people, works, battles, institutions, dynasties, or distinctive and interesting facts where useful.
-        - Each answer should be short: usually one person, place, event, work, group, or concept.
-        - Prefer relationships and answerlines that appear in the QBReader results.
-        - Do not use incidental clue names unless they are clearly important to the canon neighbourhood.
-        - The answer must correctly match the question.
+        QUESTION ONE: the answer must be the original searched term.
+        QUESTION TWO: the answer should be a closely bound neighbouring answerline that appears in, or is strongly implied by, the QBReader material.
+        QUESTION THREE: the answer should move one step outward into the surrounding quiz canon while remaining clearly connected to the searched term.
 
-        Format exactly like this:
+        Question style:
 
+        Each question should be one compact paragraph.
+        Each question should be around 45–80 words.
+        Each question should be self-contained.
+        Each question should end with a clear direct-answer prompt such as “what author?”, “what river?”, “what movement?”, “what dynasty?”, “what instrument?”, “what disease?”, “what work?”, or a similar natural category.
+        The question should not be pyramidal and should not feel like a quiz-bowl tossup.
+        Prefer accessible but interesting ICC-style clues over long chains of obscure clues.
+        Include concrete context where useful: dates, places, named people, works, battles, institutions, dynasties, mechanisms, distinctive cultural details, or canonical examples.
+        Avoid incidental clue names unless they are clearly important to the canon neighbourhood.
+        The answer must correctly match the question.
+
+        Answerline handling:
+
+        The question should not simply give away the answer.
+        Avoid using the exact answerline in the question text.
+        Avoid using a distinctive part of the answerline if there is an easy, natural alternative.
+        Do not contort the question to avoid every possible answer word.
+        Generic category words are fine: “river”, “author”, “dynasty”, “movement”, “instrument”, “language family”, “disease”, “era”, “city”, “work”, “painting”, and similar.
+        If avoiding an answer word would make the question awkward, vague, or misleading, prefer a natural ICC-style question even if one answer-related word appears.
+        The final question should read like a real quiz question, not like a disguised flashcard.
+
+        Answer style:
+
+        Each answer should be short: usually one person, place, event, work, group, movement, dynasty, language family, disease, instrument, or concept.
+
+        Before producing the final output, silently check each question:
+
+        Does the answer correctly answer the question?
+        Is the question phrased as a proper direct-answer quiz question?
+        Does the question accidentally give away the full answerline?
+
+        If a question gives away the full answerline, rewrite it. If avoiding a partial answer word would make the question worse, keep the natural wording.
+
+        Output format exactly:
+
+        QUESTION ONE
         Question text?
-        Answer
+        ANS: Answer
 
+        QUESTION TWO
         Question text?
-        Answer
+        ANS: Answer
 
+        QUESTION THREE
         Question text?
-        Answer
+        ANS: Answer
 
         QBReader material:
 
