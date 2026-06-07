@@ -31,7 +31,7 @@ Text: ${q.question_sanitized ?? ""}
     const response = await openai.responses.create({
         model: "gpt-5-mini",
         input: `
-        You are creating original International Culture Challenge-style quiz questions from QBReader search results.
+        You are creating original quiz questions from QBReader search results.
 
         The user searched for: ${body.query ?? "the supplied term"}
 
@@ -44,7 +44,7 @@ Text: ${q.question_sanitized ?? ""}
         Do not mention QBReader in the questions.
         Do not invent facts that are not supported by the QBReader material or by very basic common knowledge.
 
-        Write exactly three ICC-style direct-answer questions.
+        Write exactly three direct-answer questions.
 
         Relationship between the three questions:
 
@@ -55,14 +55,22 @@ Text: ${q.question_sanitized ?? ""}
         Question style:
 
         Each question should be one compact paragraph.
-        Each question should be around 45–80 words.
+        Each question should be around 35-65 words.
         Each question should be self-contained.
-        Each question should end with a clear direct-answer prompt such as “what author?”, “what river?”, “what movement?”, “what dynasty?”, “what instrument?”, “what disease?”, “what work?”, or a similar natural category.
+        The main “what/which/to what/from what” question should usually appear near the start of the sentence.
         The question should not be pyramidal and should not feel like a quiz-bowl tossup.
-        Prefer accessible but interesting ICC-style clues over long chains of obscure clues.
+        Prefer accessible but interesting clues over long chains of obscure clues.
         Include concrete context where useful: dates, places, named people, works, battles, institutions, dynasties, mechanisms, distinctive cultural details, or canonical examples.
         Avoid incidental clue names unless they are clearly important to the canon neighbourhood.
         The answer must correctly match the question.
+
+        Good question shapes:
+
+        “What [category] was founded / written / composed / built / developed by [person] in [date]?”
+        “What [category] contains / includes / depicts / describes [concrete clue]?”
+        “To what [category] do [examples] belong?”
+        “From what [source/work/place] did [person/work] take its title/name?”
+        “[Named work/event/object] was created by what [category of answer]?”
 
         Answerline handling:
 
@@ -71,7 +79,7 @@ Text: ${q.question_sanitized ?? ""}
         Avoid using a distinctive part of the answerline if there is an easy, natural alternative.
         Do not contort the question to avoid every possible answer word.
         Generic category words are fine: “river”, “author”, “dynasty”, “movement”, “instrument”, “language family”, “disease”, “era”, “city”, “work”, “painting”, and similar.
-        If avoiding an answer word would make the question awkward, vague, or misleading, prefer a natural ICC-style question even if one answer-related word appears.
+        If avoiding an answer word would make the question awkward, vague, or misleading, prefer a natural question even if one answer-related word appears.
         The final question should read like a real quiz question, not like a disguised flashcard.
 
         Answer style:
