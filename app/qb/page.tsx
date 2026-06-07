@@ -1,7 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./qb.module.css";
+
+const LAST_GENERATION_STORAGE_KEY = "qb-reader:last-generation";
+
+type SavedGeneration = {
+  query: string;
+  output: string;
+  savedAt: string;
+};
 
 export default function QBPage() {
   const [query, setQuery] = useState("");
@@ -9,9 +17,34 @@ export default function QBPage() {
   const [cards, setCards] = useState("");
   const [loading, setLoading] = useState(false);
   const [extracting, setExtracting] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState("");
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem(LAST_GENERATION_STORAGE_KEY);
+
+    if (!saved) return;
+
+    try {
+      const parsed = JSON.parse(saved) as SavedGeneration;
+
+      if (parsed.output) {
+        setCards(parsed.output);
+      }
+
+      if (parsed.query) {
+        setQuery(parsed.query);
+      }
+
+      if (parsed.savedAt) {
+        setLastSavedAt(parsed.savedAt);
+      }
+    } catch {
+      window.localStorage.removeItem(LAST_GENERATION_STORAGE_KEY);
+    }
+  }, []);
 
   async function searchQB() {
-    console.log("Searching QBReader for:", query);  
+    console.log("Searching QBReader for:", query);
     setLoading(true);
     setCards("");
     setResults([]);
@@ -51,9 +84,29 @@ export default function QBPage() {
     });
 
     const data = await response.json();
+    const output = data.output ?? "No cards were generated.";
 
-    setCards(data.output ?? "No cards were generated.");
+    setCards(output);
+
+    const savedGeneration: SavedGeneration = {
+      query,
+      output,
+      savedAt: new Date().toISOString(),
+    };
+
+    window.localStorage.setItem(
+      LAST_GENERATION_STORAGE_KEY,
+      JSON.stringify(savedGeneration)
+    );
+
+    setLastSavedAt(savedGeneration.savedAt);
     setExtracting(false);
+  }
+
+  function clearSavedGeneration() {
+    setCards("");
+    setLastSavedAt("");
+    window.localStorage.removeItem(LAST_GENERATION_STORAGE_KEY);
   }
 
   return (
@@ -78,7 +131,8 @@ export default function QBPage() {
           {loading ? "Searching..." : "Search"}
         </button>
 
-        <button type="button"
+        <button
+          type="button"
           onClick={extractCards}
           disabled={!results.length || extracting}
           className={styles.buttonRed}
@@ -90,7 +144,22 @@ export default function QBPage() {
       {cards && (
         <section className={styles.cards}>
           <h2 className={styles.cardsTitle}>Generated Cards</h2>
+
+          {lastSavedAt && (
+            <p>
+              Last saved: {new Date(lastSavedAt).toLocaleString()}
+            </p>
+          )}
+
           <div>{cards}</div>
+
+          <button
+            type="button"
+            onClick={clearSavedGeneration}
+            className={styles.buttonBlue}
+          >
+            Clear saved generation
+          </button>
         </section>
       )}
 
