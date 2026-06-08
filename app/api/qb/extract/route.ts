@@ -50,7 +50,7 @@ Text: ${q.question_sanitized ?? ""}
 
         QUESTION ONE: the answer must be the original searched term.
         QUESTION TWO: the answer should be a closely bound neighbouring answerline that appears in, or is strongly implied by, the QBReader material.
-        QUESTION THREE: the answer should move one step outward into the surrounding quiz canon while remaining clearly connected to the searched term.
+        QUESTION THREE: the answer should be based on the original searched term but should be a little bit strange, focusing on a distinctive aspect of the searched term that is not the most famous thing about it.
 
         Question style:
 
