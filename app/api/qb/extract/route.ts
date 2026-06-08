@@ -31,70 +31,81 @@ Text: ${q.question_sanitized ?? ""}
     const response = await openai.responses.create({
         model: "gpt-5-mini",
         input: `
-        You are creating original quiz questions from QBReader search results.
+        You are creating original ICC-style quiz questions from QBReader search results.
 
         The user searched for: ${body.query ?? "the supplied term"}
 
         Use the QBReader material as a quiz-canon map. It tells you which answerlines, clues, works, people, places, movements, dynasties, events, institutions, scientific concepts, and cultural objects are closely associated with the searched term.
 
+        Your job is not to write Anki flashcards, pyramid tossups, or generic study notes. Write polished direct-answer quiz questions in the style of compact ICC bonus parts.
+
+        CORE RULES:
+
         Do not copy quiz-bowl wording.
         Do not write tossups.
         Do not write Anki flashcards.
-        Do not include explanations, headings beyond the required question labels, source notes, analysis, translations, pronunciation guides, or metadata.
+        Do not include explanations, source notes, analysis, translations, pronunciation guides, or metadata.
         Do not mention QBReader in the questions.
         Do not invent facts that are not supported by the QBReader material or by very basic common knowledge.
+        Every question must have one clear answerline.
 
         Write exactly three direct-answer questions.
 
-        Relationship between the three questions:
-
+        RELATIONSHIP BETWEEN THE THREE QUESTIONS:
         QUESTION ONE: the answer must be the original searched term.
         QUESTION TWO: the answer should be a closely bound neighbouring answerline that appears in, or is strongly implied by, the QBReader material.
-        QUESTION THREE: the answer should be based on the original searched term but should be a little bit strange, focusing on a distinctive aspect of the searched term that is not the most famous thing about it.
+        QUESTION THREE: the answer should be based on the original searched term but should focus on a distinctive, concrete, slightly less obvious aspect of it.
 
-        Question style:
+        QUESTION STYLE:
 
         Each question should be one compact paragraph.
-        Each question should be around 35-65 words.
-        Each question should be self-contained.
-        The main “what/which/to what/from what” question should usually appear near the start of the sentence.
-        The question should not be pyramidal and should not feel like a quiz-bowl tossup.
-        Prefer accessible but interesting clues over long chains of obscure clues.
-        Include concrete context where useful: dates, places, named people, works, battles, institutions, dynasties, mechanisms, distinctive cultural details, or canonical examples.
-        Avoid incidental clue names unless they are clearly important to the canon neighbourhood.
-        The answer must correctly match the question.
+        Use 2 sentences where possible; 3 sentences maximum.
+        Each question should usually be around 45–95 words.
+        Start naturally with “Which…”, “What…”, “Name this…”, “Who…”, “In what…”, or a similar direct-answer prompt.
+        The question should feel like an ICC bonus part, not a quiz-bowl tossup.
+        Do not use “FTP”, “for 10 points”, “this man”, “this work”, or other tossup-style phrasing.
+        Prefer fluent, natural wording over tortuous attempts to hide the answer.
+        Avoid vague clue-piles. Every clue should help identify the answer.
+        Use concrete, answer-identifying clues: named works, people, dates, places, quotations, scenes, institutions, doctrines, battles, mechanisms, or canonical examples.
+        The question should be self-contained and understandable without seeing the original material.
+        The final result should sound like something a human quiz editor would actually write.
 
-        Good question shapes:
+        ANSWERLINE HANDLING:
 
-        “What [category] was founded / written / composed / built / developed by [person] in [date]?”
-        “What [category] contains / includes / depicts / describes [concrete clue]?”
-        “To what [category] do [examples] belong?”
-        “From what [source/work/place] did [person/work] take its title/name?”
-        “[Named work/event/object] was created by what [category of answer]?”
-
-        Answerline handling:
-
-        The question should not simply give away the answer.
+        Preserve the answerline exactly unless a small cleanup is needed for spelling, accents, capitalization, or obvious formatting.
         Avoid using the exact answerline in the question text.
         Avoid using a distinctive part of the answerline if there is an easy, natural alternative.
         Do not contort the question to avoid every possible answer word.
         Generic category words are fine: “river”, “author”, “dynasty”, “movement”, “instrument”, “language family”, “disease”, “era”, “city”, “work”, “painting”, and similar.
         If avoiding an answer word would make the question awkward, vague, or misleading, prefer a natural question even if one answer-related word appears.
-        The final question should read like a real quiz question, not like a disguised flashcard.
 
-        Answer style:
+        GOOD MODEL EXAMPLES:
 
-        Each answer should be short: usually one person, place, event, work, group, movement, dynasty, language family, disease, instrument, or concept.
+        QUESTION:
+        Which Eugene O’Neill play is set in the living room of the Tyrone family’s summer home, whose stage directions specify shelves of books by authors such as Shakespeare, Balzac, Zola, Schopenhauer, Nietzsche, and Marx? Near the end of the play, Mary Tyrone comes downstairs carrying her old wedding dress, lost in a morphine-induced memory of practicing piano as a convent schoolgirl.
+        ANS: Long Day’s Journey into Night
 
-        Before producing the final output, silently check each question:
+        QUESTION:
+        What recurring weather phenomenon in Long Day’s Journey into Night is repeatedly noticed by Mary and Edmund Tyrone? Mary tells Cathleen that she loves this thing because “it hides you from the world and the world from you,” and it is often read as symbolising the family’s evasions and addictions.
+        ANS: fog
+
+        QUESTION:
+        Which Middle English verse romance, surviving in the same manuscript as Pearl, Cleanness, and Patience, begins when a green stranger challenges Arthur’s court to exchange axe-blows? Its title knight later travels to the Green Chapel to receive the return stroke in that beheading game.
+        ANS: Sir Gawain and the Green Knight
+
+        QUESTION:
+        Which Venezuelan president first became nationally known after leading a failed 1992 coup against Carlos Andrés Pérez? After winning power, he used oil revenues to fund leftist social programmes called the Bolivarian Missions, and he was succeeded after his death by Nicolás Maduro.
+        ANS: Hugo Chávez
+
+        BEFORE FINAL OUTPUT, SILENTLY CHECK:
 
         Does the answer correctly answer the question?
         Is the question phrased as a proper direct-answer quiz question?
-        Does the question accidentally give away the full answerline?
+        Does the question avoid giving away the full answerline?
+        Does it sound like a compact ICC bonus part rather than a tossup or flashcard?
+        Are the clues concrete rather than vague?
 
-        If a question gives away the full answerline, rewrite it. If avoiding a partial answer word would make the question worse, keep the natural wording.
-
-        Output format exactly:
+        OUTPUT FORMAT EXACTLY:
 
         QUESTION ONE
         Question text?
