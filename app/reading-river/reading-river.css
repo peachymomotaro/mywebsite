@@ -521,6 +521,16 @@ summary.auth-text-button::-webkit-details-marker {
   color: hsl(var(--muted-foreground));
 }
 
+.river-home-page .river-spotlight-card .river-section-label {
+  font-family: var(--font-serif);
+  font-size: clamp(1.05rem, 2vw, 1.25rem);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
+  color: hsl(var(--foreground));
+}
+
 .river-home-page .river-spotlight-body {
   display: flex;
   flex-direction: column;
