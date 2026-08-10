@@ -14,6 +14,7 @@ describe("Name ranker page", () => {
     expect(
       screen.getByRole("heading", { name: "Which name wins?" })
     ).toBeInTheDocument();
+    expect(screen.queryByText("BUSINESS NAME RANKER")).toBeNull();
     expect(
       screen.getByLabelText("Your name or initials")
     ).toBeInTheDocument();

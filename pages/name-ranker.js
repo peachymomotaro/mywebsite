@@ -155,11 +155,10 @@ export default function NameRanker() {
 
         <section className="ranker-shell">
           <div className="ranker-card">
-            <div className="eyebrow">BUSINESS NAME RANKER</div>
             <h1>Which name wins?</h1>
             <p className="intro">
-              You’ll see every possible pair once. Pick the name you prefer each
-              time. There are 15 choices in total.
+              You’ll see every possible pair once, just pick the name you prefer each
+              time.
             </p>
 
             {!started && !submitted && !status.ready ? (
@@ -171,7 +170,6 @@ export default function NameRanker() {
                   onChange={(event) => setVoterName(event.target.value)}
                   autoComplete="name"
                   maxLength={50}
-                  placeholder="e.g. Peter"
                   required
                 />
                 <button type="submit">Start ranking</button>
