@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import NameRankerPage from "@/pages/name-ranker";
 
@@ -20,5 +20,20 @@ describe("Name ranker page", () => {
     expect(
       screen.getByRole("link", { name: "Return to my website" })
     ).toHaveAttribute("href", "/projects");
+  });
+
+  it("uses Floating City in the voting choices", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    render(<NameRankerPage />);
+
+    fireEvent.change(screen.getByLabelText("Your name or initials"), {
+      target: { value: "Peter" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Start ranking" }));
+
+    expect(
+      screen.getByRole("button", { name: "Floating City" })
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Floating World" })).toBeNull();
   });
 });

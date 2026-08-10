@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 const NAMES = [
-  "Floating World",
+  "Floating City",
   "Lightburst",
   "Invisible Worlds",
   "Lucid Dot",

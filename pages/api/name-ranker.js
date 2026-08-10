@@ -1,7 +1,7 @@
 import { getPrismaClient } from "../../lib/reading-river/db";
 
 const NAMES = [
-  "Floating World",
+  "Floating City",
   "Lightburst",
   "Invisible Worlds",
   "Lucid Dot",
