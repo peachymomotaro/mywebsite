@@ -1,4 +1,6 @@
 import Head from "next/head";
+import Link from "next/link";
+import { blogUpdates } from "../data/blogUpdates";
 
 const FEED_URL = "https://kingcnut.substack.com/feed";
 const SUBSTACK_URL = "https://kingcnut.substack.com";
@@ -69,8 +71,31 @@ const formatDate = (value) => {
   return dateFormatter.format(date);
 };
 
+const normalizePostUrl = (value) => {
+  if (!value) {
+    return "";
+  }
+
+  try {
+    const url = new URL(value);
+
+    return `${url.origin}${url.pathname.replace(/\/$/, "")}`;
+  } catch {
+    return value.replace(/\/$/, "");
+  }
+};
+
 export default function Blog({ posts, hasError }) {
   const hasPosts = posts && posts.length > 0;
+
+  const updatesByPostUrl = new Map(
+    blogUpdates
+      .filter((entry) => entry.updates?.length)
+      .map((entry) => [
+        normalizePostUrl(entry.postUrl),
+        entry
+      ])
+  );
 
   return (
     <>
@@ -86,6 +111,11 @@ export default function Blog({ posts, hasError }) {
         <p className="lead">
           My longer-form writing lives on Substack, feel free to click any of the links to have a read.
         </p>
+        <div className="button-row">
+          <Link className="button button-small" href="/blog-updates">
+            Blog updates
+          </Link>
+        </div>
         {hasError ? (
           <p>
             The RSS feed is unavailable at the moment. You can still browse the
@@ -95,7 +125,12 @@ export default function Blog({ posts, hasError }) {
 
         {hasPosts ? (
           <div className="list" aria-label="Substack post previews">
-            {posts.map((post) => (
+            {posts.map((post) => {
+              const updateEntry = updatesByPostUrl.get(
+                normalizePostUrl(post.url)
+              );
+
+              return (
               <article className="card post-card" key={post.url}>
                 <div className="post-content">
                   <div className="card-meta">{formatDate(post.date)}</div>
@@ -104,6 +139,15 @@ export default function Blog({ posts, hasError }) {
                   <a href={post.url} target="_blank" rel="noopener noreferrer">
                     Read on Substack
                   </a>
+
+                  {updateEntry ? (
+                    <>
+                      {" · "}
+                      <Link href={`/blog-updates#${updateEntry.id}`}>
+                        Notes &amp; updates ({updateEntry.updates.length})
+                      </Link>
+                    </>
+                  ) : null}
                 </div>
                 {post.image ? (
                   <a
@@ -122,7 +166,8 @@ export default function Blog({ posts, hasError }) {
                   </a>
                 ) : null}
               </article>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <p>New posts will appear here once the feed is loaded.</p>

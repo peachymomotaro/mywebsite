@@ -1,0 +1,19 @@
+export const blogUpdates = [
+  {
+    id: "artificial-words",
+    postTitle: "Artificial Words",
+    postUrl: "PASTE_ARTIFICIAL_WORDS_SUBSTACK_URL_HERE",
+    updates: [
+      {
+        date: "2026-08-19",
+        note: `I was excited to see [Maggie Vale's writing](https://mvaleadvocate.substack.com/) about how AI uses geometry to represent ideas, and the parallels between that and the brain. But I think much of their writing consists of artificial words, and I've run chunks of their posts through Pangram and a few other artificial word checkers, which corroborate that theory. What should we do about this? Artificial words allow you to flood people with text and ideas without spending any real time understanding it or dwelling on it. I don't think it would be particularly difficult to print words in the way that Maggie Vale does here: you just give your model of choice an agenda, give it some basic formatting rules, and away it goes, citing complex papers and printing out thousands of words. It's not that hard to pick an argument either. 
+
+Vale here has chosen the bull case for AI consciousness. In Ben Lerner's book *The Topeka School*, he mentions a debating technique called "the spread", where you rattle through as many arguments as you can so that if your opponent fails to respond to any of them, you win points. This feels like the digital equivalent of that. Take one of their most popular posts: [*The Shape of a Thought*](https://mvaleadvocate.substack.com/p/the-shape-of-a-thought). Look at the complexity of the citations! Some examples: *Tensor Product Representation Probes Reveal Shared Structure Across Linear Directions*, *Self-orthogonalizing attractor neural networks emerging from the free energy principle,* and *The Geometry of Truth: Emergent Linear Structure in LLM Representations of True/False Datasets*. These aren't easy papers to grapple with, and to properly understand and criticise their argument, I feel I'd have to look at a least a few of them in detail. But I don't work at the speed of a frontier model. So how am I supposed to engage with this? 
+
+All of this serves to warp the discussion space. I'm interested in these arguments. I want to engage with them, and to understand them myself, and to offer critical perspective. But this form of writing, where you write using a chatbot and overload your subject with citations, doesn't feel like it creates a useful discussion space. This approach to writing feels like more propaganda than reasoned argument. I'm not against using AI to improve the quality of writing or to help interpret papers. But using it to pump out new material feels unhelpful. I asked an AI to estimate the number of sources that Vale cites and the number of words they wrote for the 5 posts either side of The Shape of Thought. We're looking at (highly approximately) 36,000 words, with around 400-500 citations in 66 days. Obviously these numbers are just illustrative. Many people cite papers without engaging deeply with them, and there's nothing wrong with that. Academic papers feature hundreds of citations, but they also aren't generally written using artificial words, and typically go through significant review processes. 
+
+Good writing isn't about overwhelming your reader with countless papers, battering them into submission until they cry out for help. I don't know the way forward here. All I know is that people who are willing to write in this way are likely to absorb space and attention, at the expense of others. How do we privilege thought which is more reasoned, rather than more prolific?`
+      }
+    ]
+  }
+];
