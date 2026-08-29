@@ -1,18 +1,18 @@
 export const blogUpdates = [
   {
-    id: "artificial-words",
-    postTitle: "Artificial Words",
-    postUrl: "PASTE_ARTIFICIAL_WORDS_SUBSTACK_URL_HERE",
+    id: "the-illusion-of-intelligence",
+    postTitle: "The Illusion of Intelligence",
+    postUrl: "https://kingcnut.substack.com/p/the-illusion-of-intelligence",
     updates: [
       {
-        date: "2026-08-19",
-        note: `I was excited to see [Maggie Vale's writing](https://mvaleadvocate.substack.com/) about how AI uses geometry to represent ideas, and the parallels between that and the brain. But I think much of their writing consists of artificial words, and I've run chunks of their posts through Pangram and a few other artificial word checkers, which corroborate that theory. What should we do about this? Artificial words allow you to flood people with text and ideas without spending any real time understanding it or dwelling on it. I don't think it would be particularly difficult to print words in the way that Maggie Vale does here: you just give your model of choice an agenda, give it some basic formatting rules, and away it goes, citing complex papers and printing out thousands of words. It's not that hard to pick an argument either. 
+        date: "2026-08-29",
+        note: `In Guy Standing's *Human Capital: The Tragedy of the Education Commons* (Pelican, 2026), I came across a striking passage from the late philosopher Daniel Dennett about one of the dangers of AI, large language models and what he called "counterfeit people": that they could destroy the trust on which our shared knowledge depends. Standing quotes Dennett telling the BBC:
 
-Vale here has chosen the bull case for AI consciousness. In Ben Lerner's book *The Topeka School*, he mentions a debating technique called "the spread", where you rattle through as many arguments as you can so that if your opponent fails to respond to any of them, you win points. This feels like the digital equivalent of that. Take one of their most popular posts: [*The Shape of a Thought*](https://mvaleadvocate.substack.com/p/the-shape-of-a-thought). Look at the complexity of the citations! Some examples: *Tensor Product Representation Probes Reveal Shared Structure Across Linear Directions*, *Self-orthogonalizing attractor neural networks emerging from the free energy principle,* and *The Geometry of Truth: Emergent Linear Structure in LLM Representations of True/False Datasets*. These aren't easy papers to grapple with, and to properly understand and criticise their argument, I feel I'd have to look at a least a few of them in detail. But I don't work at the speed of a frontier model. So how am I supposed to engage with this? 
+“If we turn this wonderful technology we have for knowledge into a weapon for disinformation, we are in deep trouble ... because we won't know what we know, and we won't know who to trust, and we won't know whether we're informed or misinformed. We may become either paranoid and hyper-sceptical, or just apathetic and unmoved. Both of those are very dangerous avenues. And they're upon us.”
 
-All of this serves to warp the discussion space. I'm interested in these arguments. I want to engage with them, and to understand them myself, and to offer critical perspective. But this form of writing, where you write using a chatbot and overload your subject with citations, doesn't feel like it creates a useful discussion space. This approach to writing feels like more propaganda than reasoned argument. I'm not against using AI to improve the quality of writing or to help interpret papers. But using it to pump out new material feels unhelpful. I asked an AI to estimate the number of sources that Vale cites and the number of words they wrote for the 5 posts either side of The Shape of Thought. We're looking at (highly approximately) 36,000 words, with around 400-500 citations in 66 days. Obviously these numbers are just illustrative. Many people cite papers without engaging deeply with them, and there's nothing wrong with that. Academic papers feature hundreds of citations, but they also aren't generally written using artificial words, and typically go through significant review processes. 
-
-Good writing isn't about overwhelming your reader with countless papers, battering them into submission until they cry out for help. I don't know the way forward here. All I know is that people who are willing to write in this way are likely to absorb space and attention, at the expense of others. How do we privilege thought which is more reasoned, rather than more prolific?`
+Dennett added that “AIs are likely to evolve to get themselves reproduced. And the ones that reproduce the best will be the ones that are the cleverest manipulators of us human interlocutors. The boring ones we will cast aside, and the ones that hold our attention we will spread. All this will happen without any intention at all. It will be natural selection of software.”`,
+        sourceUrl: "https://books.google.com/books/about/Human_Capital.html?id=oc81EQAAQBAJ",
+        sourceTitle: "Guy Standing, Human Capital: The Tragedy of the Education Commons (2026)"
       }
     ]
   }
