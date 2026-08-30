@@ -150,7 +150,7 @@ export default function Projects() {
           <div className="project-hero-text">
             <h2>Scenario Builder</h2>
           <p className="lead">
-            I am currently working with The Fizz, a start-up that have partnered with the
+            I am currently working with Lucid Dot, a start-up that have partnered with the
             Sustainability Accelerator at Chatham House. We're working on a project to create
             positive visions of future worlds. If you'd like to read more about
             the project, you can find write-ups from both Chatham House's

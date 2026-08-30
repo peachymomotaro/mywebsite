@@ -88,7 +88,7 @@ export default function Home({ latestPost }) {
           I'm building AI tools which capitalise on the strengths of current machine learning architectures.
         </p>
         <p className="lead">
-          I'm currently a founder for a startup called The Fizz. We want to use AI to create more positive visions of the future and to help people adapt to climate change. More on that here soon!
+          I'm currently a founder for a startup called Lucid Dot. We want to use AI to create more positive visions of the future and to help people adapt to climate change. More on that here soon!
         </p>
         <p className="lead">
           I write a blog about systems and neuroscience, exploring how we can and should think about the future.

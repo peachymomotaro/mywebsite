@@ -59,7 +59,7 @@ describe("Projects page", () => {
     ).not.toBeNull();
     expect(document.getElementById("capstone-bo")).not.toBeNull();
     expect(
-      screen.getByText(/I am currently working with The Fizz/i)
+      screen.getByText(/I am currently working with Lucid Dot/i)
     ).toBeInTheDocument();
     expect(screen.getByText("In collaboration with")).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Chatham House logo" })).toHaveAttribute(
