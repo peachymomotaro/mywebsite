@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 900" role="img" aria-labelledby="title desc">
+  <title id="title">Portrait placeholder</title>
+  <desc id="desc">A simple sepia silhouette used until Wikimedia Commons portraits are added.</desc>
+  <rect width="720" height="900" fill="#d8c29e"/>
+  <rect x="28" y="28" width="664" height="844" rx="14" fill="none" stroke="#5e402d" stroke-width="8" opacity="0.55"/>
+  <circle cx="360" cy="305" r="142" fill="#6f513a" opacity="0.88"/>
+  <path d="M122 820c24-202 116-316 238-316s214 114 238 316H122z" fill="#6f513a" opacity="0.88"/>
+  <path d="M70 78h580M70 822h580" stroke="#8b6a4c" stroke-width="3" opacity="0.35"/>
+</svg>
