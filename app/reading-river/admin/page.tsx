@@ -7,9 +7,7 @@ import { readingRiverPath } from "@/lib/reading-river/routes";
 export const dynamic = "force-dynamic";
 
 type AdminPageProps = {
-  searchParams?:
-    | Promise<Record<string, string | string[] | undefined>>
-    | Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -38,7 +36,7 @@ async function getRequestOrigin() {
   return `${protocol}://${host}`;
 }
 
-export default async function AdminPage({ searchParams }: AdminPageProps = {}) {
+export default async function AdminPage({ searchParams }: AdminPageProps) {
   const currentUser = await requireAdminUser();
   const resolvedSearchParams = (await searchParams) ?? {};
   const inviteToken = getSearchParamValue(resolvedSearchParams, "inviteToken");

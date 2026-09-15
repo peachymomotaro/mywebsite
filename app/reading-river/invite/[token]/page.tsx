@@ -5,16 +5,10 @@ import { redeemInviteAction } from "./actions";
 import { getInviteRedemptionState } from "@/lib/reading-river/invites";
 
 type InviteRedemptionPageProps = {
-  params:
-    | Promise<{
-        token: string;
-      }>
-    | {
-        token: string;
-      };
-  searchParams?:
-    | Promise<Record<string, string | string[] | undefined>>
-    | Record<string, string | string[] | undefined>;
+  params: Promise<{
+    token: string;
+  }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 function getStatusMessage(status: string) {

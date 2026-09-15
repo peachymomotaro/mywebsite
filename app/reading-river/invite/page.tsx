@@ -4,9 +4,7 @@ import { AuthShell } from "@/components/reading-river/auth-shell";
 import { goToInviteRedemptionAction } from "./actions";
 
 type InviteEntryPageProps = {
-  searchParams?:
-    | Promise<Record<string, string | string[] | undefined>>
-    | Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 function getErrorMessage(error: string | null) {
@@ -18,7 +16,7 @@ function getErrorMessage(error: string | null) {
   }
 }
 
-export default async function InviteEntryPage({ searchParams }: InviteEntryPageProps = {}) {
+export default async function InviteEntryPage({ searchParams }: InviteEntryPageProps) {
   const resolvedSearchParams = (await searchParams) ?? {};
   const error =
     typeof resolvedSearchParams.error === "string" ? resolvedSearchParams.error : null;

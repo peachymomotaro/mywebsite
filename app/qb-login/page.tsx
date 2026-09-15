@@ -23,16 +23,18 @@ async function login(formData: FormData) {
   redirect("/qb");
 }
 
-export default function QBLoginPage({
+export default async function QBLoginPage({
   searchParams,
 }: {
-  searchParams: { error?: string };
+  searchParams: Promise<{ error?: string }>;
 }) {
+  const resolvedSearchParams = await searchParams;
+
   return (
     <main style={{ padding: 48, fontFamily: "Arial, sans-serif" }}>
       <h1>QB Login</h1>
 
-      {searchParams.error && (
+      {resolvedSearchParams.error && (
         <p style={{ color: "red" }}>Wrong password.</p>
       )}
 

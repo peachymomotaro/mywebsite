@@ -16,25 +16,16 @@ export default function Contact() {
         <p className="lead">
           The best way to reach me is by email. I also respond on LinkedIn.
         </p>
-        <div className="list">
-          <article className="card">
-            <h2 className="card-title">Email</h2>
-            <p>
-              <EmailButton className="button" />
-            </p>
-          </article>
-          <article className="card">
-            <h2 className="card-title">LinkedIn</h2>
-            <p>
-              <a
-                href="https://www.linkedin.com/in/peter-curry-5a2138153/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                linkedin.com/in/peter-curry-5a2138153
-              </a>
-            </p>
-          </article>
+        <div className="contact-actions">
+          <EmailButton className="button" />
+          <a
+            className="button"
+            href="https://www.linkedin.com/in/peter-curry-5a2138153/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            LinkedIn
+          </a>
         </div>
       </section>
     </>

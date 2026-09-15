@@ -28,7 +28,7 @@ describe("ReadingRiverPreferencesPage", () => {
       priorityRandomPoolSize: 5,
     });
 
-    const page = await PreferencesPage();
+    const page = await PreferencesPage({});
 
     const { container } = render(page);
 
@@ -64,9 +64,9 @@ describe("ReadingRiverPreferencesPage", () => {
     });
 
     const page = await PreferencesPage({
-      searchParams: {
+      searchParams: Promise.resolve({
         saved: "1",
-      },
+      }),
     });
 
     const { container } = render(page);

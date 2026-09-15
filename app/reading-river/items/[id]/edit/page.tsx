@@ -12,16 +12,10 @@ const PRIORITY_OPTIONS = Array.from({ length: 10 }, (_, index) => String(index +
 export const dynamic = "force-dynamic";
 
 type ReadingRiverEditItemPageProps = {
-  params:
-    | Promise<{
-        id: string;
-      }>
-    | {
-        id: string;
-      };
-  searchParams?:
-    | Promise<Record<string, string | string[] | undefined>>
-    | Record<string, string | string[] | undefined>;
+  params: Promise<{
+    id: string;
+  }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 function getErrorMessage(error: string | null) {

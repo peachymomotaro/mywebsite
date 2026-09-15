@@ -6,9 +6,7 @@ import { measureReadingRiverTiming } from "@/lib/reading-river/timing";
 import { loginAction, requestPasswordResetAction } from "./actions";
 
 type LoginPageProps = {
-  searchParams?:
-    | Promise<Record<string, string | string[] | undefined>>
-    | Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 function getErrorMessage(error: string | null) {
@@ -31,7 +29,7 @@ function getResetMessage(reset: string | null) {
   }
 }
 
-export default async function LoginPage({ searchParams }: LoginPageProps = {}) {
+export default async function LoginPage({ searchParams }: LoginPageProps) {
   return measureReadingRiverTiming("page.reading-river-login.render", async () => {
     const resolvedSearchParams = (await searchParams) ?? {};
     const error =

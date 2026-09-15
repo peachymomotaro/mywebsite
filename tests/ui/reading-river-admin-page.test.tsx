@@ -78,10 +78,10 @@ describe("Reading River admin page", () => {
   it("shows success feedback when the invite email sends", async () => {
     const { default: AdminPage } = await import("@/app/reading-river/admin/page");
     const page = await AdminPage({
-      searchParams: {
+      searchParams: Promise.resolve({
         inviteToken: "invite-token",
         emailStatus: "sent",
-      },
+      }),
     });
 
     const { container } = render(page);
@@ -94,10 +94,10 @@ describe("Reading River admin page", () => {
   it("shows fallback copy when the invite exists but email sending fails", async () => {
     const { default: AdminPage } = await import("@/app/reading-river/admin/page");
     const page = await AdminPage({
-      searchParams: {
+      searchParams: Promise.resolve({
         inviteToken: "invite-token",
         emailStatus: "failed",
-      },
+      }),
     });
 
     render(page);
@@ -127,7 +127,7 @@ describe("Reading River admin page", () => {
     ];
 
     const { default: AdminPage } = await import("@/app/reading-river/admin/page");
-    const page = await AdminPage();
+    const page = await AdminPage({});
 
     render(page);
 

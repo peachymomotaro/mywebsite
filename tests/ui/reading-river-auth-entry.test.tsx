@@ -32,7 +32,7 @@ describe("Reading River auth entry pages", () => {
   });
 
   it("renders the login page through the shared auth shell", async () => {
-    const page = await LoginPage();
+    const page = await LoginPage({});
 
     const { container } = render(page);
 
@@ -45,7 +45,7 @@ describe("Reading River auth entry pages", () => {
   });
 
   it("renders the invite-entry page through the shared auth shell", async () => {
-    const page = await InviteEntryPage();
+    const page = await InviteEntryPage({});
 
     const { container } = render(page);
 

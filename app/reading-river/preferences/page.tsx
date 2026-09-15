@@ -3,9 +3,7 @@ import { requireCurrentUser } from "@/lib/reading-river/current-user";
 import { getOrCreateAppSettings } from "@/lib/reading-river/settings";
 
 type PreferencesPageProps = {
-  searchParams?:
-    | Promise<Record<string, string | string[] | undefined>>
-    | Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 function getSearchParamValue(
@@ -17,7 +15,7 @@ function getSearchParamValue(
   return typeof value === "string" ? value : null;
 }
 
-export default async function PreferencesPage({ searchParams }: PreferencesPageProps = {}) {
+export default async function PreferencesPage({ searchParams }: PreferencesPageProps) {
   const currentUser = await requireCurrentUser();
   const settings = await getOrCreateAppSettings(currentUser.id);
   const resolvedSearchParams = (await searchParams) ?? {};

@@ -85,8 +85,8 @@ describe("ReadingRiverEditItemPage", () => {
       "@/app/reading-river/items/[id]/edit/page"
     );
     const page = await ReadingRiverEditItemPage({
-      params: { id: "item-1" },
-      searchParams: {},
+      params: Promise.resolve({ id: "item-1" }),
+      searchParams: Promise.resolve({}),
     });
 
     render(page);
@@ -114,8 +114,8 @@ describe("ReadingRiverEditItemPage", () => {
       "@/app/reading-river/items/[id]/edit/page"
     );
     const page = await ReadingRiverEditItemPage({
-      params: { id: "item-1" },
-      searchParams: {},
+      params: Promise.resolve({ id: "item-1" }),
+      searchParams: Promise.resolve({}),
     });
 
     render(page);

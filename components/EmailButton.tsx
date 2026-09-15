@@ -1,10 +1,20 @@
 "use client";
 
+type EmailButtonProps = {
+  className?: string;
+  label?: string;
+  subject?: string;
+};
+
 function buildEmailAddress() {
   return ["curry", ".", "peter", String.fromCharCode(64), "googlemail", ".", "com"].join("");
 }
 
-export default function EmailButton({ className, label = "Email me", subject }) {
+export default function EmailButton({
+  className,
+  label = "Email me",
+  subject,
+}: EmailButtonProps) {
   const handleClick = () => {
     const subjectQuery = subject ? `?subject=${encodeURIComponent(subject)}` : "";
     const emailLink = document.createElement("a");

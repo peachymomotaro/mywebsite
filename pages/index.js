@@ -85,36 +85,21 @@ export default function Home({ latestPost }) {
       <section>
         <h1>I’m Peter Curry.</h1>
         <p className="lead">
-          I'm building AI tools which help us make better decisions about the future.
+          I'm currently a founder for a startup called Lucid Dot. 
         </p>
         <p className="lead">
-          I'm currently a founder for a startup called Lucid Dot, working on that mission.
+          We're building AI tools to help governments and businesses make better decisions about the future.
         </p>
         <p className="lead">
           I also write a blog about systems and neuroscience, exploring how we can and should think about the future.
         </p>
         <p className="lead">
-          Previously, I was a researcher, an audiovisual producer and an editor, creating podcasts and video content for a range of clients.
+          Previously, I was a researcher, an audiovisual producer and an editor.
         </p>
       </section>
 
-      <section className="section-grid" aria-label="Quick links">
-        <Link className="quick-link-card" href="/about">
-          About
-        </Link>
-        <Link className="quick-link-card" href="/blog">
-          Blog
-        </Link>
-        <Link className="quick-link-card" href="/projects">
-          Projects
-        </Link>
-        <Link className="quick-link-card" href="/podcasts">
-          Podcasts
-        </Link>
-      </section>
-
       <section>
-        <h2>Featured writing</h2>
+        <h2>Most recent piece</h2>
         <article className="card post-card">
           <div className="post-content">
             <div className="card-meta">{formatDate(featured.date)}</div>

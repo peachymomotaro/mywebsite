@@ -86,7 +86,9 @@ vi.mock("@/app/reading-river/actions/books", () => ({
 describe("ReadingRiverHomePage", () => {
   it("renders the merged Reading River homepage with the real data flow", async () => {
     const { default: ReadingRiverHomePage } = await import("@/app/reading-river/page");
-    const page = await ReadingRiverHomePage({ searchParams: { time: "15" } });
+    const page = await ReadingRiverHomePage({
+      searchParams: Promise.resolve({ time: "15" }),
+    });
 
     const { container } = render(page);
 
@@ -138,7 +140,7 @@ describe("ReadingRiverHomePage", () => {
 
   it("unfolds and folds book roulette notes when the book is clicked", async () => {
     const { default: ReadingRiverHomePage } = await import("@/app/reading-river/page");
-    const page = await ReadingRiverHomePage();
+    const page = await ReadingRiverHomePage({});
 
     render(page);
 
@@ -183,7 +185,7 @@ describe("ReadingRiverHomePage", () => {
     });
 
     const { default: ReadingRiverHomePage } = await import("@/app/reading-river/page");
-    const page = await ReadingRiverHomePage();
+    const page = await ReadingRiverHomePage({});
 
     const { container } = render(page);
 

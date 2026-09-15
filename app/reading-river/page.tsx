@@ -11,10 +11,10 @@ import { measureReadingRiverTiming } from "@/lib/reading-river/timing";
 export const dynamic = "force-dynamic";
 
 type ReadingRiverPageProps = {
-  searchParams?: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default async function ReadingRiverPage({ searchParams }: ReadingRiverPageProps = {}) {
+export default async function ReadingRiverPage({ searchParams }: ReadingRiverPageProps) {
   return measureReadingRiverTiming("page.reading-river-home.render", async () => {
     const currentUser = await requireCurrentUser();
     const resolvedSearchParams = (await searchParams) ?? {};

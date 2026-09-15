@@ -5,16 +5,10 @@ import { getPasswordResetState } from "@/lib/reading-river/password-resets";
 import { resetPasswordAction } from "./actions";
 
 type ResetPasswordPageProps = {
-  params:
-    | Promise<{
-        token: string;
-      }>
-    | {
-        token: string;
-      };
-  searchParams?:
-    | Promise<Record<string, string | string[] | undefined>>
-    | Record<string, string | string[] | undefined>;
+  params: Promise<{
+    token: string;
+  }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 function getStatusMessage(status: string) {
