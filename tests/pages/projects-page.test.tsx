@@ -26,6 +26,17 @@ describe("Projects page", () => {
     expect(Projects.wideContent).toBe(true);
   });
 
+  it("uses editorial project notes instead of uppercase eyebrow labels", () => {
+    const { container } = render(<Projects />);
+
+    expect(screen.getByText("Contents")).toHaveClass("project-contents-label");
+    expect(screen.getByText("Machine learning capstone")).toHaveClass(
+      "project-kicker"
+    );
+    expect(screen.getByText("Personal tool")).toHaveClass("project-kicker");
+    expect(container.querySelector(".partner-label")).toBeNull();
+  });
+
   it("links to the remaining projects and omits Scenario Builder", () => {
     render(<Projects />);
 
@@ -140,11 +151,8 @@ describe("Projects page", () => {
       )
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /Sign up for the Reading River/i })
-    ).toHaveAttribute(
-      "href",
-      "mailto:curry.peter@googlemail.com?subject=Reading%20River"
-    );
+      screen.getByRole("button", { name: /Sign up for the Reading River/i })
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("img", { name: "Reading River app screenshot" })
     ).toHaveAttribute("src", "/ReadingRiver.png");

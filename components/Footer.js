@@ -1,4 +1,4 @@
-import EmailLink from "./EmailLink";
+import EmailButton from "./EmailButton";
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -8,7 +8,7 @@ export default function Footer() {
       <div className="container">
         <div>© {year} Peter Curry</div>
         <div className="footer-links">
-          <EmailLink label="Email" />
+          <EmailButton className="email-text-button" label="Email" />
           <a href="https://www.linkedin.com/in/peter-curry-5a2138153/" target="_blank" rel="noopener noreferrer">
             LinkedIn
           </a>

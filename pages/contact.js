@@ -1,5 +1,5 @@
 import Head from "next/head";
-import EmailLink from "../components/EmailLink";
+import EmailButton from "../components/EmailButton";
 
 export default function Contact() {
   return (
@@ -20,7 +20,7 @@ export default function Contact() {
           <article className="card">
             <h2 className="card-title">Email</h2>
             <p>
-              <EmailLink />
+              <EmailButton className="button" />
             </p>
           </article>
           <article className="card">

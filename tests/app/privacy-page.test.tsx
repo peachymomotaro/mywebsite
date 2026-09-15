@@ -29,10 +29,8 @@ describe("PrivacyPage", () => {
     expect(
       screen.getByText(/does not transfer user data to third parties for advertising, creditworthiness, lending/i),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "curry.peter@googlemail.com" })).toHaveAttribute(
-      "href",
-      "mailto:curry.peter@googlemail.com",
-    );
+    expect(screen.getByRole("button", { name: "Email Peter" })).toBeInTheDocument();
+    expect(screen.queryByText("curry.peter@googlemail.com")).not.toBeInTheDocument();
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
   });
 });

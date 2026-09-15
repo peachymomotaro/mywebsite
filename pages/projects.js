@@ -1,6 +1,7 @@
 import Head from "next/head";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import EmailButton from "../components/EmailButton";
 
 const READING_RIVER_IMAGE = "/ReadingRiver.png";
 const PROJECT_LINKS = [
@@ -46,7 +47,7 @@ export default function Projects() {
       </header>
 
       <nav className="project-contents" aria-label="Project contents">
-        <div className="partner-label">Contents</div>
+        <div className="project-contents-label">Contents</div>
         <ul>
           {PROJECT_LINKS.map((project) => (
             <li key={project.href}>
@@ -58,7 +59,7 @@ export default function Projects() {
 
       <section className="capstone-project" id="exploring-bayesian-optimisers">
         <span id="capstone-bo" className="legacy-anchor" aria-hidden="true" />
-        <div className="partner-label">Machine learning capstone</div>
+        <div className="project-kicker">Machine learning capstone</div>
         <h2>Exploring Bayesian Optimisers</h2>
         <p className="lead">
           Bayesian optimisation and Gaussian Processes.
@@ -156,7 +157,7 @@ export default function Projects() {
 
       <section className="reading-river-project" id="reading-river">
         <div className="reading-river-project-copy">
-          <div className="partner-label">Personal tool</div>
+          <div className="project-kicker">Personal tool</div>
           <h2>Reading River</h2>
           <p className="lead">
             Reading River is a way to lower the pressure to read everything. It 
@@ -242,9 +243,11 @@ export default function Projects() {
           <p>
             If you&apos;d like to join the Reading River beta, just drop me an email saying you'd like to try it and I'll get back to you.
           </p>
-          <a href="mailto:curry.peter@googlemail.com?subject=Reading%20River">
-            Sign up for the Reading River
-          </a>
+          <EmailButton
+            className="reading-river-email-button"
+            label="Sign up for the Reading River"
+            subject="Reading River"
+          />
         </div>
         <button
           className="media-button reading-river-project-image"

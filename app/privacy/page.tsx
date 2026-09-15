@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import EmailButton from "@/components/EmailButton";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
@@ -73,9 +74,7 @@ export default function PrivacyPage() {
           <h2>Contact</h2>
           <p>
             If you have questions about this privacy policy, contact:{" "}
-            <a href="mailto:curry.peter@googlemail.com">
-              curry.peter@googlemail.com
-            </a>
+            <EmailButton className={styles.emailButton} label="Email Peter" />
           </p>
         </section>
       </article>
