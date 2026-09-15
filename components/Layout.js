@@ -1,7 +1,7 @@
 import NavBar from "./NavBar";
 import Footer from "./Footer";
 
-export default function Layout({ children }) {
+export default function Layout({ children, wideContent = false }) {
   return (
     <>
       <a className="skip-link" href="#content">
@@ -13,7 +13,9 @@ export default function Layout({ children }) {
         </div>
       </header>
       <main id="content">
-        <div className="container">{children}</div>
+        <div className={wideContent ? "container container-wide" : "container"}>
+          {children}
+        </div>
       </main>
       <Footer />
     </>

@@ -22,31 +22,29 @@ vi.mock("next/link", () => ({
 }));
 
 describe("Projects page", () => {
-  it("links to the top-level projects from the contents section", () => {
+  it("opts into the wider site layout", () => {
+    expect(Projects.wideContent).toBe(true);
+  });
+
+  it("links to the remaining projects and omits Scenario Builder", () => {
     render(<Projects />);
 
     const projectsHeading = screen.getByRole("heading", { name: "Projects" });
     const contentsNav = screen.getByRole("navigation", {
       name: "Project contents",
     });
-    const chathamProject = document.getElementById("scenario-builder");
-    const chathamHeading = screen.getByRole("heading", {
-      name: "Scenario Builder",
-    });
+    const bayesianProject = document.getElementById(
+      "exploring-bayesian-optimisers"
+    );
 
-    expect(chathamProject).not.toBeNull();
     expect(
       projectsHeading.compareDocumentPosition(contentsNav) &
         Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
     expect(
-      contentsNav.compareDocumentPosition(chathamProject as HTMLElement) &
+      contentsNav.compareDocumentPosition(bayesianProject as HTMLElement) &
         Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
-    expect(chathamProject).toContainElement(chathamHeading);
-    expect(
-      screen.getByRole("link", { name: "Scenario Builder" })
-    ).toHaveAttribute("href", "#scenario-builder");
     expect(
       screen.getByRole("link", { name: "Exploring Bayesian Optimisers" })
     ).toHaveAttribute("href", "#exploring-bayesian-optimisers");
@@ -54,18 +52,13 @@ describe("Projects page", () => {
       "href",
       "#reading-river"
     );
-    expect(
-      document.getElementById("exploring-bayesian-optimisers")
-    ).not.toBeNull();
+    expect(bayesianProject).not.toBeNull();
     expect(document.getElementById("capstone-bo")).not.toBeNull();
-    expect(
-      screen.getByText(/I am currently working with Lucid Dot/i)
-    ).toBeInTheDocument();
-    expect(screen.getByText("In collaboration with")).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "Chatham House logo" })).toHaveAttribute(
-      "src",
-      "/chatham-house-logo.png"
-    );
+    expect(document.getElementById("scenario-builder")).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Scenario Builder" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Scenario Builder" })).toBeNull();
+    expect(screen.queryByText(/I am currently working with Lucid Dot/i)).toBeNull();
+    expect(screen.queryByRole("img", { name: "Chatham House logo" })).toBeNull();
   });
 
   it("links the Bayesian Optimisers project to the hidden Bayesian optimisation game", () => {
@@ -99,15 +92,15 @@ describe("Projects page", () => {
   it("presents Reading River as a project with its philosophy, links, and image", () => {
     render(<Projects />);
 
-    const sampleStoryHeading = screen.getByRole("heading", {
-      name: "Generate a sample short story",
+    const bayesianHeading = screen.getByRole("heading", {
+      name: "Exploring Bayesian Optimisers",
     });
     const readingRiverHeading = screen.getByRole("heading", {
       name: "Reading River",
     });
 
     expect(
-      sampleStoryHeading.compareDocumentPosition(readingRiverHeading) &
+      bayesianHeading.compareDocumentPosition(readingRiverHeading) &
         Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
     expect(

@@ -1,8 +1,8 @@
 import "../styles/globals.css";
 import Layout from "../components/Layout";
-import { EB_Garamond, Fira_Code } from "next/font/google";
+import { Fira_Code, Literata } from "next/font/google";
 
-const serif = EB_Garamond({
+const serif = Literata({
   subsets: ["latin"],
   variable: "--font-serif",
   display: "swap"
@@ -19,7 +19,11 @@ export default function App({ Component, pageProps }) {
 
   return (
     <div className={`${serif.variable} ${mono.variable} app`}>
-      {Component.hideSiteLayout ? page : <Layout>{page}</Layout>}
+      {Component.hideSiteLayout ? (
+        page
+      ) : (
+        <Layout wideContent={Component.wideContent}>{page}</Layout>
+      )}
     </div>
   );
 }

@@ -12,7 +12,10 @@ export default function EpisodeList({ episodes = [] }) {
       ) : (
         <ul>
           {episodes.map((episode) => (
-            <li className="episode-item" key={episode.url || episode.title}>
+            <li
+              className="episode-item"
+              key={`${episode.title}-${episode.date || ""}-${episode.url || ""}`}
+            >
               <a
                 href={episode.url}
                 target="_blank"

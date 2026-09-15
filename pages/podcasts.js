@@ -35,3 +35,5 @@ export default function Podcasts() {
     </>
   );
 }
+
+Podcasts.wideContent = true;

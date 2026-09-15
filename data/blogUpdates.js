@@ -5,6 +5,12 @@ export const blogUpdates = [
     postUrl: "https://kingcnut.substack.com/p/the-illusion-of-intelligence",
     updates: [
       {
+        date: "2026-08-31",
+        note: `The Wall Street Journal has now unapologetically published an artificially constructed opinion piece. I think that people are gravely underestimating how much work artificial words in their present form can do. This is going to cause damage to our "wonderful technology for knowledge".`,
+        sourceUrl: "https://www.theatlantic.com/technology/2026/08/wall-street-journal-ai-op-ed/688433/",
+        sourceTitle: "Will Oremus, A Turning Point in AI Writing (The Atlantic, 2026)"
+      },
+      {
         date: "2026-08-29",
         note: `In *Human Capital: The Tragedy of the Education Commons* (Pelican, 2026), Guy Standing quotes Dennett telling the BBC:
 

@@ -85,13 +85,13 @@ export default function Home({ latestPost }) {
       <section>
         <h1>I’m Peter Curry.</h1>
         <p className="lead">
-          I'm building AI tools which capitalise on the strengths of current machine learning architectures.
+          I'm building AI tools which help us make better decisions about the future.
         </p>
         <p className="lead">
-          I'm currently a founder for a startup called Lucid Dot. We want to use AI to create more positive visions of the future and to help people adapt to climate change. More on that here soon!
+          I'm currently a founder for a startup called Lucid Dot, working on that mission.
         </p>
         <p className="lead">
-          I write a blog about systems and neuroscience, exploring how we can and should think about the future.
+          I also write a blog about systems and neuroscience, exploring how we can and should think about the future.
         </p>
         <p className="lead">
           Previously, I was a researcher, an audiovisual producer and an editor, creating podcasts and video content for a range of clients.
@@ -100,7 +100,7 @@ export default function Home({ latestPost }) {
 
       <section className="section-grid" aria-label="Quick links">
         <Link className="quick-link-card" href="/about">
-          About &amp; CV
+          About
         </Link>
         <Link className="quick-link-card" href="/blog">
           Blog

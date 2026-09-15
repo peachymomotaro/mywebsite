@@ -1,6 +1,13 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import NavBar from "@/components/NavBar";
+
+const globalStyles = readFileSync(
+  path.resolve(process.cwd(), "styles/globals.css"),
+  "utf8"
+);
 
 vi.mock("next/link", () => ({
   default: ({
@@ -25,9 +32,14 @@ describe("NavBar", () => {
   it("links to Reading River from the main site navigation", () => {
     render(<NavBar />);
 
-    expect(screen.getByRole("link", { name: "Reading River" })).toHaveAttribute(
+    const readingRiverLink = screen.getByRole("link", { name: "Reading River" });
+
+    expect(readingRiverLink).toHaveAttribute(
       "href",
       "/reading-river"
+    );
+    expect(globalStyles).toMatch(
+      /\.nav-links a\s*\{[^}]*white-space:\s*nowrap;/s
     );
   });
 

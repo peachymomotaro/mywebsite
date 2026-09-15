@@ -3,10 +3,10 @@ const podcastShows = [
     slug: "dansnow-history-hit",
     title: "Dan Snow’s History Hit",
     creditType: "show_level",
-    role: "Producer / Researcher / Sound Editor / Video Editor",
+    role: "Producer / Researcher",
     dateRange: "2018 – 2020",
     description:
-      "Produced Dan Snow’s Podcast, the largest history podcast in the UK. At peak, helped produce up to six podcasts a week with academics, journalists, and public figures, leading guest research, pre-interviews, and briefing. Edited audio and video for filmed episodes, including sound design, mixing, and mastering, and liaised with hosts and guests to ensure high-quality recordings.",
+      "Produced Dan Snow’s Podcast, the largest history podcast in the UK. At peak, helped produce up to six podcasts a week with academics, journalists, and public figures, leading guest research, pre-interviews, and briefing.",
     links: [
       {
         label: "Show page",
