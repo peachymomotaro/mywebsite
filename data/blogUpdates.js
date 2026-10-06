@@ -2,7 +2,7 @@ export const blogUpdates = [
   {
     id: "the-illusion-of-intelligence",
     postTitle: "The Illusion of Intelligence",
-    postUrl: "https://kingcnut.substack.com/p/the-illusion-of-intelligence",
+    postUrl: "https://kingcnut.substack.com/p/the-anatomy-of-one-particular-style",
     updates: [
       {
         date: "2026-08-31",
