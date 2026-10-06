@@ -113,7 +113,7 @@ img {
   padding: 8px 14px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  box-shadow: var(--shadow);
   z-index: 100;
 }
 
@@ -618,38 +618,11 @@ p {
   margin-bottom: 20px;
 }
 
-.project-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
-  gap: 24px;
-  align-items: start;
-}
-
-.project-hero-panel {
-  border: 1px solid var(--border);
-  background: var(--bg-elevated);
-  border-radius: var(--radius);
-  padding: 22px;
-  box-shadow: var(--shadow);
-}
-
 .legacy-anchor {
   display: block;
   position: relative;
   top: -88px;
   visibility: hidden;
-}
-
-.chatham-project {
-  margin-top: 40px;
-}
-
-.chatham-project .project-hero-panel {
-  margin-top: 48px;
-}
-
-.scenario-builder-preview {
-  margin-top: 32px;
 }
 
 .project-kicker {
@@ -667,12 +640,6 @@ p {
   width: 36px;
   border-top: 1px solid var(--accent);
   opacity: 0.75;
-}
-
-.partner-meta {
-  margin-top: 14px;
-  color: var(--muted);
-  font-size: 0.95rem;
 }
 
 .reading-river-project {
@@ -801,51 +768,6 @@ p {
   object-position: top center;
 }
 
-.snapshot-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  margin-top: 18px;
-}
-
-.snapshot-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.65fr);
-  gap: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow);
-}
-
-.snapshot-image img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  min-height: 280px;
-  object-fit: cover;
-}
-
-.snapshot-content {
-  padding: 20px 22px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 8px;
-}
-
-.snapshot-label {
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.generator-section {
-  margin-top: 40px;
-}
-
 .capstone-project {
   margin-top: 28px;
 }
@@ -901,41 +823,6 @@ p {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-}
-
-.generator-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  margin: 16px 0 20px;
-}
-
-.generator-status {
-  font-size: 0.9rem;
-  color: var(--muted);
-}
-
-.typewriter-card {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-height: 240px;
-}
-
-.typewriter-output {
-  white-space: pre-wrap;
-}
-
-.style-chip-inline {
-  align-self: flex-end;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--muted);
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  letter-spacing: 0.02em;
 }
 
 /* Media lightbox */
@@ -1482,6 +1369,38 @@ p {
   gap: 10px;
 }
 
+/* Footer */
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 0 40px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.footer-links {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.footer-links a {
+  color: var(--muted);
+}
+
+.email-text-button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.email-text-button:hover {
+  color: var(--accent-muted);
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .site-header {
@@ -1523,49 +1442,9 @@ p {
   }
 }
 
-.site-footer {
-  border-top: 1px solid var(--border);
-  padding: 28px 0 40px;
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.footer-links {
-  display: flex;
-  gap: 16px;
-  margin-top: 8px;
-}
-
-.footer-links a {
-  color: var(--muted);
-}
-
-.email-text-button {
-  appearance: none;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  padding: 0;
-  font: inherit;
-  cursor: pointer;
-}
-
-.email-text-button:hover {
-  color: var(--accent-muted);
-}
-
 @media (max-width: 600px) {
   h1 {
     font-size: 2.1rem;
-  }
-
-  .nav {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .nav-links {
-    flex-wrap: wrap;
   }
 
   .section-grid {
@@ -1584,22 +1463,6 @@ p {
 
   .blog-update-message {
     padding: 15px 16px;
-  }
-
-  .project-hero {
-    grid-template-columns: 1fr;
-  }
-
-  .snapshot-card {
-    grid-template-columns: 1fr;
-  }
-
-  .snapshot-image img {
-    min-height: 220px;
-  }
-
-  .chatham-logo {
-    width: min(280px, 100%);
   }
 
   .bayes-game-shell {
