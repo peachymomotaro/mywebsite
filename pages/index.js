@@ -92,8 +92,7 @@ export default function Home({ latestPost }) {
             rel="noopener noreferrer"
           >
             Lucid Dot
-          </a>
-          , where we're building AI tools to help governments and businesses make better decisions about the future.
+          </a>, where we're building AI tools to help governments and businesses make better decisions about the future.
         </p>
         <p>
           I also write about systems and neuroscience, exploring how we can and should think about the future.
