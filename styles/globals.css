@@ -1,3 +1,4 @@
+/* Theme tokens */
 :root {
   --bg: #E8E5DE;
   --bg-elevated: #F5F3EE;
@@ -7,37 +8,43 @@
   --accent-muted: #7C3F35;
   --border: #C4BFB5;
   --shadow: 0 8px 28px rgba(17, 17, 17, 0.08);
+  --overlay: rgba(17, 15, 13, 0.72);
   --focus: #A83224;
+
   --content-width: 720px;
   --radius: 12px;
+  --radius-pill: 999px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --bg: #0f1115;
-    --bg-elevated: #151821;
-    --text: #f1f1f1;
-    --muted: #b5b5b5;
-    --accent: #8ab8ff;
-    --accent-muted: #6b93c8;
-    --border: #242938;
-    --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-    --focus: #8ab8ff;
+    --bg: #171513;
+    --bg-elevated: #24211D;
+    --text: #F2EEE6;
+    --muted: #B7AEA3;
+    --accent: #D45A48;
+    --accent-muted: #E07A6B;
+    --border: #3B3731;
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.38);
+    --overlay: rgba(0, 0, 0, 0.76);
+    --focus: #D45A48;
   }
 }
 
 :root[data-theme="dark"] {
-  --bg: #0f1115;
-  --bg-elevated: #151821;
-  --text: #f1f1f1;
-  --muted: #b5b5b5;
-  --accent: #8ab8ff;
-  --accent-muted: #6b93c8;
-  --border: #242938;
-  --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-  --focus: #8ab8ff;
+  --bg: #171513;
+  --bg-elevated: #24211D;
+  --text: #F2EEE6;
+  --muted: #B7AEA3;
+  --accent: #D45A48;
+  --accent-muted: #E07A6B;
+  --border: #3B3731;
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.38);
+  --overlay: rgba(0, 0, 0, 0.76);
+  --focus: #D45A48;
 }
 
+/* Base */
 * {
   box-sizing: border-box;
 }
@@ -96,6 +103,7 @@ img {
   outline-offset: 3px;
 }
 
+/* Site layout and navigation */
 .skip-link {
   position: absolute;
   left: -999px;
@@ -105,7 +113,7 @@ img {
   padding: 8px 14px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  box-shadow: var(--shadow);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
   z-index: 100;
 }
 
@@ -178,7 +186,7 @@ img {
   border: 1px solid var(--border);
   background: var(--bg-elevated);
   color: var(--text);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 6px 12px;
   font-size: 0.95rem;
   cursor: pointer;
@@ -189,6 +197,7 @@ main {
   padding: 48px 0 72px;
 }
 
+/* Typography */
 h1,
 h2,
 h3,
@@ -239,6 +248,7 @@ p {
   margin-top: 32px;
 }
 
+/* Shared content components */
 .card {
   border: 1px solid var(--border);
   background: var(--bg-elevated);
@@ -309,6 +319,7 @@ p {
   margin-bottom: 10px;
 }
 
+/* Blog */
 .blog-update-card {
   scroll-margin-top: 110px;
 }
@@ -486,7 +497,7 @@ p {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 10px 18px;
   border: 1px solid var(--accent);
   color: var(--accent);
@@ -514,6 +525,7 @@ p {
   margin-top: 28px;
 }
 
+/* Podcasts and stories */
 .podcast-item h3,
 .story-card h3 {
   margin-bottom: 8px;
@@ -601,6 +613,7 @@ p {
   cursor: zoom-in;
 }
 
+/* Projects */
 .project-page-header {
   margin-bottom: 20px;
 }
@@ -755,7 +768,7 @@ p {
   align-items: center;
   justify-content: center;
   border: 1px solid var(--text);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--text);
   padding: 10px 18px;
@@ -925,10 +938,11 @@ p {
   letter-spacing: 0.02em;
 }
 
+/* Media lightbox */
 .lightbox {
   position: fixed;
   inset: 0;
-  background: rgba(12, 14, 18, 0.72);
+  background: var(--overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -961,11 +975,13 @@ p {
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 6px 12px;
   cursor: pointer;
 }
 
+/* Bayesian optimisation game
+   Intentionally self-contained: these colours encode the game rather than the site theme. */
 .bayes-game-page {
   --bayes-bg: #10141d;
   --bayes-panel: #171c28;
@@ -1013,7 +1029,7 @@ p {
 .bayes-return-link {
   width: fit-content;
   border: 1px solid var(--bayes-border);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.07);
   color: var(--bayes-text);
   padding: 8px 12px;
@@ -1143,7 +1159,7 @@ p {
 .bayes-overlay-buttons button,
 .bayes-game-actions button {
   border: 1px solid var(--bayes-border);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.05);
   color: var(--bayes-text);
   padding: 8px 12px;
@@ -1280,7 +1296,7 @@ p {
   display: inline-block;
   width: 12px;
   height: 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid #ffffff;
 }
 
@@ -1466,6 +1482,7 @@ p {
   gap: 10px;
 }
 
+/* Responsive */
 @media (max-width: 900px) {
   .site-header {
     position: static;
