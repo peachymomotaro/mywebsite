@@ -51,7 +51,7 @@ export default function Projects() {
           information on the functions except for a series of previous inputs and output. 
         </p>
         <p>
-          A classic problem in both machine learning and life is the explore-exploiit trade-off.
+          A classic problem in both machine learning and life is the explore-exploit trade-off.
           Is it worth listening to a new album that you might enjoy, or relistening to an old album 
           that you know you love? This project offered a gamified way of thinking about that trade-off. 
           Should we explore new areas or exploit areas that already seemed promising?
