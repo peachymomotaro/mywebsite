@@ -65,7 +65,7 @@ const podcastShows = [
       { title: "The Five and Jack the Ripper with Hallie Rubenhold", date: "May 13, 2020", url: "https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=6" },
       { title: "The Great Fire of London with Rebecca Rideal", date: "May 2, 2020", url: "https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=6" },
 
-      { title: "The Valkyries with Jh̤anna Katrn Friŗiksdt̤tir", date: "Apr 28, 2020", url: "https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=7" },
+      { title: "The Valkyries with Jóhanna Katrín Friðriksdóttir", date: "Apr 28, 2020", url: "https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=7" },
       { title: "The Battle of Okinawa with Saul David", date: "Apr 18, 2020", url: "https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=7" },
       { title: "Christmas Special with Dan Snow", date: "Dec 17, 2019", url: "https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=7" },
       { title: "Going on Pilgrimage in the Middle Ages with Dr Emma Wells", date: "Dec 1, 2019", url: "https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=7" },
@@ -80,7 +80,7 @@ const podcastShows = [
       { title: "Marie of Romania with Tessa Dunlop", date: "Mar 17, 2019", url: "https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=10" },
       { title: "Sir Walter Raleigh with Anna Beer", date: "Mar 10, 2019", url: "https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=10" },
       { title: "Writing Historical Fiction and the Huguenots with Kate Mosse", date: "Mar 4, 2019", url: "https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=10" },
-      { title: "Prostitution with Hallie Ruben-Hold", date: "Mar 4, 2019", url: "https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=10" },
+      { title: "Prostitution with Hallie Rubenhold", date: "Mar 4, 2019", url: "https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=10" },
       { title: "Joseph Lister with Lindsey Fitzharris", date: "Feb 27, 2019", url: "https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=11" }
     ],
     notes: "Selected credited episodes."
