@@ -79,6 +79,13 @@ a:hover {
   color: var(--accent-muted);
 }
 
+main p a,
+main li a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.14em;
+}
+
 img {
   max-width: 100%;
   height: auto;
@@ -161,6 +168,12 @@ img {
   opacity: 1;
 }
 
+.nav-links a[aria-current="page"] {
+  opacity: 1;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+
 .theme-toggle {
   border: 1px solid var(--border);
   background: var(--bg-elevated);
@@ -213,6 +226,10 @@ p {
 .lead {
   font-size: 1.2rem;
   color: var(--muted);
+}
+
+.home-contact {
+  margin-top: 26px;
 }
 
 .section-grid {
@@ -603,47 +620,6 @@ p {
   box-shadow: var(--shadow);
 }
 
-.project-contents {
-  width: fit-content;
-  max-width: 100%;
-  margin-top: 28px;
-  padding: 18px 20px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow);
-}
-
-.project-contents-label {
-  margin-bottom: 10px;
-  color: var(--text);
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.project-contents ul {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.project-contents a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 36px;
-  border-bottom: 1px solid currentColor;
-  color: var(--text);
-  font-size: 0.98rem;
-  line-height: 1.25;
-}
-
-.project-contents a:hover {
-  color: var(--accent);
-}
-
 .legacy-anchor {
   display: block;
   position: relative;
@@ -858,9 +834,7 @@ p {
 }
 
 .capstone-project {
-  margin-top: 44px;
-  padding-top: 40px;
-  border-top: 1px solid var(--border);
+  margin-top: 28px;
 }
 
 .capstone-project h2 {
@@ -1493,16 +1467,21 @@ p {
 }
 
 @media (max-width: 900px) {
+  .site-header {
+    position: static;
+  }
+
   .nav {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
+    padding: 14px 0;
+    gap: 10px;
   }
 
   .nav-links {
     width: 100%;
     flex-wrap: wrap;
-    row-gap: 10px;
+    gap: 8px 14px;
   }
 
   .bayes-game-page {
