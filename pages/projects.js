@@ -4,16 +4,6 @@ import { useEffect, useState } from "react";
 import EmailButton from "../components/EmailButton";
 
 const READING_RIVER_IMAGE = "/ReadingRiver.png";
-const PROJECT_LINKS = [
-  {
-    label: "Exploring Bayesian Optimisers",
-    href: "#exploring-bayesian-optimisers",
-  },
-  {
-    label: "Reading River",
-    href: "#reading-river",
-  },
-];
 
 export default function Projects() {
   const [activeImage, setActiveImage] = useState(null);
@@ -45,17 +35,6 @@ export default function Projects() {
       <header className="project-page-header">
         <h1>Projects</h1>
       </header>
-
-      <nav className="project-contents" aria-label="Project contents">
-        <div className="project-contents-label">Contents</div>
-        <ul>
-          {PROJECT_LINKS.map((project) => (
-            <li key={project.href}>
-              <a href={project.href}>{project.label}</a>
-            </li>
-          ))}
-        </ul>
-      </nav>
 
       <section className="capstone-project" id="exploring-bayesian-optimisers">
         <span id="capstone-bo" className="legacy-anchor" aria-hidden="true" />
