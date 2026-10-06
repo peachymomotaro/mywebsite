@@ -53,7 +53,7 @@ const PODCAST_CREDITS = [
       { title:"The Five and Jack the Ripper with Hallie Rubenhold", published:"May 13, 2020", role:"Producer", creditText:"Producer: Peter Curry", source:"https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=6" },
       { title:"The Great Fire of London with Rebecca Rideal", published:"May 2, 2020", role:"Producer", creditText:"Producer: Peter Curry", source:"https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=6" },
 
-      { title:"The Valkyries with Jh̤anna Katrn Friŗiksdt̤tir", published:"Apr 28, 2020", role:"Producer", creditText:"Producer: Peter Curry", source:"https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=7" },
+      { title:"The Valkyries with Jóhanna Katrín Friðriksdóttir", published:"Apr 28, 2020", role:"Producer", creditText:"Producer: Peter Curry", source:"https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=7" },
       { title:"The Battle of Okinawa with Saul David", published:"Apr 18, 2020", role:"Producer", creditText:"Producer: Peter Curry", source:"https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=7" },
       { title:"Christmas Special with Dan Snow", published:"Dec 17, 2019", role:"Producer", creditText:"Producer: Peter Curry", source:"https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=7" },
       { title:"Going on Pilgrimage in the Middle Ages with Dr Emma Wells", published:"Dec 1, 2019", role:"Producer", creditText:"Producer: Peter Curry", source:"https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=7" },
@@ -69,7 +69,7 @@ const PODCAST_CREDITS = [
       { title:"Marie of Romania with Tessa Dunlop", published:"Mar 17, 2019", role:"Audio", creditText:"Audio: Peter Curry", source:"https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=10" },
       { title:"Sir Walter Raleigh with Anna Beer", published:"Mar 10, 2019", role:"Audio", creditText:"Audio: Peter Curry", source:"https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=10" },
       { title:"Writing Historical Fiction and the Huguenots with Kate Mosse", published:"Mar 4, 2019", role:"Audio", creditText:"Audio: Peter Curry", source:"https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=10" },
-      { title:"Prostitution with Hallie Ruben-Hold", published:"Mar 4, 2019", role:"Audio", creditText:"Audio: Peter Curry", source:"https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=10" },
+      { title:"Prostitution with Hallie Rubenhold", published:"Mar 4, 2019", role:"Audio", creditText:"Audio: Peter Curry", source:"https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=10" },
       { title:"Joseph Lister with Lindsey Fitzharris", published:"Feb 27, 2019", role:"Audio", creditText:"Audio: Peter Curry", source:"https://www.podbean.com/podcast-detail/zkf2u-8793d/Hidden-Histories-Podcast?page=11" }
     ]
   },
