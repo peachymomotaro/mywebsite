@@ -101,7 +101,7 @@ export default function Home({ latestPost }) {
           Previously, I was a researcher, an audiovisual producer and an editor.
         </p>
         <p className="home-contact">
-          If you'd like to talk about this work, <Link href="/contact">get in touch</Link>.
+          If you'd like to talk to me, <Link href="/contact">get in touch</Link>. I love a chat!
         </p>
       </section>
 
