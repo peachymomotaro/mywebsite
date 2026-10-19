@@ -458,7 +458,7 @@ describe("buildHomePageDataForBudgets", () => {
       dayKey: "2026-06-03",
       books: [{ id: "book", title: "Book", createdAt: new Date("2026-06-01") }],
     });
-    expect(Object.keys(variants)).toEqual(["any", "5", "10", "15", "30", "45"]);
+    expect(Object.keys(variants)).toEqual(["5", "10", "15", "30", "45", "any"]);
     expect(variants["5"].priorityRead?.id).toBe("a");
     expect(variants["30"].priorityRead).not.toBeNull();
     expect(variants.any.bookRoulettePick).toEqual(variants["45"].bookRoulettePick);
