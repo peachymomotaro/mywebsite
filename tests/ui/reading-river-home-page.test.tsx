@@ -107,7 +107,10 @@ describe("ReadingRiverHomePage", () => {
       "true"
     );
     expect(screen.getByText("Next priority read")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Live stream article" })).toBeInTheDocument();
+    const articleLink = screen.getByRole("link", { name: "Live stream article" });
+    expect(articleLink).toHaveAttribute("href", "https://example.com/live-stream");
+    expect(articleLink).toHaveAttribute("target", "_blank");
+    expect(articleLink).toHaveAttribute("rel", "noopener noreferrer");
     expect(
       screen.getByRole("link", { name: "Edit Live stream article" }),
     ).toBeInTheDocument();

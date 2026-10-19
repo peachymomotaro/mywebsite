@@ -29,7 +29,7 @@ export function EddiesSection({ items }: { items: EddyArticle[] }) {
             <li key={item.id}>
               <article aria-labelledby={`eddy-title-${item.id}`}>
                 <h3 id={`eddy-title-${item.id}`}>
-                  {item.sourceUrl ? <a href={item.sourceUrl}>{item.title}</a> : item.title}
+                  {item.sourceUrl ? <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer">{item.title}</a> : item.title}
                 </h3>
                 {item.siteName || item.estimatedMinutes ? (
                   <p className="river-eddies-meta">

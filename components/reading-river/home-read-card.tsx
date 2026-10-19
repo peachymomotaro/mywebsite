@@ -72,6 +72,8 @@ export function HomeReadCard({ label, item, emptyMessage }: HomeReadCardProps) {
             {item.sourceUrl ? (
               <a
                 href={item.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="river-spotlight-link river-spotlight-title-wrap river-spotlight-title-clamp"
               >
                 {item.title}
