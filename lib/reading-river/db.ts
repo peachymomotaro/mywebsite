@@ -25,11 +25,7 @@ export function getPrismaClient() {
     return globalForPrisma.prisma;
   }
 
-  const prisma = createPrismaClient();
-
-  if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.prisma = prisma;
-  }
-
-  return prisma;
+  // Reuse the same pool across requests handled by a warm server instance.
+  // Creating a new client on every production request also creates a new pool.
+  return (globalForPrisma.prisma ??= createPrismaClient());
 }

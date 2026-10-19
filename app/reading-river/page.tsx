@@ -2,10 +2,18 @@ import Link from "next/link";
 import { deleteBook } from "@/app/reading-river/actions/books";
 import { BookRoulette } from "@/components/reading-river/book-roulette";
 import { HomeReadCard } from "@/components/reading-river/home-read-card";
-import { TimeBudgetPicker, parseTimeBudgetSearchParam } from "@/components/reading-river/time-budget-picker";
+import {
+  HomeSpotlights,
+  type HomeSpotlightCards,
+} from "@/components/reading-river/home-spotlights";
 import { requireCurrentUser } from "@/lib/reading-river/current-user";
-import { getHomePageData } from "@/lib/reading-river/homepage-data";
+import { getHomePageDataForBudgets } from "@/lib/reading-river/homepage-data";
 import { readingRiverPath } from "@/lib/reading-river/routes";
+import {
+  getTimeBudgetKey,
+  parseTimeBudgetSearchParam,
+  TIME_BUDGET_SELECTIONS,
+} from "@/lib/reading-river/time-budgets";
 import { measureReadingRiverTiming } from "@/lib/reading-river/timing";
 
 export const dynamic = "force-dynamic";
@@ -19,20 +27,37 @@ export default async function ReadingRiverPage({ searchParams }: ReadingRiverPag
     const currentUser = await requireCurrentUser();
     const resolvedSearchParams = (await searchParams) ?? {};
     const selectedTimeBudgetMinutes = parseTimeBudgetSearchParam(resolvedSearchParams.time);
-    const data = await getHomePageData({
-      userId: currentUser.id,
-      timeBudgetMinutes: selectedTimeBudgetMinutes,
-    });
-    const bookRoulettePick = data.bookRoulettePick;
+    const dataByBudget = await getHomePageDataForBudgets({ userId: currentUser.id });
+    const data = dataByBudget[getTimeBudgetKey(selectedTimeBudgetMinutes)];
+
+    // Render the six possible spotlight pairs once. Selecting a time budget
+    // then swaps already-fetched cards rather than making another round trip.
+    const cards = {} as HomeSpotlightCards;
+    for (const minutes of TIME_BUDGET_SELECTIONS) {
+      const pair = dataByBudget[getTimeBudgetKey(minutes)];
+      cards[getTimeBudgetKey(minutes)] = {
+        priority: (
+          <HomeReadCard
+            label="Next priority read"
+            item={pair.priorityRead}
+            emptyMessage="Add something to the stream to get a recommendation."
+          />
+        ),
+        stream: (
+          <HomeReadCard
+            label="From the stream"
+            item={pair.streamRead}
+            emptyMessage="Add another item to unlock a daily stream pick."
+          />
+        ),
+      };
+    }
 
     async function removeBookRoulettePickAction(formData: FormData) {
       "use server";
 
       const bookId = String(formData.get("bookId") || "").trim();
-
-      if (!bookId) {
-        return;
-      }
+      if (!bookId) return;
 
       await deleteBook({ id: bookId });
     }
@@ -43,29 +68,15 @@ export default async function ReadingRiverPage({ searchParams }: ReadingRiverPag
           <div className="river-home-hero-copy">
             <h1 className="river-home-title">Pick your next read</h1>
           </div>
-
           <Link href={readingRiverPath("/add")} className="river-primary-action">
             Add to stream
           </Link>
         </section>
 
-        <section className="river-spotlight-grid">
-          <HomeReadCard
-            label="Next priority read"
-            item={data.priorityRead}
-            emptyMessage="Add something to the stream to get a recommendation."
-          />
-          <HomeReadCard
-            label="From the stream"
-            item={data.streamRead}
-            emptyMessage="Add another item to unlock a daily stream pick."
-          />
-        </section>
-
-        <TimeBudgetPicker selectedMinutes={data.selectedTimeBudgetMinutes} />
+        <HomeSpotlights initialMinutes={selectedTimeBudgetMinutes} cards={cards} />
 
         <BookRoulette
-          book={bookRoulettePick}
+          book={data.bookRoulettePick}
           books={data.bookRouletteBooks}
           removeAction={removeBookRoulettePickAction}
         />
