@@ -2,6 +2,11 @@ import type { DisplayMode } from "@prisma/client";
 import { getPrismaClient } from "@/lib/reading-river/db";
 import { computeSuggestedOrder } from "@/lib/reading-river/ranking";
 import { getOrCreateAppSettings } from "@/lib/reading-river/settings";
+import {
+  getTimeBudgetKey,
+  TIME_BUDGET_SELECTIONS,
+  type TimeBudgetKey,
+} from "@/lib/reading-river/time-budgets";
 
 type HomepageSourceItem = {
   id: string;
@@ -208,8 +213,9 @@ function resolveBucketItems(
     return getSuggestedActiveItems(items, settings);
   }
 
+  const candidates = getBucketCandidates(items);
   for (let index = selectedBucketIndex; index >= 0; index -= 1) {
-    const bucketItems = getBucketCandidates(items).filter((item) => matchesBucket(item, TIME_BUCKETS[index]));
+    const bucketItems = candidates.filter((item) => matchesBucket(item, TIME_BUCKETS[index]));
 
     if (bucketItems.length > 0) {
       return bucketItems;
@@ -352,13 +358,29 @@ export function buildHomePageData(
   };
 }
 
-export async function getHomePageData(options: HomePageDataOptions) {
+export function buildHomePageDataForBudgets(
+  items: HomepageSourceItem[],
+  settings: HomepageSettings,
+  options: Omit<BuildHomePageDataOptions, "timeBudgetMinutes"> = {},
+): Record<TimeBudgetKey, HomePageData> {
+  // Resolve the day once so all time filters show picks from the same day.
+  const dayKey = options.dayKey ?? getDayKey(options.now);
+
+  return Object.fromEntries(
+    TIME_BUDGET_SELECTIONS.map((timeBudgetMinutes) => [
+      getTimeBudgetKey(timeBudgetMinutes),
+      buildHomePageData(items, settings, { ...options, dayKey, timeBudgetMinutes }),
+    ]),
+  ) as Record<TimeBudgetKey, HomePageData>;
+}
+
+async function loadHomePageSources(userId: string) {
   const prisma = getPrismaClient();
   const [settings, items, books] = await Promise.all([
-    getOrCreateAppSettings(options.userId),
+    getOrCreateAppSettings(userId),
     prisma.readingItem.findMany({
       where: {
-        userId: options.userId,
+        userId,
         status: {
           in: ["unread", "reading"],
         },
@@ -390,7 +412,7 @@ export async function getHomePageData(options: HomePageDataOptions) {
     }),
     prisma.book.findMany({
       where: {
-        userId: options.userId,
+        userId,
       },
       select: {
         id: true,
@@ -402,7 +424,21 @@ export async function getHomePageData(options: HomePageDataOptions) {
     }),
   ]);
 
+  return { items, settings, books };
+}
+
+export async function getHomePageData(options: HomePageDataOptions) {
+  const { items, settings, books } = await loadHomePageSources(options.userId);
   const { userId: _userId, ...restOptions } = options;
 
   return buildHomePageData(items, settings, { ...restOptions, books });
+}
+
+export async function getHomePageDataForBudgets(
+  options: Omit<HomePageDataOptions, "timeBudgetMinutes">,
+) {
+  const { items, settings, books } = await loadHomePageSources(options.userId);
+  const { userId: _userId, ...restOptions } = options;
+
+  return buildHomePageDataForBudgets(items, settings, { ...restOptions, books });
 }

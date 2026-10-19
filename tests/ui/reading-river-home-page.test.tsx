@@ -13,7 +13,10 @@ const mocks = vi.hoisted(() => ({
     createdAt: new Date("2026-04-01T12:00:00Z"),
     updatedAt: new Date("2026-04-01T12:00:00Z"),
   })),
-  getHomePageDataMock: vi.fn(async ({ timeBudgetMinutes }: { timeBudgetMinutes: number | null }) => ({
+  getHomePageDataMock: vi.fn(async ({ userId }: { userId: string }) => Object.fromEntries(
+    [null, 5, 10, 15, 30, 45].map((timeBudgetMinutes) => [
+      timeBudgetMinutes === null ? "any" : String(timeBudgetMinutes),
+      ({
     priorityRead: {
       id: "item-1",
       title: "Live stream article",
@@ -43,7 +46,10 @@ const mocks = vi.hoisted(() => ({
       notes: "A gentle nudge from the shelf.",
     },
     selectedTimeBudgetMinutes: timeBudgetMinutes,
-  })),
+    bookRouletteBooks: [],
+  }),
+    ]),
+  )),
   markAsReadMock: vi.fn(async () => {}),
   skipReadingItemMock: vi.fn(async () => {}),
   deleteReadingItemMock: vi.fn(async () => {}),
@@ -70,7 +76,7 @@ vi.mock("@/lib/reading-river/current-user", () => ({
 }));
 
 vi.mock("@/lib/reading-river/homepage-data", () => ({
-  getHomePageData: mocks.getHomePageDataMock,
+  getHomePageDataForBudgets: mocks.getHomePageDataMock,
 }));
 
 vi.mock("@/app/reading-river/actions/reading-items", () => ({
@@ -125,7 +131,6 @@ describe("ReadingRiverHomePage", () => {
     expect(screen.getByText("Terry Pratchett")).toBeInTheDocument();
     expect(mocks.getHomePageDataMock).toHaveBeenCalledWith({
       userId: "user-1",
-      timeBudgetMinutes: 15,
     });
     expect(
       screen.queryByText("A calm reading triage space for choosing the next worthwhile thing to read."),
@@ -162,7 +167,10 @@ describe("ReadingRiverHomePage", () => {
   });
 
   it("marks spotlight titles so overlong URLs can wrap inside the card", async () => {
-    mocks.getHomePageDataMock.mockResolvedValueOnce({
+    mocks.getHomePageDataMock.mockResolvedValueOnce(Object.fromEntries(
+      [null, 5, 10, 15, 30, 45].map((timeBudgetMinutes) => [
+        timeBudgetMinutes === null ? "any" : String(timeBudgetMinutes),
+        ({
       priorityRead: {
         id: "item-1",
         title: "https://example.com/reallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallyreallylong-title-without-breaks",
@@ -181,8 +189,11 @@ describe("ReadingRiverHomePage", () => {
         author: null,
         notes: null,
       },
-      selectedTimeBudgetMinutes: null,
-    });
+      selectedTimeBudgetMinutes: timeBudgetMinutes,
+      bookRouletteBooks: [],
+    }),
+      ]),
+    ));
 
     const { default: ReadingRiverHomePage } = await import("@/app/reading-river/page");
     const page = await ReadingRiverHomePage({});
