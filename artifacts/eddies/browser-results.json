@@ -1,0 +1,73 @@
+{
+  "mobileLayout": {
+    "viewport": 390,
+    "width": 390,
+    "actions": [
+      {
+        "height": 44,
+        "name": "Add article"
+      },
+      {
+        "height": 44,
+        "name": "Mark as read"
+      },
+      {
+        "height": 44,
+        "name": "Remove from eddies"
+      },
+      {
+        "height": 44,
+        "name": "Mark as read"
+      },
+      {
+        "height": 44,
+        "name": "Remove from eddies"
+      },
+      {
+        "height": 44,
+        "name": "Mark as read"
+      },
+      {
+        "height": 44,
+        "name": "Remove from eddies"
+      },
+      {
+        "height": 44,
+        "name": "Mark as read"
+      },
+      {
+        "height": 44,
+        "name": "Remove from eddies"
+      }
+    ],
+    "titleOverflow": false
+  },
+  "focus": {
+    "width": "2px",
+    "style": "solid"
+  },
+  "filterHomepageRequests": 0,
+  "requestsDuringFilter": [
+    {
+      "url": "http://127.0.0.1:3128/reading-river-icon.png",
+      "type": "other"
+    },
+    {
+      "url": "http://127.0.0.1:3128/reading-river/items/9e0cca26-c148-4bac-b59d-b777426d8102/edit?_rsc=hI3KrW4hmFr6fb78",
+      "type": "fetch"
+    },
+    {
+      "url": "http://127.0.0.1:3128/reading-river/items/9e0cca26-c148-4bac-b59d-b777426d8102/edit?_rsc=Qj4CnHuCpwn-6vIE",
+      "type": "fetch"
+    }
+  ],
+  "errors": [],
+  "checks": [
+    "remove preserves article",
+    "read records history and releases slot",
+    "shallow time filter makes no homepage requests",
+    "intake preselected",
+    "edit add/remove revalidates",
+    "full/empty states and inline capacity failure"
+  ]
+}

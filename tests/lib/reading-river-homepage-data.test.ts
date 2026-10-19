@@ -92,6 +92,7 @@ describe("getHomePageData", () => {
         priorityScore: true,
         status: true,
         pinned: true,
+        eddySlot: true,
         createdAt: true,
         tags: {
           select: {
@@ -462,5 +463,28 @@ describe("buildHomePageDataForBudgets", () => {
     expect(variants["5"].priorityRead?.id).toBe("a");
     expect(variants["30"].priorityRead).not.toBeNull();
     expect(variants.any.bookRoulettePick).toEqual(variants["45"].bookRoulettePick);
+  });
+});
+
+
+describe("homepage eddy membership", () => {
+  const settings = { displayMode: "suggested" as const, manualOrderActive: false };
+  const makeItem = (id: string, eddySlot: number | null) => ({
+    id, title: id, sourceType: "url", estimatedMinutes: 5, priorityScore: 8,
+    status: "unread" as const, pinned: false, createdAt: new Date("2026-01-01"), eddySlot,
+  });
+
+  it("offers other articles in the spotlights when suitable alternatives exist", () => {
+    const data = buildHomePageData([makeItem("kept", 1), makeItem("other", null), makeItem("another", null)], settings);
+    expect(data.priorityRead?.id).not.toBe("kept");
+    expect(data.streamRead?.id).not.toBe("kept");
+  });
+
+  it("preserves recommendations and filters when only eddy articles fit", () => {
+    const data = buildHomePageData([makeItem("kept", 1), makeItem("also-kept", 2)], settings, { timeBudgetMinutes: 5 });
+    expect(data.priorityRead).not.toBeNull();
+    expect(data.streamRead).not.toBeNull();
+    expect(data.priorityRead?.id).not.toBe(data.streamRead?.id);
+    expect(data.priorityRead?.estimatedMinutes).toBeLessThanOrEqual(5);
   });
 });

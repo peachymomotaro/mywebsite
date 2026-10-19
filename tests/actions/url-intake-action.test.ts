@@ -93,6 +93,7 @@ function buildReviewState({
 }: {
   message?: string;
   draftValues?: {
+    addToEddies?: boolean;
     url?: string;
     title?: string;
     notes?: string;
@@ -125,6 +126,7 @@ function buildReviewState({
     status: "review" as const,
     message,
     draftValues: {
+      addToEddies: false,
       url: "https://example.com/essay",
       title: "Essay",
       notes: "Why this belongs in the stream",
@@ -426,6 +428,7 @@ describe("submitUrlIntake", () => {
       status: "review",
       message: "Fetched article details. Review the title and reading time, then save it.",
       draftValues: {
+        addToEddies: false,
         url: "https://example.com/redirect",
         title: "Redirected Essay",
         notes: "Why this belongs in the stream",
@@ -493,6 +496,7 @@ describe("submitUrlIntake", () => {
       message:
         "I couldn't fetch this page. Review the title and add a reading time before saving it manually.",
       draftValues: {
+        addToEddies: false,
         url: "https://example.com/essay",
         title: "Essay override",
         notes: "Why this belongs in the stream",
@@ -568,6 +572,7 @@ describe("submitUrlIntake", () => {
       status: "error",
       message: "That link is already in your stream.",
       draftValues: {
+        addToEddies: false,
         url: "https://example.com/essay",
         title: "Essay override",
         notes: "Why this belongs in the stream",
@@ -591,6 +596,7 @@ describe("submitUrlIntake", () => {
         message:
           "I couldn't fetch this page. Review the title and add a reading time before saving it manually.",
         draftValues: {
+        addToEddies: false,
           title: "Essay override",
           estimatedMinutes: "",
         },
@@ -617,6 +623,7 @@ describe("submitUrlIntake", () => {
       status: "review",
       message: "Add an estimated reading time before saving this article.",
       draftValues: {
+        addToEddies: false,
         url: "https://example.com/essay",
         title: "Essay override",
         notes: "Why this belongs in the stream",
@@ -657,6 +664,7 @@ describe("submitUrlIntake", () => {
         message:
           "I couldn't fetch this page. Review the title and add a reading time before saving it manually.",
         draftValues: {
+        addToEddies: false,
           title: "Essay override",
           estimatedMinutes: "",
         },
@@ -723,6 +731,7 @@ describe("submitUrlIntake", () => {
       status: "review",
       message: "Fetched article details. Review the title and reading time, then save it.",
       draftValues: {
+        addToEddies: false,
         url: "https://example.com/essay",
         title: "Essay",
         notes: "Why this belongs in the stream",
@@ -771,6 +780,7 @@ describe("submitUrlIntake", () => {
     expect(result).toMatchObject({
       status: "review",
       draftValues: {
+        addToEddies: false,
         estimatedMinutes: "12",
       },
       reviewMetadata: {
@@ -793,7 +803,8 @@ describe("submitUrlIntake", () => {
       title: "Essay",
     });
 
-    const result = await submitUrlIntake(buildReviewState({ draftValues: { title: "" } }), formData);
+    const result = await submitUrlIntake(buildReviewState({ draftValues: {
+        addToEddies: false, title: "" } }), formData);
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(createMock).toHaveBeenCalledWith({
@@ -886,6 +897,7 @@ describe("submitUrlIntake", () => {
       status: "review",
       message: "Fetched article details. Review the title and reading time, then save it.",
       draftValues: {
+        addToEddies: false,
         url: "https://example.com/updated",
         title: "Updated essay",
         notes: "Why this belongs in the stream",
@@ -936,6 +948,7 @@ describe("submitUrlIntake", () => {
       message:
         "I found the article, but the reading time still needs your confirmation before saving.",
       draftValues: {
+        addToEddies: false,
         url: "https://example.com/essay",
         title: "Short note",
         notes: "Why this belongs in the stream",
@@ -980,6 +993,7 @@ describe("submitUrlIntake", () => {
         message:
           "I found the article, but the reading time still needs your confirmation before saving.",
         draftValues: {
+        addToEddies: false,
           title: "Short note",
           estimatedMinutes: "1",
         },
@@ -1081,6 +1095,7 @@ describe("submitUrlIntake", () => {
       status: "review",
       message: "Fetched article details. Review the title and reading time, then save it.",
       draftValues: {
+        addToEddies: false,
         url: "https://davidepstein.substack.com/p/how-to-improve-your-information-diet",
         title: "How To Improve Your Information Diet",
         notes: "Why this belongs in the stream",
@@ -1139,6 +1154,7 @@ describe("submitUrlIntake", () => {
       status: "review",
       message: "Fetched article details. Review the title and reading time, then save it.",
       draftValues: {
+        addToEddies: false,
         url: "https://davidepstein.substack.com/p/how-to-improve-your-information-diet",
         title: "How To Improve Your Information Diet",
         notes: "Why this belongs in the stream",
@@ -1201,6 +1217,7 @@ describe("submitUrlIntake", () => {
       message:
         "I found the article, but the reading time still needs your confirmation before saving.",
       draftValues: {
+        addToEddies: false,
         url: "https://davidepstein.substack.com/p/how-to-improve-your-information-diet",
         title: "How To Improve Your Information Diet",
         notes: "Why this belongs in the stream",

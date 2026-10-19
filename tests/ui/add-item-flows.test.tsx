@@ -105,6 +105,11 @@ describe("AddPage", () => {
     expect(screen.queryByRole("button", { name: "Add chapter" })).not.toBeInTheDocument();
   });
 
+  it("preselects eddies intake only when opened from the section", async () => {
+    render(await AddPage({ searchParams: Promise.resolve({ eddies: "1" }) }));
+    expect(screen.getByRole("checkbox", { name: "Add to the eddies" })).toBeChecked();
+  });
+
   it("shows inline success feedback for the URL form", () => {
     useActionStateMock.mockImplementationOnce(() => [
       {

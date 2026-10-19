@@ -1,3 +1,5 @@
+import { EddiesSection } from "@/components/reading-river/eddies-section";
+import { getEddyArticles } from "@/lib/reading-river/eddies";
 import Link from "next/link";
 import { deleteBook } from "@/app/reading-river/actions/books";
 import { BookRoulette } from "@/components/reading-river/book-roulette";
@@ -27,7 +29,10 @@ export default async function ReadingRiverPage({ searchParams }: ReadingRiverPag
     const currentUser = await requireCurrentUser();
     const resolvedSearchParams = (await searchParams) ?? {};
     const selectedTimeBudgetMinutes = parseTimeBudgetSearchParam(resolvedSearchParams.time);
-    const dataByBudget = await getHomePageDataForBudgets({ userId: currentUser.id });
+    const [dataByBudget, eddies] = await Promise.all([
+      getHomePageDataForBudgets({ userId: currentUser.id }),
+      getEddyArticles(currentUser.id),
+    ]);
     const data = dataByBudget[getTimeBudgetKey(selectedTimeBudgetMinutes)];
 
     // Render the six possible spotlight pairs once. Selecting a time budget
@@ -74,6 +79,8 @@ export default async function ReadingRiverPage({ searchParams }: ReadingRiverPag
         </section>
 
         <HomeSpotlights initialMinutes={selectedTimeBudgetMinutes} cards={cards} />
+
+        <EddiesSection items={eddies} />
 
         <BookRoulette
           book={data.bookRoulettePick}

@@ -56,6 +56,8 @@ const mocks = vi.hoisted(() => ({
   deleteBookMock: vi.fn(async () => {}),
 }));
 
+vi.mock("@/lib/reading-river/eddies", () => ({ getEddyArticles: vi.fn(async () => []) }));
+
 vi.mock("next/link", () => ({
   default: ({
     children,

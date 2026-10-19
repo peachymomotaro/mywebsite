@@ -173,6 +173,8 @@ model ReadingItem {
   manualRank                 Int?
   suggestedRank              Int?
   pinned                     Boolean                    @default(false)
+  eddySlot                   Int?
+  eddyAddedAt                DateTime?
   userId                     String
   bookId                     String?
   chapterIndex               Int?
@@ -186,6 +188,7 @@ model ReadingItem {
 
   @@index([userId])
   @@unique([userId, id])
+  @@unique([userId, eddySlot])
   @@index([bookId])
   @@index([status])
 }

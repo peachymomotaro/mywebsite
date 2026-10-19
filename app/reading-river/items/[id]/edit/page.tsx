@@ -1,3 +1,4 @@
+import { EddyArticleActions } from "@/components/reading-river/eddy-article-actions";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { TagInput } from "@/components/reading-river/tag-input";
@@ -53,6 +54,9 @@ export default async function ReadingRiverEditItemPage({
       id: true,
       title: true,
       sourceType: true,
+      status: true,
+      eddySlot: true,
+      readEvent: { select: { id: true } },
       sourceUrl: true,
       estimatedMinutes: true,
       priorityScore: true,
@@ -86,6 +90,13 @@ export default async function ReadingRiverEditItemPage({
         {getErrorMessage(error) ? (
           <div aria-live="polite" className="intake-feedback intake-feedback-error">
             <p className="intake-feedback-message">{getErrorMessage(error)}</p>
+          </div>
+        ) : null}
+
+        {item.sourceType !== "manual" && item.sourceType !== "book_chapter" &&
+         ["unread", "reading"].includes(item.status) && !item.readEvent ? (
+          <div className="river-eddy-edit-membership">
+            <EddyArticleActions id={item.id} inEddies={item.eddySlot != null} />
           </div>
         ) : null}
 

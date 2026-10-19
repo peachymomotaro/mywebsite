@@ -18,6 +18,7 @@ type HomepageSourceItem = {
   priorityScore: number | null;
   status: "unread" | "reading" | "done" | "not_now" | "archived";
   pinned: boolean;
+  eddySlot?: number | null;
   manualRank?: number | null;
   suggestedRank?: number | null;
   createdAt: Date;
@@ -56,6 +57,7 @@ export type HomePageFeaturedItem = {
   priorityScore: number | null;
   status: "unread" | "reading" | "done" | "not_now" | "archived";
   pinned: boolean;
+  eddySlot?: number | null;
   tags: string[];
 };
 
@@ -111,6 +113,7 @@ function toFeaturedItem(item: HomepageSourceItem): HomePageFeaturedItem {
     priorityScore: item.priorityScore,
     status: item.status,
     pinned: item.pinned,
+    eddySlot: item.eddySlot ?? null,
     tags: item.tags?.map(({ tag }) => tag.name) ?? [],
   };
 }
@@ -337,14 +340,17 @@ export function buildHomePageData(
   const selectedTimeBudgetMinutes = options.timeBudgetMinutes ?? null;
   const dayKey = options.dayKey ?? getDayKey(options.now);
   const articleItems = getArticleItems(items);
-  const suggestedItems = resolveBucketItems(
-    getPriorityCandidates(articleItems),
-    selectedTimeBudgetMinutes,
-    settings,
-  );
-  const streamItems = resolveStreamItems(articleItems, selectedTimeBudgetMinutes);
+  // Offer other articles when possible; retain the existing ranking, daily picks
+  // and time-budget fallback when the eddies contain the only suitable choices.
+  const outsideEddies = articleItems.filter((item) => item.eddySlot == null);
+  let suggestedItems = resolveBucketItems(getPriorityCandidates(outsideEddies), selectedTimeBudgetMinutes, settings);
+  if (suggestedItems.length === 0) {
+    suggestedItems = resolveBucketItems(getPriorityCandidates(articleItems), selectedTimeBudgetMinutes, settings);
+  }
+  const streamItems = resolveStreamItems(outsideEddies, selectedTimeBudgetMinutes);
   const priorityItem = pickPriorityItem(suggestedItems, dayKey, settings);
-  const streamItem = pickDailyStreamItem(streamItems, dayKey, priorityItem?.id);
+  const streamItem = pickDailyStreamItem(streamItems, dayKey, priorityItem?.id) ??
+    pickDailyStreamItem(resolveStreamItems(articleItems, selectedTimeBudgetMinutes), dayKey, priorityItem?.id);
   const books = options.books ?? [];
   const bookRoulettePick = pickDailyBook(books, dayKey);
   const bookRouletteBooks = books.map(toHomePageBook);
@@ -398,6 +404,7 @@ async function loadHomePageSources(userId: string) {
         priorityScore: true,
         status: true,
         pinned: true,
+        eddySlot: true,
         createdAt: true,
         tags: {
           select: {
