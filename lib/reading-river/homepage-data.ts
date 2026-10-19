@@ -377,7 +377,7 @@ export function buildHomePageDataForBudgets(
 async function loadHomePageSources(userId: string) {
   const prisma = getPrismaClient();
   const [settings, items, books] = await Promise.all([
-    getOrCreateAppSettings(options.userId),
+    getOrCreateAppSettings(userId),
     prisma.readingItem.findMany({
       where: {
         userId,
