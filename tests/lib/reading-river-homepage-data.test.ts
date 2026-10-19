@@ -20,7 +20,7 @@ vi.mock("@/lib/reading-river/settings", () => ({
   getOrCreateAppSettings: mocks.getOrCreateAppSettingsMock,
 }));
 
-import { buildHomePageData, getHomePageData } from "@/lib/reading-river/homepage-data";
+import { buildHomePageData, buildHomePageDataForBudgets, getHomePageData } from "@/lib/reading-river/homepage-data";
 
 function createPrismaMock() {
   const readingItemFindMany = vi.fn();
@@ -441,5 +441,26 @@ describe("getHomePageData", () => {
 
     expect(firstPick).not.toBeNull();
     expect(secondPick).toEqual(firstPick);
+  });
+});
+
+describe("buildHomePageDataForBudgets", () => {
+  it("prepares all six selections with the same daily book and correct time-budget keys", () => {
+    const items = [
+      { id: "a", title: "Short read", sourceType: "url", estimatedMinutes: 5, priorityScore: 9,
+        status: "unread" as const, pinned: false, createdAt: new Date("2026-06-01"), tags: [] },
+      { id: "b", title: "Long read", sourceType: "url", estimatedMinutes: 25, priorityScore: 8,
+        status: "unread" as const, pinned: false, createdAt: new Date("2026-06-02"), tags: [] },
+    ];
+    const settings = { displayMode: "suggested" as const, manualOrderActive: false,
+      highPriorityThreshold: 7, shortReadThresholdMinutes: 25 };
+    const variants = buildHomePageDataForBudgets(items, settings, {
+      dayKey: "2026-06-03",
+      books: [{ id: "book", title: "Book", createdAt: new Date("2026-06-01") }],
+    });
+    expect(Object.keys(variants)).toEqual(["any", "5", "10", "15", "30", "45"]);
+    expect(variants["5"].priorityRead?.id).toBe("a");
+    expect(variants["30"].priorityRead).not.toBeNull();
+    expect(variants.any.bookRoulettePick).toEqual(variants["45"].bookRoulettePick);
   });
 });
