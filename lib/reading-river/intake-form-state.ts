@@ -4,6 +4,7 @@ import type {
 } from "@/lib/reading-river/article-length-estimation";
 
 export type UrlIntakeDraftValues = {
+  addToEddies?: boolean;
   url: string;
   title: string;
   notes: string;

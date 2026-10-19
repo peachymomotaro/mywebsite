@@ -1,5 +1,7 @@
 "use server";
 
+import type { Prisma } from "@prisma/client";
+import { EddyError, setEddyMembership, withEddyTransaction } from "@/lib/reading-river/eddies";
 import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 import { getPrismaClient } from "@/lib/reading-river/db";
@@ -61,6 +63,7 @@ const FETCH_TIMEOUT_MS = 10_000;
 const MAX_FETCH_REDIRECTS = 5;
 
 type IngestUrlInput = {
+  addToEddies?: boolean;
   url: string;
   title?: string | null;
   notes?: string | null;
@@ -133,6 +136,7 @@ function buildDraftValues(formData: FormData): UrlIntakeDraftValues {
     priorityScore: priorityScore || "5",
     estimatedMinutes: String(formData.get("estimatedMinutes") ?? "").trim(),
     tagNames: String(formData.get("tagNames") ?? "").trim(),
+    addToEddies: formData.get("addToEddies") === "on",
   };
 }
 
@@ -507,9 +511,9 @@ async function fetchExtractedArticle(url: string, userId: string) {
   return (await fetchEstimatedArticleFromSubstackFeed(url, wordsPerMinute)) ?? directEstimation;
 }
 
-export async function ingestUrl(input: IngestUrlInput, userId?: string) {
+export async function ingestUrl(input: IngestUrlInput) {
   const prisma = getPrismaClient();
-  const currentUserId = userId ?? (await requireCurrentUser()).id;
+  const currentUserId = (await requireCurrentUser()).id;
   const createRateLimit = await consumeItemCreateRateLimit(currentUserId);
 
   if (!createRateLimit.allowed) {
@@ -530,33 +534,42 @@ export async function ingestUrl(input: IngestUrlInput, userId?: string) {
   const estimation = input.estimation ?? null;
   const fallbackTitle =
     normalizeOptionalLimitedString(input.title, READING_RIVER_LIMITS.titleLength) ?? url;
-  const normalizedSourceUrl = await assertNoDuplicateReadingItemSourceUrl(prisma, currentUserId, url);
+  const createItem = async (client: Pick<Prisma.TransactionClient, "readingItem">) => {
+    const normalizedSourceUrl = await assertNoDuplicateReadingItemSourceUrl(client, currentUserId, url);
+    return client.readingItem.create({
+      data: {
+        userId: currentUserId,
+        title:
+          normalizeOptionalLimitedString(input.title, READING_RIVER_LIMITS.titleLength) ??
+          normalizeOptionalLimitedString(estimation?.title, READING_RIVER_LIMITS.titleLength) ??
+          fallbackTitle,
+        sourceType: "url",
+        sourceUrl: normalizedSourceUrl,
+        notes: normalizeOptionalLimitedString(input.notes, READING_RIVER_LIMITS.notesLength),
+        estimatedMinutes: input.estimatedMinutes,
+        priorityScore: input.priorityScore === undefined ? 5 : input.priorityScore,
+        status: "unread",
+        siteName: estimation?.siteName ?? null,
+        author: normalizeOptionalLimitedString(estimation?.author, READING_RIVER_LIMITS.authorLength),
+        extractedText: normalizeOptionalLimitedString(
+          estimation?.extractedText,
+          READING_RIVER_LIMITS.extractedTextLength,
+        ),
+        wordCount: estimation?.wordCount ?? null,
+        lengthEstimationMethod: input.lengthEstimationMethod,
+        lengthEstimationConfidence: input.lengthEstimationConfidence,
+        tags: buildTagWrite(currentUserId, input.tagNames ?? []),
+      },
+    });
+  };
 
-  const item = await prisma.readingItem.create({
-    data: {
-      userId: currentUserId,
-      title:
-        normalizeOptionalLimitedString(input.title, READING_RIVER_LIMITS.titleLength) ??
-        normalizeOptionalLimitedString(estimation?.title, READING_RIVER_LIMITS.titleLength) ??
-        fallbackTitle,
-      sourceType: "url",
-      sourceUrl: normalizedSourceUrl,
-      notes: normalizeOptionalLimitedString(input.notes, READING_RIVER_LIMITS.notesLength),
-      estimatedMinutes: input.estimatedMinutes,
-      priorityScore: input.priorityScore === undefined ? 5 : input.priorityScore,
-      status: "unread",
-      siteName: estimation?.siteName ?? null,
-      author: normalizeOptionalLimitedString(estimation?.author, READING_RIVER_LIMITS.authorLength),
-      extractedText: normalizeOptionalLimitedString(
-        estimation?.extractedText,
-        READING_RIVER_LIMITS.extractedTextLength,
-      ),
-      wordCount: estimation?.wordCount ?? null,
-      lengthEstimationMethod: input.lengthEstimationMethod,
-      lengthEstimationConfidence: input.lengthEstimationConfidence,
-      tags: buildTagWrite(currentUserId, input.tagNames ?? []),
-    },
-  });
+  const item = input.addToEddies
+    ? await withEddyTransaction(currentUserId, async (tx) => {
+        const created = await createItem(tx);
+        await setEddyMembership(tx, currentUserId, created.id, true);
+        return created;
+      })
+    : await createItem(prisma);
 
   revalidatePath(STREAM_PATH);
 
@@ -651,6 +664,7 @@ export async function submitUrlIntake(
       const item = await ingestUrl(
         {
           url,
+          addToEddies: draftValues.addToEddies,
           title: titleOverride,
           notes,
           priorityScore,
@@ -660,12 +674,11 @@ export async function submitUrlIntake(
           lengthEstimationMethod: shouldSaveAsManual ? "manual" : estimation.method,
           lengthEstimationConfidence: shouldSaveAsManual ? "unknown" : estimation.confidence,
         },
-        currentUser.id,
       );
 
       return {
         status: "success",
-        message: `Added "${item.title || fallbackTitle}" to the stream.`,
+        message: `Added "${item.title || fallbackTitle}" to ${draftValues.addToEddies ? "the stream and the eddies" : "the stream"}.`,
         savedTitle: item.title || fallbackTitle,
         submittedAt: Date.now(),
       };
@@ -728,6 +741,16 @@ export async function submitUrlIntake(
     });
   } catch (error) {
     unstable_rethrow(error);
+
+    if (error instanceof EddyError) {
+      return {
+        ...previousState,
+        status: previousState.status === "review" ? "review" : "error",
+        message: error.message,
+        draftValues,
+        submittedAt: Date.now(),
+      };
+    }
 
     if (isDuplicateReadingItemUrlError(error)) {
       return buildDuplicateUrlState(previousState, draftValues);

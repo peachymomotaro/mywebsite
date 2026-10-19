@@ -1,7 +1,7 @@
 import { getPrismaClient } from "@/lib/reading-river/db";
 import { READING_RIVER_LIMITS } from "@/lib/reading-river/input-limits";
 
-type ReadingRiverPrismaClient = ReturnType<typeof getPrismaClient>;
+type ReadingRiverPrismaClient = Pick<ReturnType<typeof getPrismaClient>, "readingItem">;
 
 export class DuplicateReadingItemUrlError extends Error {
   duplicateItemId?: string;

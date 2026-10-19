@@ -18,13 +18,13 @@ function SubmitButton({
   const { pending } = useFormStatus();
 
   return (
-    <button type="submit" className="intake-submit-button">
+    <button type="submit" className="intake-submit-button" disabled={pending}>
       {pending ? pendingLabel : idleLabel}
     </button>
   );
 }
 
-export function UrlIntakeForm({ knownTagNames = [] }: { knownTagNames?: string[] }) {
+export function UrlIntakeForm({ knownTagNames = [], defaultAddToEddies = false }: { knownTagNames?: string[]; defaultAddToEddies?: boolean }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction] = useActionState(submitUrlIntake, initialIntakeFormState);
   const isReview = state.status === "review";
@@ -36,6 +36,7 @@ export function UrlIntakeForm({ knownTagNames = [] }: { knownTagNames?: string[]
     priorityScore: "5",
     estimatedMinutes: "",
     tagNames: "",
+    addToEddies: defaultAddToEddies,
   };
 
   useEffect(() => {
@@ -150,6 +151,10 @@ export function UrlIntakeForm({ knownTagNames = [] }: { knownTagNames?: string[]
             placeholder="work, essays"
           />
         </div>
+        <label className="river-eddy-checkbox">
+          <input name="addToEddies" type="checkbox" defaultChecked={draftValues.addToEddies ?? false} />
+          <span>Add to the eddies</span>
+        </label>
         {!isReview ? (
           <div className="intake-submit-row intake-submit-row-start">
             <SubmitButton idleLabel="Fetch details" pendingLabel="Fetching details..." />

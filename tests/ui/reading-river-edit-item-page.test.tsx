@@ -64,6 +64,9 @@ describe("ReadingRiverEditItemPage", () => {
           id: "item-1",
           title: "Live stream article",
           sourceType: "url",
+          status: "unread",
+          eddySlot: null,
+          readEvent: null,
           sourceUrl: "https://example.com/live-stream",
           estimatedMinutes: 9,
           priorityScore: null,
@@ -92,6 +95,7 @@ describe("ReadingRiverEditItemPage", () => {
     render(page);
 
     expect(screen.getByRole("heading", { name: "Edit item" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Keep in the eddies" })).toBeInTheDocument();
     expect(screen.getByLabelText("Title")).toHaveValue("Live stream article");
     expect(screen.getByLabelText("Source URL")).toHaveValue(
       "https://example.com/live-stream",

@@ -1,3 +1,4 @@
+import { EddyArticleActions } from "@/components/reading-river/eddy-article-actions";
 import Link from "next/link";
 import {
   deleteReadingItem,
@@ -110,6 +111,7 @@ export function HomeReadCard({ label, item, emptyMessage }: HomeReadCardProps) {
               </form>
               <HomeRemoveAction removeAction={deleteReadingItemAction} />
             </div>
+            <EddyArticleActions id={item.id} inEddies={item.eddySlot != null} />
             <div className="river-spotlight-tags-row">
               <HomeCardTags tags={item.tags} />
             </div>

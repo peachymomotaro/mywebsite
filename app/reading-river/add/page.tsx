@@ -4,9 +4,11 @@ import { UrlIntakeForm } from "@/components/reading-river/url-intake-form";
 import { getKnownTagNames } from "@/lib/reading-river/known-tags";
 import { measureReadingRiverTiming } from "@/lib/reading-river/timing";
 
-export default async function AddPage() {
+export default async function AddPage({ searchParams }: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+} = {}) {
   return measureReadingRiverTiming("page.reading-river-add.render", async () => {
-    const knownTagNames = await getKnownTagNames();
+    const [knownTagNames, params] = await Promise.all([getKnownTagNames(), searchParams]);
 
     return (
       <main className="river-page">
@@ -18,7 +20,7 @@ export default async function AddPage() {
         </section>
 
         <AddItemTabs
-          articleContent={<UrlIntakeForm knownTagNames={knownTagNames} />}
+          articleContent={<UrlIntakeForm knownTagNames={knownTagNames} defaultAddToEddies={params?.eddies === "1"} />}
           bookContent={<BookForm />}
         />
       </main>

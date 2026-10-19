@@ -1,5 +1,6 @@
 "use server";
 
+import { clearedEddyMembership } from "@/lib/reading-river/eddy-state";
 import { revalidatePath } from "next/cache";
 import { getPrismaClient } from "@/lib/reading-river/db";
 import { requireCurrentUser } from "@/lib/reading-river/current-user";
@@ -101,6 +102,9 @@ export async function updateReadingItem(input: unknown) {
       data: {
         userId: currentUser.id,
         ...restData,
+        ...((restData.status && !["unread", "reading"].includes(restData.status)) ||
+            restData.sourceType === "manual" || restData.sourceType === "book_chapter"
+          ? clearedEddyMembership : {}),
         ...(restData.bookId !== undefined ? { bookId } : {}),
         ...(sourceUrl !== undefined ? { sourceUrl: normalizedSourceUrl } : {}),
         ...(tagNames
@@ -178,7 +182,7 @@ export async function setReadingStatus(input: unknown) {
         id: ownedItem.id,
       },
     },
-    data: { status: parsed.status },
+    data: { status: parsed.status, ...(!["unread", "reading"].includes(parsed.status) ? clearedEddyMembership : {}) },
   });
 
   revalidatePath(STREAM_PATH);
@@ -214,7 +218,7 @@ export async function markAsRead(input: unknown) {
           id: ownedItem.id,
         },
       },
-      data: { status: "done" },
+      data: { status: "done", ...clearedEddyMembership },
     });
   });
 

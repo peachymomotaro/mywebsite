@@ -113,6 +113,7 @@ describe("submitUrlIntake jsdom runtime failures", () => {
       message:
         "I found the article, but the reading time still needs your confirmation before saving.",
       draftValues: {
+        addToEddies: false,
         url: "https://example.com/runtime-failure",
         title: "Runtime failure",
         notes: "Why this belongs in the stream",
