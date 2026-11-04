@@ -48,9 +48,8 @@ export default function HowItWorksPage() {
             <p> 2. Put the things you think are worthwhile into the river, where they
               become fiches. Set how important a fiche is to you by using the priority setting.</p>
             <p> 3. When you want to read something, return to the river and go ficheing. </p>
-            <p> 4. The left option is the &apos;most important&apos; option based on the
-              priority setting and the amount of time you have. The right button is a
-              randomly selected piece of reading.</p>
+            <p> 4. Three pieces drift by at a time. Choose one to bring it to the bank,
+              or let them drift on and three others will come into view.</p>
             <p>
               5. I&apos;d recommend installing the Firefox extension, found{" "}
               <a
@@ -87,22 +86,25 @@ export default function HowItWorksPage() {
               clear whether it was worth reading.
             </p>
             <p>
-              If you&apos;re interested, the priority algorithm for Reading River is
-              as follows: 
+              If you&apos;re interested, here is how the river chooses what drifts by:
             </p>
             <p>
-              If you set how long you have to read, it first winnows your list down to pieces
-              that fit that budget, falling back to shorter options if needed. 
-              Then it sorts by a simple equation that considers the priority, reading
-              time, and age.
+              If you set how long you have to read, only pieces that fit that time drift by.
+              Then three are chosen by gentle chance. Priority makes a piece up to five times
+              as likely to appear, for fourteen days after you set it; after that it returns to
+              ordinary chance unless you renew it. Anything that has just drifted past is less
+              likely for a few days. Everything keeps some chance of appearing.
             </p>
             <p>
-              If you do not choose a time budget, it prefers high-priority short reads, 
-              then high-priority long reads, then lower-priority short reads, and then 
-              everything else. 
+              The same three stay put for the day so you can settle on one. If you look at a
+              piece on two separate days without opening it, it rests upstream for three days;
+              if it comes back and passes you again, it rests for a week. Letting them drift on
+              never counts against anything, and nothing is marked or deleted.
             </p>
             <p>
-              Skipping a read lowers its priority score, making it less likely to appear in future.
+              Anything you open stays on the bank, under Still reading, until you mark it as read
+              or put it back in the river. Pieces that drifted past in the last week can be found
+              again just below.
             </p>
              <p>
               Here are some of the sites that influenced the design of the Reading River:

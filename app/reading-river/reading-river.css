@@ -1484,3 +1484,658 @@ summary.auth-text-button::-webkit-details-marker {
 .river-eddy-checkbox { display: flex; align-items: center; gap: 0.75rem; min-height: 44px; }
 .river-eddy-checkbox input { width: 1.1rem; height: 1.1rem; accent-color: hsl(var(--river-teal)); }
 .river-eddy-edit-membership { padding-bottom: 1rem; border-bottom: 1px solid hsl(var(--border)); }
+
+/* ------------------------------------------------------------------ */
+/* The garden river                                                    */
+/* A still garden — raked gravel, stones, moss — with a slow river      */
+/* carrying three pieces past. Motion is slow and stops when you look.  */
+/* ------------------------------------------------------------------ */
+
+:root {
+  --garden-gravel: 38 24% 92%;
+  --garden-rake: 34 16% 80%;
+  --garden-bank: 36 18% 84%;
+  --garden-moss: 96 18% 48%;
+  --garden-water: 188 34% 81%;
+  --garden-water-deep: 191 36% 72%;
+  --garden-paper: 40 45% 98%;
+  --garden-ease-drift: cubic-bezier(0.25, 0.6, 0.3, 1);
+  --garden-ease-leave: cubic-bezier(0.5, 0, 0.85, 0.4);
+}
+
+/* App-wide stillness: quieter light, gentler labels, more air. */
+body {
+  background:
+    radial-gradient(ellipse 70% 40% at 50% 0%, hsl(var(--garden-gravel) / 0.6), transparent 70%),
+    hsl(var(--background));
+  line-height: 1.7;
+}
+
+.editorial-shell::before { opacity: 0.45; }
+
+.river-section-label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: hsl(var(--muted-foreground));
+}
+
+.river-home-page { gap: clamp(2.4rem, 5vw, 4.25rem); }
+
+.river-home-title {
+  font-weight: 500;
+  letter-spacing: -0.035em;
+}
+
+.river-primary-action {
+  min-height: 3rem;
+  padding: 0.75rem 1.35rem;
+  box-shadow: none;
+}
+
+.river-shell-nav-link:focus-visible,
+.river-primary-action:focus-visible,
+.river-home-page .river-time-pill:focus-visible,
+.river-book-roulette-title:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 3px;
+}
+
+.river-eddies-list li { padding: 1.6rem 0 1.2rem; }
+
+.river-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The garden ----------------------------------------------------------- */
+
+.river-drift {
+  display: grid;
+  gap: clamp(1.4rem, 3vw, 2rem);
+}
+
+.garden {
+  position: relative;
+  container-type: size;
+  /* Breathe a little wider than the text column on large screens. */
+  width: min(calc(100% + 6rem), calc(100vw - 2rem));
+  margin-inline: calc((100% - min(calc(100% + 6rem), calc(100vw - 2rem))) / 2);
+  aspect-ratio: 1200 / 440;
+  overflow: hidden;
+  border-radius: 2.25rem;
+  background: hsl(var(--garden-gravel));
+  box-shadow: 0 0 0 1px hsl(var(--garden-rake) / 0.6) inset;
+}
+
+.garden-scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* The current: very slow, faster only while things drift on. */
+.garden-current-line {
+  animation: garden-flow 26s linear infinite;
+}
+.garden-current-line-1 { animation-duration: 34s; animation-delay: -9s; }
+.garden-current-line-2 { animation-duration: 30s; animation-delay: -17s; }
+.garden-current-line-3 { animation-duration: 38s; animation-delay: -4s; }
+
+.river-drift[data-phase="leaving"] .garden-current-line,
+.river-drift[data-phase="arriving"] .garden-current-line {
+  animation-duration: 7s;
+}
+
+@keyframes garden-flow {
+  from { stroke-dashoffset: 400; }
+  to { stroke-dashoffset: 0; }
+}
+
+.garden-petal {
+  animation: garden-petal 70s linear infinite;
+}
+.garden-petal-1 { animation-duration: 84s; animation-delay: -30s; }
+.garden-petal-2 { animation-duration: 76s; animation-delay: -52s; }
+.garden-petal-3 { animation-duration: 92s; animation-delay: -12s; }
+
+@keyframes garden-petal {
+  from { transform: translateX(-40px) rotate(0deg); }
+  to { transform: translateX(1240px) rotate(240deg); }
+}
+
+/* Pieces afloat -------------------------------------------------------- */
+
+.garden-afloat {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.garden-float {
+  position: absolute;
+  left: calc(var(--x) * 100%);
+  top: calc(var(--y) * 100%);
+  width: clamp(12rem, 23cqw, 17.5rem);
+  transform: translate(-50%, -50%);
+}
+
+/* Slow wandering along the current and a gentle bob, paused on hover,
+   focus or while one is on the bank, so it is easy to settle. */
+.garden-float-drift {
+  animation:
+    garden-wander calc(36s + var(--i) * 7s) ease-in-out infinite alternate,
+    garden-bob calc(6.5s + var(--i) * 1.3s) ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * -9s), calc(var(--i) * -2s);
+}
+
+.garden:hover .garden-float-drift,
+.garden:focus-within .garden-float-drift,
+.river-drift:has(.river-bank-lifted) .garden-float-drift {
+  animation-play-state: paused;
+}
+
+@keyframes garden-wander {
+  from { translate: -2.2cqw 0; }
+  to { translate: 2.2cqw 0; }
+}
+
+@keyframes garden-bob {
+  from { transform: translateY(-3px) rotate(var(--tilt)); }
+  to { transform: translateY(3px) rotate(calc(var(--tilt) * -0.4)); }
+}
+
+.garden-float-card {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 1rem 1.15rem 0.95rem;
+  border: 1px solid hsl(var(--garden-rake) / 0.9);
+  border-radius: 0.9rem 1.15rem 1rem 0.8rem;
+  background:
+    linear-gradient(135deg, hsl(0 0% 100% / 0.7), transparent 45%),
+    hsl(var(--garden-paper));
+  color: hsl(var(--foreground));
+  text-align: left;
+  cursor: pointer;
+  box-shadow:
+    0 1px 0 hsl(0 0% 100%) inset,
+    0 14px 18px -12px hsl(195 40% 22% / 0.38),
+    0 3px 6px -2px hsl(195 40% 22% / 0.12);
+  transition: box-shadow 400ms var(--garden-ease-drift), transform 400ms var(--garden-ease-drift);
+}
+
+.garden-float-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 1px 0 hsl(0 0% 100%) inset,
+    0 20px 24px -14px hsl(195 40% 22% / 0.42),
+    0 3px 6px -2px hsl(195 40% 22% / 0.12);
+}
+
+.garden-float-card:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 4px;
+}
+
+.garden-float-card:disabled { cursor: default; }
+
+.garden-float-lifted .garden-float-card {
+  border-color: hsl(var(--river-teal));
+  box-shadow:
+    0 0 0 3px hsl(var(--river-teal) / 0.22),
+    0 20px 24px -14px hsl(195 40% 22% / 0.42);
+}
+
+.garden-float-title {
+  font-family: var(--font-serif);
+  font-size: clamp(1rem, 1.5cqw, 1.2rem);
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.garden-float-meta,
+.river-bank-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.6rem;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: hsl(var(--muted-foreground));
+}
+
+.garden-float-priority {
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background: hsl(var(--river-accent-surface));
+  color: hsl(var(--accent-foreground));
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Drifting on: everything floats downstream; newcomers come from upstream. */
+.garden-float-leaving {
+  animation: garden-leave 1300ms var(--garden-ease-leave) forwards;
+  animation-delay: calc((2 - var(--i)) * 90ms);
+  pointer-events: none;
+}
+
+.garden-float-arriving {
+  animation: garden-arrive 2300ms var(--garden-ease-drift) both;
+  animation-delay: calc(var(--i) * 260ms);
+}
+
+@keyframes garden-leave {
+  to {
+    transform: translate(calc(-50% + 75cqw), -50%) rotate(6deg);
+    opacity: 0;
+  }
+}
+
+@keyframes garden-arrive {
+  from {
+    transform: translate(calc(-50% - 70cqw), calc(-50% + 1.5cqh)) rotate(-5deg);
+    opacity: 0;
+  }
+  35% { opacity: 1; }
+  to {
+    transform: translate(-50%, -50%);
+    opacity: 1;
+  }
+}
+
+/* Controls ------------------------------------------------------------- */
+
+.river-drift-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem 2.5rem;
+}
+
+.river-drift-on-group {
+  display: grid;
+  justify-items: start;
+  gap: 0.35rem;
+  max-width: 28rem;
+}
+
+.river-drift-on {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 48px;
+  padding: 0.6rem 1.35rem 0.6rem 1.05rem;
+  border: 1px solid hsl(190 30% 70%);
+  border-radius: 999px;
+  background: hsl(188 34% 88% / 0.6);
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 220ms ease;
+}
+
+.river-drift-on:hover:not(:disabled) { background: hsl(188 34% 84%); }
+.river-drift-on:disabled { cursor: default; opacity: 0.6; }
+.river-drift-on:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 3px; }
+
+.river-drift-on-mark { width: 1.35rem; height: 1.35rem; }
+
+.river-drift[data-phase="leaving"] .river-drift-on-mark {
+  animation: garden-mark 1.3s ease-in-out infinite;
+}
+
+@keyframes garden-mark {
+  50% { transform: translateX(3px); }
+}
+
+.river-drift-hint,
+.river-bank-hint {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: hsl(var(--muted-foreground));
+}
+
+.river-drift .river-time-picker { gap: 0.5rem; padding-top: 0; border-top: 0; }
+.river-drift .river-time-picker-options { gap: 0.35rem; }
+
+.river-drift .river-time-pill {
+  min-height: 44px;
+  padding: 0.5rem 0.9rem;
+  border-color: transparent;
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+}
+
+.river-drift .river-time-pill:hover {
+  transform: none;
+  color: hsl(var(--foreground));
+  background: hsl(var(--garden-gravel));
+}
+
+.river-drift .river-time-pill-active {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+/* The bank ------------------------------------------------------------- */
+
+.river-bank-lifted-region:focus { outline: none; }
+.river-bank-lifted-region:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 6px; border-radius: 1.5rem; }
+
+.river-bank-lifted {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 1.25rem 2.5rem;
+  padding: clamp(1.4rem, 3vw, 2.1rem) clamp(1.4rem, 3vw, 2.4rem);
+  border-radius: 1.75rem;
+  background: hsl(var(--garden-gravel) / 0.75);
+  box-shadow: 0 0 0 1px hsl(var(--garden-rake) / 0.7) inset;
+  animation: river-bank-in 420ms var(--garden-ease-drift);
+}
+
+@keyframes river-bank-in {
+  from { opacity: 0; transform: translateY(8px); }
+}
+
+.river-bank-lifted-copy { display: grid; gap: 0.55rem; align-content: start; }
+
+.river-bank-lifted-title {
+  margin: 0;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 500;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.river-bank-lifted-title a,
+.river-bank-row-title a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.16em;
+  text-decoration-thickness: 1px;
+  transition: text-decoration-color 200ms ease;
+}
+
+.river-bank-lifted-title a:hover,
+.river-bank-row-title a:hover { text-decoration-color: hsl(var(--river-teal) / 0.6); }
+
+.river-bank-lifted-title a:focus-visible,
+.river-bank-row-title a:focus-visible,
+.river-button:focus-visible,
+.river-bank-heading:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 3px;
+  border-radius: 0.4rem;
+}
+
+.river-bank-meta { font-size: 0.88rem; }
+
+.river-drift .river-spotlight-tags,
+.river-drift .river-spotlight-tags-toggle {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: hsl(var(--muted-foreground));
+  text-align: left;
+  cursor: pointer;
+}
+
+.river-bank-lifted-actions { display: grid; gap: 0.5rem; align-content: start; }
+.river-bank-primary-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+
+.river-bank-quiet-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 1.1rem;
+}
+
+.river-bank-quiet-row .river-eddy-actions { gap: 0 1.1rem; }
+
+.river-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid hsl(var(--garden-rake));
+  border-radius: 999px;
+  background: hsl(0 0% 100% / 0.6);
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+  font-size: 0.94rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 180ms ease;
+}
+
+.river-button:hover { background: hsl(0 0% 100%); }
+.river-button:disabled { cursor: wait; opacity: 0.6; }
+
+.river-button-primary {
+  border-color: transparent;
+  background: hsl(var(--foreground));
+  color: hsl(var(--garden-paper));
+}
+
+.river-button-primary:hover { background: hsl(var(--river-accent-foreground)); }
+
+/* The existing remove confirmation, quietened to a text action. */
+.river-drift .river-spotlight-remove-action > .river-spotlight-action-button {
+  min-height: 44px;
+  padding: 0.35rem 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: hsl(var(--river-danger-rest-fg));
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 400;
+  text-decoration: underline;
+  text-decoration-color: hsl(var(--river-danger-rest-border));
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.river-drift .river-spotlight-remove-action-open { flex-basis: 100%; }
+.river-drift .river-spotlight-remove-confirmation-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+.river-bank-lists { display: grid; gap: 1.75rem; }
+.river-bank-section { display: grid; gap: 0.25rem; }
+
+.river-bank-heading {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: hsl(var(--foreground));
+}
+
+summary.river-bank-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+}
+
+summary.river-bank-heading::-webkit-details-marker { display: none; }
+
+summary.river-bank-heading::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 200ms ease;
+}
+
+.river-bank-passed[open] > summary.river-bank-heading::before { transform: rotate(45deg); }
+
+.river-bank-count {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.river-bank-list { margin: 0; padding: 0; list-style: none; }
+
+.river-bank-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 1.5rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.river-bank-row-copy { min-width: 0; flex: 1 1 22rem; }
+
+.river-bank-row-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.river-bank-row-actions { display: flex; flex-wrap: wrap; gap: 0 1.1rem; }
+
+/* Small and empty rivers ----------------------------------------------- */
+
+.garden-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.45rem;
+  padding: 1.5rem;
+  text-align: center;
+  font-family: var(--font-sans);
+  color: hsl(var(--muted-foreground));
+}
+
+.garden-empty > * {
+  max-width: 28rem;
+  margin: 0;
+}
+
+.garden-empty-title {
+  padding: 0.2rem 0.9rem;
+  border-radius: 999px;
+  background: hsl(var(--garden-paper) / 0.85);
+  font-family: var(--font-serif);
+  font-size: clamp(1.3rem, 2.4vw, 1.7rem);
+  color: hsl(var(--foreground));
+}
+
+.garden-empty p:not(.garden-empty-title) {
+  padding: 0.15rem 0.7rem;
+  border-radius: 0.6rem;
+  background: hsl(var(--garden-paper) / 0.8);
+}
+
+.garden-empty .river-button { margin-top: 0.6rem; }
+
+/* With one or two pieces, let them sit more centrally on the water. */
+.garden[data-count="1"] .garden-float { --x: 0.5 !important; --y: 0.54 !important; }
+.garden[data-count="2"] .garden-float:nth-child(1) { --x: 0.32 !important; --y: 0.55 !important; }
+.garden[data-count="2"] .garden-float:nth-child(2) { --x: 0.68 !important; --y: 0.46 !important; }
+
+/* Narrow screens: the garden turns so the river runs top to bottom. ---- */
+
+@media (max-width: 44rem) {
+  .garden {
+    width: 100%;
+    margin-inline: 0;
+    aspect-ratio: 440 / 860;
+    border-radius: 1.75rem;
+  }
+
+  .garden-scene {
+    inset: auto;
+    top: 0;
+    left: 100%;
+    width: 100cqh;
+    height: 100cqw;
+    transform-origin: top left;
+    transform: rotate(90deg);
+  }
+
+  .garden-float,
+  .garden[data-count] .garden-float {
+    left: calc((1 - var(--y)) * 100%);
+    top: calc(var(--x) * 100% + 2%);
+    width: min(78cqw, 20rem);
+  }
+
+  .garden-float-title { font-size: 1.1rem; }
+
+  @keyframes garden-wander {
+    from { translate: 0 -1.2cqh; }
+    to { translate: 0 1.2cqh; }
+  }
+
+  @keyframes garden-leave {
+    to { transform: translate(-50%, calc(-50% + 60cqh)) rotate(5deg); opacity: 0; }
+  }
+
+  @keyframes garden-arrive {
+    from { transform: translate(calc(-50% + 3cqw), calc(-50% - 55cqh)) rotate(-4deg); opacity: 0; }
+    35% { opacity: 1; }
+    to { transform: translate(-50%, -50%); opacity: 1; }
+  }
+
+  .river-bank-lifted { grid-template-columns: minmax(0, 1fr); }
+  .river-drift-controls { flex-direction: column; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .garden-current-line,
+  .garden-petal,
+  .garden-float-drift,
+  .river-drift[data-phase="leaving"] .river-drift-on-mark,
+  .river-bank-lifted { animation: none; }
+  .garden-float-drift { transform: rotate(var(--tilt)); }
+  .garden-float-leaving { animation: none; opacity: 0.35; }
+  .garden-float-arriving { animation: garden-fade-in 200ms linear both; animation-delay: 0ms; }
+  .garden-float-card, .river-button, .river-drift-on { transition: none; }
+}
+
+@keyframes garden-fade-in {
+  from { opacity: 0; }
+}

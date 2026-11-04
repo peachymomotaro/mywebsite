@@ -40,19 +40,19 @@ describe("ReadingRiverHowItWorksPage", () => {
       /When you want to read something, return to the river and go ficheing\./i,
     );
     const randomPickExplanation = screen.getByText(
-      /The left option is the 'most important' option based on the priority setting and the amount of time you have\. The right button is a randomly selected piece of reading\./i,
+      /Three pieces drift by at a time\. Choose one to bring it to the bank, or let them drift on and three others will come into view\./i,
     );
     const algorithmIntro = screen.getByText(
-      /If you're interested, the priority algorithm for Reading River is as follows:/i,
+      /If you're interested, here is how the river chooses what drifts by:/i,
     );
     expect(
       screen.getByText(
-        /If you set how long you have to read, it first winnows your list down to pieces that fit that budget, falling back to shorter options if needed\. Then it sorts by a simple equation that considers the priority, reading time, and age\./i,
+        /Priority makes a piece up to five times as likely to appear, for fourteen days after you set it/i,
       ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        /If you do not choose a time budget, it prefers high-priority short reads, then high-priority long reads, then lower-priority short reads, and then everything else\./i,
+        /Anything you open stays on the bank, under Still reading, until you mark it as read/i,
       ),
     ).toBeInTheDocument();
 

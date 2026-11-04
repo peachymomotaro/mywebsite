@@ -3,19 +3,12 @@ import { getEddyArticles } from "@/lib/reading-river/eddies";
 import Link from "next/link";
 import { deleteBook } from "@/app/reading-river/actions/books";
 import { BookRoulette } from "@/components/reading-river/book-roulette";
-import { HomeReadCard } from "@/components/reading-river/home-read-card";
-import {
-  HomeSpotlights,
-  type HomeSpotlightCards,
-} from "@/components/reading-river/home-spotlights";
+import { RiverDrift } from "@/components/reading-river/river-drift";
 import { requireCurrentUser } from "@/lib/reading-river/current-user";
-import { getHomePageDataForBudgets } from "@/lib/reading-river/homepage-data";
+import { getHomePageData } from "@/lib/reading-river/homepage-data";
+import { getDriftViews, getRiverBank } from "@/lib/reading-river/drift-store";
 import { readingRiverPath } from "@/lib/reading-river/routes";
-import {
-  getTimeBudgetKey,
-  parseTimeBudgetSearchParam,
-  TIME_BUDGET_SELECTIONS,
-} from "@/lib/reading-river/time-budgets";
+import { parseTimeBudgetSearchParam } from "@/lib/reading-river/time-budgets";
 import { measureReadingRiverTiming } from "@/lib/reading-river/timing";
 
 export const dynamic = "force-dynamic";
@@ -29,34 +22,15 @@ export default async function ReadingRiverPage({ searchParams }: ReadingRiverPag
     const currentUser = await requireCurrentUser();
     const resolvedSearchParams = (await searchParams) ?? {};
     const selectedTimeBudgetMinutes = parseTimeBudgetSearchParam(resolvedSearchParams.time);
-    const [dataByBudget, eddies] = await Promise.all([
-      getHomePageDataForBudgets({ userId: currentUser.id }),
+    // Every time budget's afloat are drawn together, so switching time swaps
+    // already-fetched afloat rather than making another round trip.
+    const [driftViews, eddies, data] = await Promise.all([
+      getDriftViews(currentUser.id),
       getEddyArticles(currentUser.id),
+      getHomePageData({ userId: currentUser.id }),
     ]);
-    const data = dataByBudget[getTimeBudgetKey(selectedTimeBudgetMinutes)];
-
-    // Render the six possible spotlight pairs once. Selecting a time budget
-    // then swaps already-fetched cards rather than making another round trip.
-    const cards = {} as HomeSpotlightCards;
-    for (const minutes of TIME_BUDGET_SELECTIONS) {
-      const pair = dataByBudget[getTimeBudgetKey(minutes)];
-      cards[getTimeBudgetKey(minutes)] = {
-        priority: (
-          <HomeReadCard
-            label="Next priority read"
-            item={pair.priorityRead}
-            emptyMessage="Add something to the stream to get a recommendation."
-          />
-        ),
-        stream: (
-          <HomeReadCard
-            label="From the stream"
-            item={pair.streamRead}
-            emptyMessage="Add another item to unlock a daily stream pick."
-          />
-        ),
-      };
-    }
+    const afloatIds = Object.values(driftViews).flatMap((view) => view.afloat.map((item) => item.id));
+    const bank = await getRiverBank(currentUser.id, afloatIds);
 
     async function removeBookRoulettePickAction(formData: FormData) {
       "use server";
@@ -78,7 +52,7 @@ export default async function ReadingRiverPage({ searchParams }: ReadingRiverPag
           </Link>
         </section>
 
-        <HomeSpotlights initialMinutes={selectedTimeBudgetMinutes} cards={cards} />
+        <RiverDrift initialMinutes={selectedTimeBudgetMinutes} views={driftViews} bank={bank} />
 
         <EddiesSection items={eddies} />
 
