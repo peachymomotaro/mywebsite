@@ -22,7 +22,6 @@ function getRedirectLocation(response: Response) {
 describe("reading river middleware", () => {
   beforeEach(() => {
     getCurrentUserFromSessionToken.mockReset();
-    process.env.QB_PASSWORD = "correct-password";
   });
 
   it("ignores public website routes", async () => {
@@ -96,42 +95,29 @@ describe("reading river middleware", () => {
     expect(getCurrentUserFromSessionToken).not.toHaveBeenCalled();
   });
 
-  it("keeps the QB login route public", async () => {
-    const response = await proxy(new NextRequest("https://example.com/qb-login"));
+  it("redirects the retired QB page and login to POps", async () => {
+    for (const path of ["/qb", "/qb/anything", "/qb-login"]) {
+      const response = await proxy(new NextRequest(`https://example.com${path}`));
 
-    expect(getRedirectLocation(response)).toBeNull();
+      expect(response.status).toBe(307);
+      expect(getRedirectLocation(response)).toBe("https://example.com/pops");
+    }
   });
 
-  it("redirects anonymous QB page requests to the QB login page", async () => {
-    const response = await proxy(new NextRequest("https://example.com/qb"));
-
-    expect(getRedirectLocation(response)).toBe("https://example.com/qb-login");
-  });
-
-  it("rejects anonymous QB API requests without redirecting", async () => {
-    const response = await proxy(new NextRequest("https://example.com/api/qb/extract"));
-
-    expect(response.status).toBe(401);
-    expect(getRedirectLocation(response)).toBeNull();
-  });
-
-  it("allows QB routes through with the shared password cookie", async () => {
+  it("does not let a legacy QB password cookie through to anything", async () => {
     const response = await proxy(
       new NextRequest("https://example.com/qb", {
-        headers: {
-          cookie: "qb_auth=correct-password",
-        },
+        headers: { cookie: "qb_auth=correct-password" },
       }),
     );
 
-    expect(getRedirectLocation(response)).toBeNull();
+    expect(getRedirectLocation(response)).toBe("https://example.com/pops");
   });
 
-  it("does not allow QB routes through when the shared password is not configured", async () => {
-    delete process.env.QB_PASSWORD;
+  it("returns 410 Gone for the retired QB API", async () => {
+    const response = await proxy(new NextRequest("https://example.com/api/qb/extract"));
 
-    const response = await proxy(new NextRequest("https://example.com/api/qb"));
-
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(410);
+    expect(getRedirectLocation(response)).toBeNull();
   });
 });
