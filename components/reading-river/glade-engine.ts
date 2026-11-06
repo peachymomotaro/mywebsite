@@ -933,32 +933,52 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
 
   // --- Rafts for the pieces afloat, and ripples --------------------------------
   const plankGeometry = keep(new THREE.BoxGeometry(0.42, 0.16, 1.6));
-  const plankMaterials = ["#8a6339", "#a77a45", "#6e4c2b"].map((color) => keep(new THREE.MeshLambertMaterial({ color: new THREE.Color(color) })));
-  const rafts: THREE.Group[] = [];
   const poleGeometry = keep(new THREE.CylinderGeometry(0.025, 0.03, 1.1, 5));
+  const raftWood = ["#8a6339", "#a77a45", "#6e4c2b"];
+  // Bake six rigid wooden pieces into one vertex-coloured draw call per raft.
+  // The flag and shadow remain separate so they can still animate normally.
+  const raftBodyMaterial = keep(new THREE.MeshLambertMaterial({ vertexColors: true }));
+  const raftBodyGeometry = (() => {
+    const pieces: THREE.BufferGeometry[] = [];
+    const add = (geometry: THREE.BufferGeometry, colour: string, position: THREE.Vector3,
+      rotation = new THREE.Euler(), scale = new THREE.Vector3(1, 1, 1)) => {
+      const part = geometry.clone();
+      const matrix = new THREE.Matrix4().compose(position, new THREE.Quaternion().setFromEuler(rotation), scale);
+      part.applyMatrix4(matrix);
+      const tint = new THREE.Color(colour);
+      const count = part.getAttribute("position").count;
+      const colours = new Float32Array(count * 3);
+      for (let index = 0; index < count; index += 1) {
+        colours[index * 3] = tint.r;
+        colours[index * 3 + 1] = tint.g;
+        colours[index * 3 + 2] = tint.b;
+      }
+      part.setAttribute("color", new THREE.BufferAttribute(colours, 3));
+      pieces.push(part);
+    };
+    for (let plank = 0; plank < 4; plank += 1) {
+      add(plankGeometry, raftWood[plank % 3], new THREE.Vector3((plank - 1.5) * 0.44, 0, (plank % 2) * 0.08));
+    }
+    add(plankGeometry, raftWood[2], new THREE.Vector3(0, 0.1, 0),
+      new THREE.Euler(0, Math.PI / 2, 0), new THREE.Vector3(0.6, 0.8, 1.15));
+    add(poleGeometry, raftWood[2], new THREE.Vector3(0.3, 0.6, 0.3));
+    const merged = mergeGeometries(pieces);
+    pieces.forEach((piece) => piece.dispose());
+    if (!merged) throw new Error("Unable to batch the raft geometry");
+    return keep(merged);
+  })();
+  const rafts: THREE.Group[] = [];
   const pennantGeometry = keep(new THREE.PlaneGeometry(0.42, 0.22));
   pennantGeometry.translate(0.21, 0, 0);
   const pennantMaterial = keep(new THREE.MeshLambertMaterial({ color: new THREE.Color(C.cream), side: THREE.DoubleSide }));
   function raftAt(index: number) {
     while (rafts.length <= index) {
       const raft = new THREE.Group();
-      for (let plank = 0; plank < 4; plank += 1) {
-        const mesh = new THREE.Mesh(plankGeometry, plankMaterials[plank % 3]);
-        mesh.position.set((plank - 1.5) * 0.44, 0, (plank % 2) * 0.08);
-        raft.add(mesh);
-      }
-      const bar = new THREE.Mesh(plankGeometry, plankMaterials[2]);
-      bar.scale.set(0.6, 0.8, 1.15);
-      bar.rotation.y = Math.PI / 2;
-      bar.position.y = 0.1;
-      raft.add(bar);
-      // A little mast and pennant, so you can spot a piece from afar.
-      const pole = new THREE.Mesh(poleGeometry, plankMaterials[2]);
-      pole.position.set(0.3, 0.6, 0.3);
+      raft.add(new THREE.Mesh(raftBodyGeometry, raftBodyMaterial));
       const pennant = new THREE.Mesh(pennantGeometry, pennantMaterial);
       pennant.position.set(0.3, 1.02, 0.3);
       pennant.name = "pennant";
-      raft.add(pole, pennant);
+      raft.add(pennant);
       const shade = new THREE.Mesh(shadowGeometry, shadowMaterial);
       shade.scale.set(3, 1, 3.2);
       shade.position.y = -0.08;
