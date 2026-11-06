@@ -19,7 +19,7 @@ describe("daily digest helpers", () => {
     vi.restoreAllMocks();
   });
 
-  it("selects the featured homepage items for the digest", async () => {
+  it("features one piece a day: the river's pick", async () => {
     const now = new Date("2026-06-01T07:15:00Z");
 
     mocks.getHomePageData.mockResolvedValue({
@@ -49,7 +49,6 @@ describe("daily digest helpers", () => {
     });
 
     await expect(getDailyDigestItems({ userId: "user-1", now })).resolves.toEqual([
-      expect.objectContaining({ id: "priority-1", title: "Priority read" }),
       expect.objectContaining({ id: "stream-1", title: "From the stream" }),
     ]);
 
@@ -57,6 +56,20 @@ describe("daily digest helpers", () => {
       userId: "user-1",
       now,
     });
+  });
+
+  it("falls back to the priority pick when the river has nothing", async () => {
+    const now = new Date("2026-06-01T07:15:00Z");
+
+    mocks.getHomePageData.mockResolvedValue({
+      priorityRead: { id: "priority-1", title: "Priority read", tags: [] },
+      streamRead: null,
+      selectedTimeBudgetMinutes: 15,
+    });
+
+    await expect(getDailyDigestItems({ userId: "user-1", now })).resolves.toEqual([
+      expect.objectContaining({ id: "priority-1" }),
+    ]);
   });
 
   it("uses the London morning hour in and out of daylight saving time", () => {

@@ -10,10 +10,10 @@ export async function getDailyDigestItems({
   now?: Date;
 }) {
   const data = await getHomePageData({ userId, now });
+  // One piece a day: the river's own pick, or the priority pick when the river has none.
+  const pick = data.streamRead ?? data.priorityRead;
 
-  return [data.priorityRead, data.streamRead].filter(
-    (item): item is NonNullable<typeof item> => Boolean(item),
-  );
+  return pick ? [pick] : [];
 }
 
 export async function getDailyDigestBookRoulettePick({

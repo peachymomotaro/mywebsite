@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   buildReadingRiverDailyDigestEmail,
   buildReadingRiverPasswordResetEmail,
+  DIGEST_STILLS,
+  getDigestStillUrl,
 } from "@/lib/reading-river/email";
 
 describe("buildReadingRiverDailyDigestEmail", () => {
@@ -65,6 +67,72 @@ describe("buildReadingRiverDailyDigestEmail", () => {
     expect(message.text).toContain("Small Gods");
     expect(message.text).toContain("Terry Pratchett");
     expect(message.text).toContain("A gentle nudge from the shelf.");
+  });
+
+  it("lays a link to the day's article over the painted still", () => {
+    process.env.READING_RIVER_BASE_URL = "https://example.com";
+
+    const message = buildReadingRiverDailyDigestEmail({
+      displayName: "River Reader",
+      items: [{ id: "item-1", title: "One good article", sourceUrl: "https://example.com/a", siteName: "Orion", estimatedMinutes: 8, tags: [] }],
+      now: new Date("2026-06-01T07:15:00Z"),
+    });
+
+    expect(message.html).toMatch(/background-image: url\('https:\/\/example\.com\/email\/reading-river\/[a-z]+\.jpg'\)/);
+    expect(message.html).toMatch(/<v:fill type="frame" src="https:\/\/example\.com\/email\/reading-river\/[a-z]+\.jpg"/);
+    expect(message.html).toMatch(/<a href="https:\/\/example\.com\/a"[^>]*>.*One good article.*Orion · 8 min.*<\/a>/);
+    expect(message.text).toContain("One good article");
+    expect(message.text).toContain("Walk down to the river: https://example.com/reading-river");
+  });
+
+  it("cuts a long title at a word so the picture still shows", () => {
+    process.env.READING_RIVER_BASE_URL = "https://example.com";
+    const title = "What the river remembers: notes on slowness, attention and the long work of reading well";
+
+    const message = buildReadingRiverDailyDigestEmail({
+      displayName: "River Reader",
+      items: [{ id: "item-1", title, sourceUrl: "https://example.com/a", tags: [] }],
+    });
+
+    expect(message.html).toContain("What the river remembers: notes on slowness, attention and the long work…");
+    expect(message.text).toContain(title);
+  });
+
+  it("links the still down to the river when there's nothing today", () => {
+    process.env.READING_RIVER_BASE_URL = "https://example.com";
+
+    const message = buildReadingRiverDailyDigestEmail({ displayName: "River Reader", items: [] });
+
+    expect(message.html).toMatch(/<a href="https:\/\/example\.com\/reading-river"[^>]*>.*Walk down to the river/);
+  });
+
+  it("shows only one piece, even if given more", () => {
+    process.env.READING_RIVER_BASE_URL = "https://example.com";
+
+    const message = buildReadingRiverDailyDigestEmail({
+      displayName: "River Reader",
+      items: [
+        { id: "item-1", title: "The one for today", sourceUrl: "https://example.com/a", tags: [] },
+        { id: "item-2", title: "Not today", sourceUrl: "https://example.com/b", tags: [] },
+      ],
+    });
+
+    expect(message.html).toContain("The one for today");
+    expect(message.html).not.toContain("Not today");
+    expect(message.text).not.toContain("Not today");
+  });
+
+  it("turns to a new still each London day, coming round in order", () => {
+    process.env.READING_RIVER_BASE_URL = "https://example.com";
+
+    const days = [0, 1, 2, 3, 4].map((offset) =>
+      getDigestStillUrl(new Date(Date.UTC(2026, 5, 1 + offset, 7, 15))).split("/").pop(),
+    );
+
+    expect(new Set(days.slice(0, DIGEST_STILLS.length)).size).toBe(DIGEST_STILLS.length);
+    expect(days[DIGEST_STILLS.length]).toBe(days[0]);
+    // Late evening in London is still the same day there, even after midnight UTC.
+    expect(getDigestStillUrl(new Date("2026-06-01T22:30:00Z"))).toBe(getDigestStillUrl(new Date("2026-06-01T07:15:00Z")));
   });
 
   it("renders password reset emails with the reset link", () => {
