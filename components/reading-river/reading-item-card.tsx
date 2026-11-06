@@ -59,6 +59,8 @@ export function ReadingItemCard({
       <li>
         <a
           href={sourceUrl}
+          target="_blank"
+          rel="noopener noreferrer"
           aria-label={title}
           className="editorial-stream-entry transition hover:bg-white/30"
         >

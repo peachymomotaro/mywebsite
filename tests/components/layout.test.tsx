@@ -1,6 +1,5 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-// @ts-expect-error -- the legacy component is JavaScript without declarations.
 import Layout from "@/components/Layout";
 
 vi.mock("@/components/NavBar", () => ({

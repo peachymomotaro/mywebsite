@@ -134,6 +134,9 @@ describe("ReadingRiverHomePage", () => {
     expect(screen.getByRole("group", { name: "Lifted from the river: Live stream article" })).toBeInTheDocument();
     const bank = within(document.getElementById("river-bank-lifted")!);
     expect(bank.getByRole("link", { name: "Start reading" })).toHaveAttribute("href", "https://example.com/live");
+    // Articles open in a new tab, so the glade stays where you left it.
+    expect(bank.getByRole("link", { name: "Start reading" })).toHaveAttribute("target", "_blank");
+    expect(bank.getByRole("link", { name: "Start reading" })).toHaveAttribute("rel", "noopener noreferrer");
     expect(bank.getByRole("button", { name: "Remove" })).toBeInTheDocument();
     // On the river there is only starting it: finishing happens in the eddies,
     // and the title and time are edited in place.

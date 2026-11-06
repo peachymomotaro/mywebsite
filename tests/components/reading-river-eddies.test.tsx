@@ -30,7 +30,10 @@ describe("In the eddies", () => {
   it("preserves supplied newest-first order, metadata and source links without truncation", () => {
     const { container } = render(<EddiesSection items={[item("new"), item("old")]} />);
     const rows = screen.getAllByRole("article");
-    expect(within(rows[0]).getByRole("link", { name: "Article new" })).toHaveAttribute("href", "https://example.com/new");
+    const sourceLink = within(rows[0]).getByRole("link", { name: "Article new" });
+    expect(sourceLink).toHaveAttribute("href", "https://example.com/new");
+    expect(sourceLink).toHaveAttribute("target", "_blank");
+    expect(sourceLink).toHaveAttribute("rel", "noopener noreferrer");
     expect(within(rows[1]).getByRole("heading", { name: "Article old" })).toBeInTheDocument();
     expect(within(rows[0]).getByText("Literary Review · 12 min")).toBeInTheDocument();
     expect(container.querySelector(".river-spotlight-title-clamp")).not.toBeInTheDocument();

@@ -47,7 +47,7 @@ export default async function HistoryPage() {
               <li key={readEvent.id} className="river-history-item">
                 <div className="river-history-item-head">
                   {readEvent.readingItem.sourceUrl ? (
-                    <a href={readEvent.readingItem.sourceUrl} className="river-history-link">
+                    <a href={readEvent.readingItem.sourceUrl} target="_blank" rel="noopener noreferrer" className="river-history-link">
                       {readEvent.readingItem.title}
                     </a>
                   ) : (
