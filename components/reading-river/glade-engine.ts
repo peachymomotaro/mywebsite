@@ -717,7 +717,8 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
 
   // --- Distant hills all round, like the far bank in the painting -----------------
   const hillMaterial = keep(new THREE.MeshLambertMaterial({ color: new THREE.Color(C.hills) }));
-  const hillGeometry = keep(new THREE.SphereGeometry(1, 24, 12));
+  // Distant hill silhouettes need fewer triangles than close-up scenery.
+  const hillGeometry = keep(new THREE.SphereGeometry(1, 12, 8));
   for (let index = 0; index < 14; index += 1) {
     const angle = (index / 14) * Math.PI * 2 + random() * 0.3;
     // Leave the river's two ends open to the haze.
