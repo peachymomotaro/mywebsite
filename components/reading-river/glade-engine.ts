@@ -169,7 +169,8 @@ const mod = (value: number, size: number) => ((value % size) + size) % size;
 
 export function createGlade(host: HTMLElement, options: Options): GladeControls {
   const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, powerPreference: "high-performance" });
-  const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+  // Reduce costly Retina fill rate; the painted image masks subpixel detail.
+  const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
   renderer.setPixelRatio(pixelRatio);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.domElement.className = "glade-gl";
@@ -1204,7 +1205,7 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
   // The scene is drawn into a texture, then repainted: a Kuwahara filter flattens
   // it into daubs, a slow wobble breaks up edges like a loaded brush, and canvas
   // weave, stroke texture, a warm grade and a soft vignette finish it.
-  const paintTarget = keep(new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 }));
+  const paintTarget = keep(new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 2 }));
   const paintUniforms = {
     tScene: { value: paintTarget.texture },
     uTexel: { value: new THREE.Vector2(1, 1) },
@@ -1233,8 +1234,8 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
         vec3 m0 = vec3(0.0); vec3 m1 = vec3(0.0); vec3 m2 = vec3(0.0); vec3 m3 = vec3(0.0);
         vec3 s0 = vec3(0.0); vec3 s1 = vec3(0.0); vec3 s2 = vec3(0.0); vec3 s3 = vec3(0.0);
         // Sampling every 1.6 texels makes the daubs broader, like a wide brush.
-        for (int j = -4; j <= 4; j++) {
-          for (int i = -4; i <= 4; i++) {
+        for (int j = -3; j <= 3; j++) {
+          for (int i = -3; i <= 3; i++) {
             vec3 c = texture2D(tScene, uv + vec2(float(i), float(j)) * uTexel * 1.6).rgb;
             vec3 c2 = c * c;
             if (i <= 0 && j <= 0) { m0 += c; s0 += c2; }
@@ -1243,7 +1244,7 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
             if (i <= 0 && j >= 0) { m3 += c; s3 += c2; }
           }
         }
-        float n = 25.0;
+        float n = 16.0;
         m0 /= n; m1 /= n; m2 /= n; m3 /= n;
         float v0 = dot(abs(s0 / n - m0 * m0), vec3(1.0));
         float v1 = dot(abs(s1 / n - m1 * m1), vec3(1.0));
@@ -1303,7 +1304,8 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
     height = Math.max(1, rect.height);
     renderer.setSize(width, height, false);
     // The paint pass works on a slightly smaller picture; the daubs hide it.
-    const paintScale = Math.min(pixelRatio, 1.5) * 0.8;
+    // Broad brush strokes hide a lower-resolution paint texture.
+    const paintScale = Math.min(pixelRatio, 1.25) * 0.72;
     const targetWidth = Math.max(1, Math.round(width * paintScale));
     const targetHeight = Math.max(1, Math.round(height * paintScale));
     paintTarget.setSize(targetWidth, targetHeight);
