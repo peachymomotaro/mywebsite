@@ -1,6 +1,6 @@
 import { RiverDrift } from "@/components/reading-river/river-drift";
 import { requireCurrentUser } from "@/lib/reading-river/current-user";
-import { getDriftViews, getRiverBank } from "@/lib/reading-river/drift-store";
+import { getDriftViews } from "@/lib/reading-river/drift-store";
 import { getEddyArticles } from "@/lib/reading-river/eddies";
 import { parseTimeBudgetSearchParam } from "@/lib/reading-river/time-budgets";
 import { measureReadingRiverTiming } from "@/lib/reading-river/timing";
@@ -22,16 +22,12 @@ export default async function ReadingRiverPage({ searchParams }: ReadingRiverPag
       getDriftViews(currentUser.id),
       getEddyArticles(currentUser.id),
     ]);
-    // Today's stream is long, so pieces that already drifted past are listed
-    // too; the page leaves out whichever are in view right now.
-    const bank = await getRiverBank(currentUser.id, []);
 
     return (
       <main className="river-home-page glade-home">
         <RiverDrift
           initialMinutes={selectedTimeBudgetMinutes}
           views={driftViews}
-          bank={bank}
           eddies={eddies}
         />
       </main>
