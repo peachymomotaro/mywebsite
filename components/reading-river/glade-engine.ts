@@ -1453,23 +1453,43 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
   // Read card geometry together, before positioning changes any styles.
   // Previously each placeCard read offsetWidth/Height after writing the previous
   // card's transform, repeatedly forcing browser layout during a frame.
-  type CardMeasurement = { cardHeight: number; boxWidth: number; boxHeight: number };
+  type CardMeasurement = {
+    firstChild: Element | null;
+    cardHeight: number;
+    boxWidth: number;
+    boxHeight: number;
+  };
   const cardMeasurements = new Map<HTMLElement, CardMeasurement>();
   let clearTop = 110;
-  function measureCardGeometry() {
-    cardMeasurements.clear();
+  let measuredAt = -Infinity;
+  let measuredWidth = -1;
+  let measuredHeight = -1;
+  function measureCardGeometry(now: number) {
+    const elements: HTMLElement[] = [];
     for (const list of [options.floats(), options.pool()]) {
-      if (!list) continue;
-      for (const element of Array.from(list.children) as HTMLElement[]) {
-        cardMeasurements.set(element, {
-          cardHeight: (element.firstElementChild as HTMLElement | null)?.offsetHeight ?? 80,
-          boxWidth: element.offsetWidth,
-          boxHeight: element.offsetHeight,
-        });
-      }
+      if (list) elements.push(...Array.from(list.children) as HTMLElement[]);
+    }
+    // Existing article labels rarely change size. Avoid layout reads on every
+    // frame, but measure immediately when a card becomes a lifted sheet or the
+    // viewport changes. Periodic checks handle late font/layout changes.
+    const unchanged = elements.length === cardMeasurements.size
+      && elements.every((element) => cardMeasurements.get(element)?.firstChild === element.firstElementChild);
+    if (unchanged && measuredWidth === width && measuredHeight === height && now - measuredAt < 180) return;
+    cardMeasurements.clear();
+    for (const element of elements) {
+      const child = element.firstElementChild as HTMLElement | null;
+      cardMeasurements.set(element, {
+        firstChild: child,
+        cardHeight: child?.offsetHeight ?? 80,
+        boxWidth: element.offsetWidth,
+        boxHeight: element.offsetHeight,
+      });
     }
     const chrome = host.closest(".glade-home-layout")?.querySelector(".glade-top")?.getBoundingClientRect();
     clearTop = chrome ? chrome.bottom - host.getBoundingClientRect().top + 10 : 110;
+    measuredAt = now;
+    measuredWidth = width;
+    measuredHeight = height;
   }
 
   /** Move a card onto its raft on screen. Returns how visible it ended up. */
@@ -1499,8 +1519,19 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
       top = THREE.MathUtils.clamp(top, safeTop, Math.max(safeTop, height - boxHeight - margin));
     }
     const shown = lifted || (!behind && opacity > 0.02);
+    const style = element.style;
+    // Don't continuously reposition labels that cannot be seen. They will
+    // receive a fresh transform on the first frame they become visible.
+    const outsideView = !pinned && !lifted &&
+      (x < -boxWidth || x > width + boxWidth || y < -boxHeight || y > height + boxHeight);
+    if (!shown || outsideView) {
+      if (style.visibility !== "hidden") style.visibility = "hidden";
+      if (style.opacity !== "0") style.opacity = "0";
+      return { opacity, onScreen: false };
+    }
 
-    element.style.transformOrigin = `50% ${cardHeight + 6}px`;
+    const origin = `50% ${cardHeight + 6}px`;
+    if (style.transformOrigin !== origin) style.transformOrigin = origin;
     let depth = "";
     if (!lifted && !pinned) {
       const far = THREE.MathUtils.smoothstep(distance, 16, 48);
@@ -1514,15 +1545,19 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
       const turn = THREE.MathUtils.clamp(-projected.x * 14, -14, 14);
       top += bob;
       depth = ` perspective(700px) rotateX(${lean.toFixed(1)}deg) rotateY(${turn.toFixed(1)}deg) rotate(${rock.toFixed(2)}deg)`;
-      element.style.setProperty("--far", (Math.round(far * 10) / 10).toFixed(1));
-    } else {
-      element.style.setProperty("--far", "0");
+      const farValue = (Math.round(far * 10) / 10).toFixed(1);
+      if (style.getPropertyValue("--far") !== farValue) style.setProperty("--far", farValue);
+    } else if (style.getPropertyValue("--far") !== "0") {
+      style.setProperty("--far", "0");
     }
-    element.style.transform = `translate3d(${left.toFixed(1)}px, ${top.toFixed(1)}px, 0) scale(${(pinned && !lifted ? pinned.size : size).toFixed(3)})${depth}`;
-    element.style.opacity = shown ? opacity.toFixed(3) : "0";
-    element.style.zIndex = String(lifted ? 2000 : Math.round(1000 - distance * 5));
-    element.style.visibility = shown ? "visible" : "hidden";
-    return { opacity, onScreen: shown && opacity > 0.5 && x > 0 && x < width && y > 0 && y < height };
+    const transform = `translate3d(${left.toFixed(1)}px, ${top.toFixed(1)}px, 0) scale(${(pinned && !lifted ? pinned.size : size).toFixed(3)})${depth}`;
+    if (style.transform !== transform) style.transform = transform;
+    const nextOpacity = opacity.toFixed(3);
+    if (style.opacity !== nextOpacity) style.opacity = nextOpacity;
+    const zIndex = String(lifted ? 2000 : Math.round(1000 - distance * 5));
+    if (style.zIndex !== zIndex) style.zIndex = zIndex;
+    if (style.visibility !== "visible") style.visibility = "visible";
+    return { opacity, onScreen: opacity > 0.5 && x > 0 && x < width && y > 0 && y < height };
   }
 
   // The eddies: pieces you are reading turn slowly round the pool. One pushed
@@ -1854,7 +1889,7 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
 
-    measureCardGeometry();
+    measureCardGeometry(now);
 
     if (animate) {
       time += dt;
