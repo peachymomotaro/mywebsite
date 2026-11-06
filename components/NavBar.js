@@ -1,5 +1,7 @@
+"use client";
+
 import Link from "next/link";
-import { useRouter } from "next/router";
+import { usePathname } from "next/navigation";
 import ThemeToggle from "./ThemeToggle";
 
 const NAV_ITEMS = [
@@ -10,7 +12,7 @@ const NAV_ITEMS = [
 ];
 
 export default function NavBar() {
-  const router = useRouter();
+  const pathname = usePathname();
 
   return (
     <nav className="nav" aria-label="Primary">
@@ -22,7 +24,7 @@ export default function NavBar() {
           <Link
             key={href}
             href={href}
-            aria-current={router.pathname === href ? "page" : undefined}
+            aria-current={pathname === href ? "page" : undefined}
           >
             {label}
           </Link>
