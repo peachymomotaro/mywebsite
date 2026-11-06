@@ -14,7 +14,7 @@ import { QuickAdd } from "@/components/reading-river/quick-add";
 import { useGladeSound } from "@/components/reading-river/glade-sound";
 import type { EddyArticle } from "@/lib/reading-river/eddies";
 import { EDDY_CAPACITY } from "@/lib/reading-river/eddy-state";
-import type { DriftView, DriftViews, RiverBank, RiverItem } from "@/lib/reading-river/drift-store";
+import type { DriftView, DriftViews, RiverItem } from "@/lib/reading-river/drift-store";
 import { readingRiverPath } from "@/lib/reading-river/routes";
 import { getTimeBudgetKey, parseTimeBudgetSearchParam } from "@/lib/reading-river/time-budgets";
 
@@ -51,7 +51,6 @@ function noteOpened(id: string) {
 type RiverDriftProps = {
   initialMinutes: number | null;
   views: DriftViews;
-  bank: RiverBank;
   /** The eddy pool: what you are reading, newest first, five at most. */
   eddies: EddyArticle[];
 };
