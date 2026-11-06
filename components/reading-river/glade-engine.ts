@@ -1448,9 +1448,28 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
   let walkedTo: { id: string; seq: number } | null = null;
 
   /** The first clear line below the title and chips along the top. */
-  function topClearance() {
+  function topClearance() { return clearTop; }
+
+  // Read card geometry together, before positioning changes any styles.
+  // Previously each placeCard read offsetWidth/Height after writing the previous
+  // card's transform, repeatedly forcing browser layout during a frame.
+  type CardMeasurement = { cardHeight: number; boxWidth: number; boxHeight: number };
+  const cardMeasurements = new Map<HTMLElement, CardMeasurement>();
+  let clearTop = 110;
+  function measureCardGeometry() {
+    cardMeasurements.clear();
+    for (const list of [options.floats(), options.pool()]) {
+      if (!list) continue;
+      for (const element of Array.from(list.children) as HTMLElement[]) {
+        cardMeasurements.set(element, {
+          cardHeight: (element.firstElementChild as HTMLElement | null)?.offsetHeight ?? 80,
+          boxWidth: element.offsetWidth,
+          boxHeight: element.offsetHeight,
+        });
+      }
+    }
     const chrome = host.closest(".glade-home-layout")?.querySelector(".glade-top")?.getBoundingClientRect();
-    return chrome ? chrome.bottom - host.getBoundingClientRect().top + 10 : 110;
+    clearTop = chrome ? chrome.bottom - host.getBoundingClientRect().top + 10 : 110;
   }
 
   /** Move a card onto its raft on screen. Returns how visible it ended up. */
@@ -1466,9 +1485,8 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
     const x = (projected.x + 1) / 2 * width;
     const y = (1 - projected.y) / 2 * height;
 
-    const cardHeight = (element.firstElementChild as HTMLElement | null)?.offsetHeight ?? 80;
-    const boxWidth = element.offsetWidth;
-    const boxHeight = element.offsetHeight;
+    const { cardHeight, boxWidth, boxHeight } = cardMeasurements.get(element)
+      ?? { cardHeight: 80, boxWidth: 200, boxHeight: 80 };
     // Depth: far pieces are smaller, hazier and lean back with the water;
     // near ones come up large and clear.
     const size = lifted ? 1 : THREE.MathUtils.clamp(24 / distance, 0.52, 1.12);
@@ -1570,7 +1588,7 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
     const anchorY = centreOnScreen.y;
     const columnSize = 0.92;
     const gap = 6;
-    const heights = settled.map((element) => ((element.firstElementChild as HTMLElement | null)?.offsetHeight ?? 44) * columnSize);
+    const heights = settled.map((element) => (cardMeasurements.get(element)?.cardHeight ?? 44) * columnSize);
     const columnHeight = heights.reduce((sum, h) => sum + h + gap, 0);
     const safeTop = topClearance();
     let columnTop = THREE.MathUtils.clamp(anchorY - columnHeight / 2, safeTop, Math.max(safeTop, height - columnHeight - 90));
@@ -1688,13 +1706,14 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
       const place = settled.indexOf(element);
       if (place >= 0 && !lifted) {
         // While one is lifted, the rest step back so its actions have room.
-        const columnWidth = element.offsetWidth * columnSize;
+        const elementWidth = cardMeasurements.get(element)?.boxWidth ?? 200;
+        const columnWidth = elementWidth * columnSize;
         const fitsRight = rightRim.x + columnWidth + 12 < width;
         const wanted = fitsRight ? rightRim.x + 8 : leftRim.x - columnWidth - 8;
         const left = THREE.MathUtils.clamp(wanted, 12, Math.max(12, width - columnWidth - 12));
         // The column fades in and out as one, as you arrive at the pool.
         placeCard(element, poolPoint, liftedHere ? 0 : opacity * atPool, false,
-          { left: left - (element.offsetWidth - columnWidth) / 2, top: columnTops[place], size: columnSize });
+          { left: left - (elementWidth - columnWidth) / 2, top: columnTops[place], size: columnSize });
       } else {
         placeCard(element, poolPoint, opacity * near, lifted);
       }
@@ -1827,8 +1846,15 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
   function frame(now: number) {
     frameId = requestAnimationFrame(frame);
     const animate = options.animate();
+    // A steady 60 fps is preferable to racing the display's 120 Hz refresh
+    // and dropping frames when the GPU is busy. Keep the walker/river's delta
+    // based on elapsed wall time so motion stays the same speed.
+    const minFrameMs = 1000 / 60;
+    if (now - last < minFrameMs - 0.75) return;
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
+
+    measureCardGeometry();
 
     if (animate) {
       time += dt;
