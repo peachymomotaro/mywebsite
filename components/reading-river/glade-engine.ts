@@ -169,7 +169,8 @@ const mod = (value: number, size: number) => ((value % size) + size) % size;
 
 export function createGlade(host: HTMLElement, options: Options): GladeControls {
   const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, powerPreference: "high-performance" });
-  const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+  // Reduce costly Retina fill rate; the painted image masks subpixel detail.
+  const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
   renderer.setPixelRatio(pixelRatio);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.domElement.className = "glade-gl";
@@ -716,7 +717,8 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
 
   // --- Distant hills all round, like the far bank in the painting -----------------
   const hillMaterial = keep(new THREE.MeshLambertMaterial({ color: new THREE.Color(C.hills) }));
-  const hillGeometry = keep(new THREE.SphereGeometry(1, 24, 12));
+  // Distant hill silhouettes need fewer triangles than close-up scenery.
+  const hillGeometry = keep(new THREE.SphereGeometry(1, 12, 8));
   for (let index = 0; index < 14; index += 1) {
     const angle = (index / 14) * Math.PI * 2 + random() * 0.3;
     // Leave the river's two ends open to the haze.
@@ -932,32 +934,52 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
 
   // --- Rafts for the pieces afloat, and ripples --------------------------------
   const plankGeometry = keep(new THREE.BoxGeometry(0.42, 0.16, 1.6));
-  const plankMaterials = ["#8a6339", "#a77a45", "#6e4c2b"].map((color) => keep(new THREE.MeshLambertMaterial({ color: new THREE.Color(color) })));
-  const rafts: THREE.Group[] = [];
   const poleGeometry = keep(new THREE.CylinderGeometry(0.025, 0.03, 1.1, 5));
+  const raftWood = ["#8a6339", "#a77a45", "#6e4c2b"];
+  // Bake six rigid wooden pieces into one vertex-coloured draw call per raft.
+  // The flag and shadow remain separate so they can still animate normally.
+  const raftBodyMaterial = keep(new THREE.MeshLambertMaterial({ vertexColors: true }));
+  const raftBodyGeometry = (() => {
+    const pieces: THREE.BufferGeometry[] = [];
+    const add = (geometry: THREE.BufferGeometry, colour: string, position: THREE.Vector3,
+      rotation = new THREE.Euler(), scale = new THREE.Vector3(1, 1, 1)) => {
+      const part = geometry.clone();
+      const matrix = new THREE.Matrix4().compose(position, new THREE.Quaternion().setFromEuler(rotation), scale);
+      part.applyMatrix4(matrix);
+      const tint = new THREE.Color(colour);
+      const count = part.getAttribute("position").count;
+      const colours = new Float32Array(count * 3);
+      for (let index = 0; index < count; index += 1) {
+        colours[index * 3] = tint.r;
+        colours[index * 3 + 1] = tint.g;
+        colours[index * 3 + 2] = tint.b;
+      }
+      part.setAttribute("color", new THREE.BufferAttribute(colours, 3));
+      pieces.push(part);
+    };
+    for (let plank = 0; plank < 4; plank += 1) {
+      add(plankGeometry, raftWood[plank % 3], new THREE.Vector3((plank - 1.5) * 0.44, 0, (plank % 2) * 0.08));
+    }
+    add(plankGeometry, raftWood[2], new THREE.Vector3(0, 0.1, 0),
+      new THREE.Euler(0, Math.PI / 2, 0), new THREE.Vector3(0.6, 0.8, 1.15));
+    add(poleGeometry, raftWood[2], new THREE.Vector3(0.3, 0.6, 0.3));
+    const merged = mergeGeometries(pieces);
+    pieces.forEach((piece) => piece.dispose());
+    if (!merged) throw new Error("Unable to batch the raft geometry");
+    return keep(merged);
+  })();
+  const rafts: THREE.Group[] = [];
   const pennantGeometry = keep(new THREE.PlaneGeometry(0.42, 0.22));
   pennantGeometry.translate(0.21, 0, 0);
   const pennantMaterial = keep(new THREE.MeshLambertMaterial({ color: new THREE.Color(C.cream), side: THREE.DoubleSide }));
   function raftAt(index: number) {
     while (rafts.length <= index) {
       const raft = new THREE.Group();
-      for (let plank = 0; plank < 4; plank += 1) {
-        const mesh = new THREE.Mesh(plankGeometry, plankMaterials[plank % 3]);
-        mesh.position.set((plank - 1.5) * 0.44, 0, (plank % 2) * 0.08);
-        raft.add(mesh);
-      }
-      const bar = new THREE.Mesh(plankGeometry, plankMaterials[2]);
-      bar.scale.set(0.6, 0.8, 1.15);
-      bar.rotation.y = Math.PI / 2;
-      bar.position.y = 0.1;
-      raft.add(bar);
-      // A little mast and pennant, so you can spot a piece from afar.
-      const pole = new THREE.Mesh(poleGeometry, plankMaterials[2]);
-      pole.position.set(0.3, 0.6, 0.3);
+      raft.add(new THREE.Mesh(raftBodyGeometry, raftBodyMaterial));
       const pennant = new THREE.Mesh(pennantGeometry, pennantMaterial);
       pennant.position.set(0.3, 1.02, 0.3);
       pennant.name = "pennant";
-      raft.add(pole, pennant);
+      raft.add(pennant);
       const shade = new THREE.Mesh(shadowGeometry, shadowMaterial);
       shade.scale.set(3, 1, 3.2);
       shade.position.y = -0.08;
@@ -1204,7 +1226,7 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
   // The scene is drawn into a texture, then repainted: a Kuwahara filter flattens
   // it into daubs, a slow wobble breaks up edges like a loaded brush, and canvas
   // weave, stroke texture, a warm grade and a soft vignette finish it.
-  const paintTarget = keep(new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 }));
+  const paintTarget = keep(new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 2 }));
   const paintUniforms = {
     tScene: { value: paintTarget.texture },
     uTexel: { value: new THREE.Vector2(1, 1) },
@@ -1233,8 +1255,8 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
         vec3 m0 = vec3(0.0); vec3 m1 = vec3(0.0); vec3 m2 = vec3(0.0); vec3 m3 = vec3(0.0);
         vec3 s0 = vec3(0.0); vec3 s1 = vec3(0.0); vec3 s2 = vec3(0.0); vec3 s3 = vec3(0.0);
         // Sampling every 1.6 texels makes the daubs broader, like a wide brush.
-        for (int j = -4; j <= 4; j++) {
-          for (int i = -4; i <= 4; i++) {
+        for (int j = -3; j <= 3; j++) {
+          for (int i = -3; i <= 3; i++) {
             vec3 c = texture2D(tScene, uv + vec2(float(i), float(j)) * uTexel * 1.6).rgb;
             vec3 c2 = c * c;
             if (i <= 0 && j <= 0) { m0 += c; s0 += c2; }
@@ -1243,7 +1265,7 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
             if (i <= 0 && j >= 0) { m3 += c; s3 += c2; }
           }
         }
-        float n = 25.0;
+        float n = 16.0;
         m0 /= n; m1 /= n; m2 /= n; m3 /= n;
         float v0 = dot(abs(s0 / n - m0 * m0), vec3(1.0));
         float v1 = dot(abs(s1 / n - m1 * m1), vec3(1.0));
@@ -1297,18 +1319,61 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
   let width = 1;
   let height = 1;
   let dirty = true;
+  // Adaptive resolution uses frame spacing, never synchronous GPU readbacks.
+  // Three conservative quality steps with hysteresis prevent oscillation.
+  const qualityLevels = [1, 0.84, 0.7] as const;
+  let qualityLevel = 0;
+  let lastQualityChange = 0;
+  let lastQualitySample = 0;
+  let slowFrames = 0;
+  let sampledFrames = 0;
+  let frameSpacingMs = 1000 / 60;
+  let pageVisible = document.visibilityState === "visible";
+  function updateQuality(now: number, spacingMs: number) {
+    // Ignore tab-resume gaps and animation-disabled scenes; those are not GPU load.
+    if (!options.animate() || !pageVisible || spacingMs > 180) return;
+    frameSpacingMs = frameSpacingMs * 0.9 + spacingMs * 0.1;
+    sampledFrames++;
+    if (spacingMs > 24) slowFrames++;
+    if (!lastQualitySample) lastQualitySample = now;
+    if (now - lastQualitySample < 2200) return;
+    const slowShare = slowFrames / Math.max(1, sampledFrames);
+    // Downgrade only for sustained jank. Upgrade more slowly, with a margin.
+    const next = slowShare > 0.28 && frameSpacingMs > 20
+      ? Math.min(qualityLevels.length - 1, qualityLevel + 1)
+      : slowShare < 0.07 && frameSpacingMs < 18
+        ? Math.max(0, qualityLevel - 1)
+        : qualityLevel;
+    if (next !== qualityLevel && now - lastQualityChange > 4800) {
+      qualityLevel = next;
+      lastQualityChange = now;
+      applyResolution();
+    }
+    lastQualitySample = now;
+    sampledFrames = 0;
+    slowFrames = 0;
+  }
+  function applyResolution() {
+    const factor = qualityLevels[qualityLevel];
+    // Render the final image and painterly intermediate at matching adaptive
+    // quality; preserve CSS dimensions, camera framing and readable HTML cards.
+    renderer.setPixelRatio(pixelRatio * factor);
+    renderer.setSize(width, height, false);
+    const scale = Math.min(pixelRatio, 1.25) * 0.72 * factor;
+    const targetWidth = Math.max(1, Math.round(width * scale));
+    const targetHeight = Math.max(1, Math.round(height * scale));
+    if (paintTarget.width !== targetWidth || paintTarget.height !== targetHeight) {
+      paintTarget.setSize(targetWidth, targetHeight);
+    }
+    paintUniforms.uTexel.value.set(1 / targetWidth, 1 / targetHeight);
+    paintUniforms.uResolution.value.set(width * pixelRatio * factor, height * pixelRatio * factor);
+    dirty = true;
+  }
   function resize() {
     const rect = host.getBoundingClientRect();
     width = Math.max(1, rect.width);
     height = Math.max(1, rect.height);
-    renderer.setSize(width, height, false);
-    // The paint pass works on a slightly smaller picture; the daubs hide it.
-    const paintScale = Math.min(pixelRatio, 1.5) * 0.8;
-    const targetWidth = Math.max(1, Math.round(width * paintScale));
-    const targetHeight = Math.max(1, Math.round(height * paintScale));
-    paintTarget.setSize(targetWidth, targetHeight);
-    paintUniforms.uTexel.value.set(1 / targetWidth, 1 / targetHeight);
-    paintUniforms.uResolution.value.set(width * pixelRatio, height * pixelRatio);
+    applyResolution();
     camera.aspect = width / height;
     // Narrow screens see more of the river by widening the lens.
     camera.fov = camera.aspect < 0.7 ? 64 : camera.aspect < 1.1 ? 56 : 46;
@@ -1319,6 +1384,14 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
   const resizeObserver = typeof ResizeObserver === "function" ? new ResizeObserver(resize) : null;
   resizeObserver?.observe(host);
   window.addEventListener("resize", resize);
+  function onPageVisibility() {
+    pageVisible = document.visibilityState === "visible";
+    // Start fresh after a hidden-tab gap, rather than mistaking it for lag.
+    lastQualitySample = 0;
+    sampledFrames = 0;
+    slowFrames = 0;
+  }
+  document.addEventListener("visibilitychange", onPageVisibility);
 
   const canvas = renderer.domElement;
   const raycaster = new THREE.Raycaster();
@@ -1446,9 +1519,48 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
   let walkedTo: { id: string; seq: number } | null = null;
 
   /** The first clear line below the title and chips along the top. */
-  function topClearance() {
+  function topClearance() { return clearTop; }
+
+  // Read card geometry together, before positioning changes any styles.
+  // Previously each placeCard read offsetWidth/Height after writing the previous
+  // card's transform, repeatedly forcing browser layout during a frame.
+  type CardMeasurement = {
+    firstChild: Element | null;
+    cardHeight: number;
+    boxWidth: number;
+    boxHeight: number;
+  };
+  const cardMeasurements = new Map<HTMLElement, CardMeasurement>();
+  let clearTop = 110;
+  let measuredAt = -Infinity;
+  let measuredWidth = -1;
+  let measuredHeight = -1;
+  function measureCardGeometry(now: number) {
+    const elements: HTMLElement[] = [];
+    for (const list of [options.floats(), options.pool()]) {
+      if (list) elements.push(...Array.from(list.children) as HTMLElement[]);
+    }
+    // Existing article labels rarely change size. Avoid layout reads on every
+    // frame, but measure immediately when a card becomes a lifted sheet or the
+    // viewport changes. Periodic checks handle late font/layout changes.
+    const unchanged = elements.length === cardMeasurements.size
+      && elements.every((element) => cardMeasurements.get(element)?.firstChild === element.firstElementChild);
+    if (unchanged && measuredWidth === width && measuredHeight === height && now - measuredAt < 180) return;
+    cardMeasurements.clear();
+    for (const element of elements) {
+      const child = element.firstElementChild as HTMLElement | null;
+      cardMeasurements.set(element, {
+        firstChild: child,
+        cardHeight: child?.offsetHeight ?? 80,
+        boxWidth: element.offsetWidth,
+        boxHeight: element.offsetHeight,
+      });
+    }
     const chrome = host.closest(".glade-home-layout")?.querySelector(".glade-top")?.getBoundingClientRect();
-    return chrome ? chrome.bottom - host.getBoundingClientRect().top + 10 : 110;
+    clearTop = chrome ? chrome.bottom - host.getBoundingClientRect().top + 10 : 110;
+    measuredAt = now;
+    measuredWidth = width;
+    measuredHeight = height;
   }
 
   /** Move a card onto its raft on screen. Returns how visible it ended up. */
@@ -1464,9 +1576,8 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
     const x = (projected.x + 1) / 2 * width;
     const y = (1 - projected.y) / 2 * height;
 
-    const cardHeight = (element.firstElementChild as HTMLElement | null)?.offsetHeight ?? 80;
-    const boxWidth = element.offsetWidth;
-    const boxHeight = element.offsetHeight;
+    const { cardHeight, boxWidth, boxHeight } = cardMeasurements.get(element)
+      ?? { cardHeight: 80, boxWidth: 200, boxHeight: 80 };
     // Depth: far pieces are smaller, hazier and lean back with the water;
     // near ones come up large and clear.
     const size = lifted ? 1 : THREE.MathUtils.clamp(24 / distance, 0.52, 1.12);
@@ -1479,8 +1590,19 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
       top = THREE.MathUtils.clamp(top, safeTop, Math.max(safeTop, height - boxHeight - margin));
     }
     const shown = lifted || (!behind && opacity > 0.02);
+    const style = element.style;
+    // Don't continuously reposition labels that cannot be seen. They will
+    // receive a fresh transform on the first frame they become visible.
+    const outsideView = !pinned && !lifted &&
+      (x < -boxWidth || x > width + boxWidth || y < -boxHeight || y > height + boxHeight);
+    if (!shown || outsideView) {
+      if (style.visibility !== "hidden") style.visibility = "hidden";
+      if (style.opacity !== "0") style.opacity = "0";
+      return { opacity, onScreen: false };
+    }
 
-    element.style.transformOrigin = `50% ${cardHeight + 6}px`;
+    const origin = `50% ${cardHeight + 6}px`;
+    if (style.transformOrigin !== origin) style.transformOrigin = origin;
     let depth = "";
     if (!lifted && !pinned) {
       const far = THREE.MathUtils.smoothstep(distance, 16, 48);
@@ -1494,15 +1616,19 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
       const turn = THREE.MathUtils.clamp(-projected.x * 14, -14, 14);
       top += bob;
       depth = ` perspective(700px) rotateX(${lean.toFixed(1)}deg) rotateY(${turn.toFixed(1)}deg) rotate(${rock.toFixed(2)}deg)`;
-      element.style.setProperty("--far", (Math.round(far * 10) / 10).toFixed(1));
-    } else {
-      element.style.setProperty("--far", "0");
+      const farValue = (Math.round(far * 10) / 10).toFixed(1);
+      if (style.getPropertyValue("--far") !== farValue) style.setProperty("--far", farValue);
+    } else if (style.getPropertyValue("--far") !== "0") {
+      style.setProperty("--far", "0");
     }
-    element.style.transform = `translate3d(${left.toFixed(1)}px, ${top.toFixed(1)}px, 0) scale(${(pinned && !lifted ? pinned.size : size).toFixed(3)})${depth}`;
-    element.style.opacity = shown ? opacity.toFixed(3) : "0";
-    element.style.zIndex = String(lifted ? 2000 : Math.round(1000 - distance * 5));
-    element.style.visibility = shown ? "visible" : "hidden";
-    return { opacity, onScreen: shown && opacity > 0.5 && x > 0 && x < width && y > 0 && y < height };
+    const transform = `translate3d(${left.toFixed(1)}px, ${top.toFixed(1)}px, 0) scale(${(pinned && !lifted ? pinned.size : size).toFixed(3)})${depth}`;
+    if (style.transform !== transform) style.transform = transform;
+    const nextOpacity = opacity.toFixed(3);
+    if (style.opacity !== nextOpacity) style.opacity = nextOpacity;
+    const zIndex = String(lifted ? 2000 : Math.round(1000 - distance * 5));
+    if (style.zIndex !== zIndex) style.zIndex = zIndex;
+    if (style.visibility !== "visible") style.visibility = "visible";
+    return { opacity, onScreen: opacity > 0.5 && x > 0 && x < width && y > 0 && y < height };
   }
 
   // The eddies: pieces you are reading turn slowly round the pool. One pushed
@@ -1568,7 +1694,7 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
     const anchorY = centreOnScreen.y;
     const columnSize = 0.92;
     const gap = 6;
-    const heights = settled.map((element) => ((element.firstElementChild as HTMLElement | null)?.offsetHeight ?? 44) * columnSize);
+    const heights = settled.map((element) => (cardMeasurements.get(element)?.cardHeight ?? 44) * columnSize);
     const columnHeight = heights.reduce((sum, h) => sum + h + gap, 0);
     const safeTop = topClearance();
     let columnTop = THREE.MathUtils.clamp(anchorY - columnHeight / 2, safeTop, Math.max(safeTop, height - columnHeight - 90));
@@ -1686,13 +1812,14 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
       const place = settled.indexOf(element);
       if (place >= 0 && !lifted) {
         // While one is lifted, the rest step back so its actions have room.
-        const columnWidth = element.offsetWidth * columnSize;
+        const elementWidth = cardMeasurements.get(element)?.boxWidth ?? 200;
+        const columnWidth = elementWidth * columnSize;
         const fitsRight = rightRim.x + columnWidth + 12 < width;
         const wanted = fitsRight ? rightRim.x + 8 : leftRim.x - columnWidth - 8;
         const left = THREE.MathUtils.clamp(wanted, 12, Math.max(12, width - columnWidth - 12));
         // The column fades in and out as one, as you arrive at the pool.
         placeCard(element, poolPoint, liftedHere ? 0 : opacity * atPool, false,
-          { left: left - (element.offsetWidth - columnWidth) / 2, top: columnTops[place], size: columnSize });
+          { left: left - (elementWidth - columnWidth) / 2, top: columnTops[place], size: columnSize });
       } else {
         placeCard(element, poolPoint, opacity * near, lifted);
       }
@@ -1825,8 +1952,18 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
   function frame(now: number) {
     frameId = requestAnimationFrame(frame);
     const animate = options.animate();
-    const dt = Math.min(0.05, (now - last) / 1000);
+    // A steady 60 fps is preferable to racing the display's 120 Hz refresh
+    // and dropping frames when the GPU is busy. Keep the walker/river's delta
+    // based on elapsed wall time so motion stays the same speed.
+    if (!pageVisible) { last = now; return; }
+    const minFrameMs = 1000 / 60;
+    if (now - last < minFrameMs - 0.75) return;
+    const spacingMs = now - last;
+    const dt = Math.min(0.05, spacingMs / 1000);
     last = now;
+    updateQuality(now, spacingMs);
+
+    measureCardGeometry(now);
 
     if (animate) {
       time += dt;
@@ -1993,6 +2130,7 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
       cancelAnimationFrame(frameId);
       resizeObserver?.disconnect();
       window.removeEventListener("resize", resize);
+      document.removeEventListener("visibilitychange", onPageVisibility);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", onBlur);

@@ -82,6 +82,19 @@ export function addWanders(world: WandersWorld) {
   };
   const flat = (a: THREE.Vector3, b: THREE.Vector3) => Math.hypot(a.x - b.x, a.z - b.z);
   const updates: ((now: number, dt: number, walker: THREE.Vector3) => void)[] = [];
+  // Background tableaux keep their timed motion but need not update every
+  // rendered frame when they are far from the reader.
+  function addDistantUpdate(at: THREE.Vector3, update: (now: number, dt: number, walker: THREE.Vector3) => void) {
+    let lastRun = -Infinity;
+    updates.push((now, dt, walker) => {
+      const distance = Math.hypot(at.x - walker.x, at.z - walker.z);
+      const interval = distance > 130 ? 650 : distance > 65 ? 200 : 0;
+      if (interval && now - lastRun < interval) return;
+      const elapsed = Number.isFinite(lastRun) ? Math.min(0.05, (now - lastRun) / 1000) : dt;
+      lastRun = now;
+      update(now, interval ? elapsed : dt, walker);
+    });
+  }
   // Ripples are shared with the rest of the river, so only make them where you'd see them.
   const lastWalker = new THREE.Vector3(1e6, 0, 1e6);
   const splash = (at: THREE.Vector3, size?: number) => { if (flat(at, lastWalker) < 45) ripple(at, size); };
@@ -156,7 +169,7 @@ export function addWanders(world: WandersWorld) {
     stream.rotation.y = angle;
     scene.add(stream);
     let rippleAt = 0;
-    updates.push((now) => {
+    addDistantUpdate(riverPoint(arc, 0), (now) => {
       if (now < rippleAt) return;
       rippleAt = now + 900;
       splash(end.clone(), 0.6);
@@ -192,7 +205,7 @@ export function addWanders(world: WandersWorld) {
     const swans = [makeSwan(), makeSwan()];
     const span = to - from;
     let wakeAt = 0;
-    updates.push((now) => {
+    addDistantUpdate(riverPoint((from + to) / 2, 0), (now) => {
       const t = now / 1000;
       swans.forEach((swan, index) => {
         // Unhurried, there and back round the loop, one a little behind the other.
@@ -251,7 +264,7 @@ export function addWanders(world: WandersWorld) {
     let lift = 0;
     let fledAt = 0;
     const fleeFrom = new THREE.Vector3();
-    updates.push((now, dt, walker) => {
+    addDistantUpdate(home, (now, dt, walker) => {
       const near = flat(walker, home);
       if (mood === "away") {
         if (now - fledAt > 60_000 && near > 28) {
@@ -339,7 +352,7 @@ export function addWanders(world: WandersWorld) {
       scene.add(boat);
       return boat;
     });
-    updates.push((now) => {
+    addDistantUpdate(riverPoint(arc, 0), (now) => {
       const t = now / 1000;
       boats.forEach((boat) => {
         boat.position.y = WATER_Y - 0.02 + Math.sin(t * 1.3 + boat.userData.phase) * 0.03;
@@ -424,7 +437,7 @@ export function addWanders(world: WandersWorld) {
       return cow;
     });
     let rippleAt = 0;
-    updates.push((now) => {
+    addDistantUpdate(riverPoint(arc, 0), (now) => {
       const t = now / 1000;
       cows.forEach((cow) => {
         const { phase, headGroup, tail } = cow.userData as { phase: number; headGroup: THREE.Group; tail: THREE.Group };
@@ -503,7 +516,7 @@ export function addWanders(world: WandersWorld) {
       });
     };
     place();
-    updates.push((now, dt) => {
+    addDistantUpdate(centre, (now, dt) => {
       // Up for the Temeraire and her tug, down again once they're through.
       const open = flat(tugAt, centre) < 22 ? 1 : 0;
       const next = lift + (open - lift) * Math.min(1, dt * 0.6);
@@ -556,7 +569,7 @@ export function addWanders(world: WandersWorld) {
     let mood: "sitting" | "trotting" | "away" = "sitting";
     let leftAt = 0;
     const away = new THREE.Vector3();
-    updates.push((now, dt, walker) => {
+    addDistantUpdate(home, (now, dt, walker) => {
       const near = flat(walker, home);
       const t = now / 1000;
       if (mood === "away") {
@@ -634,7 +647,7 @@ export function addWanders(world: WandersWorld) {
     const streakAt = new THREE.Vector3();
     const one = new THREE.Vector3(1, 1, 1);
     let dropAt = 0;
-    updates.push((now) => {
+    addDistantUpdate(showerCentre, (now) => {
       const t = now / 1000;
       seeds.forEach((seed, index) => {
         const fall = (seed.phase + t * 0.9) % 1;
