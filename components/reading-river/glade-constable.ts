@@ -147,11 +147,13 @@ export function addConstable(world: ConstableWorld) {
   chimney.position.set(1.4, 4.1, 0.4);
   const windowMaterial = keep(new THREE.MeshLambertMaterial({ color: new THREE.Color("#3b3326") }));
   const pane = keep(new THREE.PlaneGeometry(0.6, 0.55));
-  for (const [x, y] of [[-1.3, 1.7], [1.2, 1.7], [-1.3, 0.75], [1.2, 0.75]]) {
-    const glass = new THREE.Mesh(pane, windowMaterial);
-    glass.position.set(x, y, 1.71);
-    house.add(glass);
-  }
+  // One instanced draw call instead of four separate window meshes.
+  const windows = new THREE.InstancedMesh(pane, windowMaterial, 4);
+  const windowMatrix = new THREE.Matrix4();
+  [[-1.3, 1.7], [1.2, 1.7], [-1.3, 0.75], [1.2, 0.75]].forEach(([x, y], index) => {
+    windows.setMatrixAt(index, windowMatrix.makeTranslation(x, y, 1.71));
+  });
+  house.add(windows);
   const door = new THREE.Mesh(keep(new THREE.PlaneGeometry(0.7, 1.3)), windowMaterial);
   door.position.set(0, 0.65, 1.71);
   house.add(walls, roof, lean, leanRoof, chimney, door);
