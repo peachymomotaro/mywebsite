@@ -11,7 +11,7 @@ export type SheetItem = {
   estimatedMinutes: number | null;
 };
 
-export type SheetEdit = { title?: string; estimatedMinutes?: number };
+export type SheetEdit = { title?: string; estimatedMinutes?: number; sourceUrl?: string | null };
 
 type GladeSheetProps = {
   item: SheetItem;
@@ -34,17 +34,18 @@ const MAX_MINUTES = 600;
 export const GladeSheet = forwardRef<HTMLDivElement, GladeSheetProps>(function GladeSheet(
   { item, place, onStart, onFinish, onRemove, onEdited }, ref,
 ) {
-  const [editing, setEditing] = useState<"title" | "minutes" | null>(null);
+  const [editing, setEditing] = useState<"title" | "minutes" | "sourceUrl" | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [message, setMessage] = useState("");
   const startLabel = place === "eddies" ? "Continue" : "Start reading";
-  const canFinish = place === "eddies" || !item.sourceUrl;
+  const canFinish = place === "eddies";
 
   async function save(edit: SheetEdit) {
     setEditing(null);
     if (edit.title !== undefined && edit.title === item.title) return;
     if (edit.estimatedMinutes !== undefined && edit.estimatedMinutes === item.estimatedMinutes) return;
-    const before = { title: item.title, estimatedMinutes: item.estimatedMinutes ?? undefined };
+    if (edit.sourceUrl !== undefined && edit.sourceUrl === item.sourceUrl) return;
+    const before = { title: item.title, estimatedMinutes: item.estimatedMinutes ?? undefined, sourceUrl: item.sourceUrl };
     onEdited(item.id, edit);
     setMessage("");
     try {
@@ -55,7 +56,9 @@ export const GladeSheet = forwardRef<HTMLDivElement, GladeSheetProps>(function G
           ? { lengthEstimationMethod: "manual", lengthEstimationConfidence: "high" } : {}),
       });
     } catch {
-      onEdited(item.id, edit.title !== undefined ? { title: before.title } : { estimatedMinutes: before.estimatedMinutes });
+      onEdited(item.id, edit.title !== undefined ? { title: before.title }
+        : edit.sourceUrl !== undefined ? { sourceUrl: before.sourceUrl }
+        : { estimatedMinutes: before.estimatedMinutes });
       setMessage("Couldn't save that change. Try again.");
     }
   }
@@ -104,7 +107,12 @@ export const GladeSheet = forwardRef<HTMLDivElement, GladeSheetProps>(function G
               onClick={() => onStart(item)} onAuxClick={(event) => { if (event.button === 1) onStart(item); }}>
               {startLabel}
             </a>
-          ) : null}
+          ) : (
+            <button type="button" className="glade-sheet-button glade-sheet-primary"
+              onClick={() => setEditing("sourceUrl")}>
+              Add article link to {place === "eddies" ? "continue" : "start reading"}
+            </button>
+          )}
           {canFinish ? (
             <button type="button" className="glade-sheet-button" onClick={() => onFinish(item)}>
               Finished
@@ -115,6 +123,9 @@ export const GladeSheet = forwardRef<HTMLDivElement, GladeSheetProps>(function G
           </button>
         </div>
       )}
+      {editing === "sourceUrl" ? (
+        <LinkField onSave={(sourceUrl) => void save({ sourceUrl })} onCancel={() => setEditing(null)} />
+      ) : null}
       <p className="glade-sheet-message" role="status" aria-live="polite">{message}</p>
     </div>
   );
@@ -172,5 +183,36 @@ function MinutesField({ value, onDone, onCancel }: { value: number | null; onDon
         onBlur={() => finish(true)} />
       <span aria-hidden="true">min</span>
     </span>
+  );
+}
+
+/** A real URL is required to open the article. Never guess a missing link. */
+function LinkField({ onSave, onCancel }: { onSave: (url: string) => void; onCancel: () => void }) {
+  const [url, setUrl] = useState("");
+  const [error, setError] = useState("");
+  function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    let parsed: URL;
+    try { parsed = new URL(url.trim()); }
+    catch { setError("Enter a full article URL."); return; }
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+      setError("Use an http:// or https:// article URL.");
+      return;
+    }
+    setError("");
+    onSave(parsed.toString());
+  }
+  return (
+    <form className="glade-sheet-link-editor" onSubmit={submit}>
+      <label htmlFor="glade-sheet-source-link" className="river-sr-only">Article link</label>
+      <input id="glade-sheet-source-link" className="glade-sheet-field" type="url" required autoFocus
+        placeholder="https://…" value={url} onChange={(event) => setUrl(event.target.value)}
+        onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); onCancel(); } }} />
+      <div className="glade-sheet-actions">
+        <button className="glade-sheet-button" type="submit">Save link</button>
+        <button className="glade-sheet-quiet" type="button" onClick={onCancel}>Cancel</button>
+      </div>
+      {error ? <p className="glade-sheet-message" role="alert">{error}</p> : null}
+    </form>
   );
 }
