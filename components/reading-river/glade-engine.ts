@@ -1318,19 +1318,61 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
   let width = 1;
   let height = 1;
   let dirty = true;
+  // Adaptive resolution uses frame spacing, never synchronous GPU readbacks.
+  // Three conservative quality steps with hysteresis prevent oscillation.
+  const qualityLevels = [1, 0.84, 0.7] as const;
+  let qualityLevel = 0;
+  let lastQualityChange = 0;
+  let lastQualitySample = 0;
+  let slowFrames = 0;
+  let sampledFrames = 0;
+  let frameSpacingMs = 1000 / 60;
+  let pageVisible = document.visibilityState === "visible";
+  function updateQuality(now: number, spacingMs: number) {
+    // Ignore tab-resume gaps and animation-disabled scenes; those are not GPU load.
+    if (!options.animate() || !pageVisible || spacingMs > 180) return;
+    frameSpacingMs = frameSpacingMs * 0.9 + spacingMs * 0.1;
+    sampledFrames++;
+    if (spacingMs > 24) slowFrames++;
+    if (!lastQualitySample) lastQualitySample = now;
+    if (now - lastQualitySample < 2200) return;
+    const slowShare = slowFrames / Math.max(1, sampledFrames);
+    // Downgrade only for sustained jank. Upgrade more slowly, with a margin.
+    const next = slowShare > 0.28 && frameSpacingMs > 20
+      ? Math.min(qualityLevels.length - 1, qualityLevel + 1)
+      : slowShare < 0.07 && frameSpacingMs < 18
+        ? Math.max(0, qualityLevel - 1)
+        : qualityLevel;
+    if (next !== qualityLevel && now - lastQualityChange > 4800) {
+      qualityLevel = next;
+      lastQualityChange = now;
+      applyResolution();
+    }
+    lastQualitySample = now;
+    sampledFrames = 0;
+    slowFrames = 0;
+  }
+  function applyResolution() {
+    const factor = qualityLevels[qualityLevel];
+    // Render the final image and painterly intermediate at matching adaptive
+    // quality; preserve CSS dimensions, camera framing and readable HTML cards.
+    renderer.setPixelRatio(pixelRatio * factor);
+    renderer.setSize(width, height, false);
+    const scale = Math.min(pixelRatio, 1.25) * 0.72 * factor;
+    const targetWidth = Math.max(1, Math.round(width * scale));
+    const targetHeight = Math.max(1, Math.round(height * scale));
+    if (paintTarget.width !== targetWidth || paintTarget.height !== targetHeight) {
+      paintTarget.setSize(targetWidth, targetHeight);
+    }
+    paintUniforms.uTexel.value.set(1 / targetWidth, 1 / targetHeight);
+    paintUniforms.uResolution.value.set(width * pixelRatio * factor, height * pixelRatio * factor);
+    dirty = true;
+  }
   function resize() {
     const rect = host.getBoundingClientRect();
     width = Math.max(1, rect.width);
     height = Math.max(1, rect.height);
-    renderer.setSize(width, height, false);
-    // The paint pass works on a slightly smaller picture; the daubs hide it.
-    // Broad brush strokes hide a lower-resolution paint texture.
-    const paintScale = Math.min(pixelRatio, 1.25) * 0.72;
-    const targetWidth = Math.max(1, Math.round(width * paintScale));
-    const targetHeight = Math.max(1, Math.round(height * paintScale));
-    paintTarget.setSize(targetWidth, targetHeight);
-    paintUniforms.uTexel.value.set(1 / targetWidth, 1 / targetHeight);
-    paintUniforms.uResolution.value.set(width * pixelRatio, height * pixelRatio);
+    applyResolution();
     camera.aspect = width / height;
     // Narrow screens see more of the river by widening the lens.
     camera.fov = camera.aspect < 0.7 ? 64 : camera.aspect < 1.1 ? 56 : 46;
@@ -1341,6 +1383,14 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
   const resizeObserver = typeof ResizeObserver === "function" ? new ResizeObserver(resize) : null;
   resizeObserver?.observe(host);
   window.addEventListener("resize", resize);
+  function onPageVisibility() {
+    pageVisible = document.visibilityState === "visible";
+    // Start fresh after a hidden-tab gap, rather than mistaking it for lag.
+    lastQualitySample = 0;
+    sampledFrames = 0;
+    slowFrames = 0;
+  }
+  document.addEventListener("visibilitychange", onPageVisibility);
 
   const canvas = renderer.domElement;
   const raycaster = new THREE.Raycaster();
@@ -1904,10 +1954,13 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
     // A steady 60 fps is preferable to racing the display's 120 Hz refresh
     // and dropping frames when the GPU is busy. Keep the walker/river's delta
     // based on elapsed wall time so motion stays the same speed.
+    if (!pageVisible) { last = now; return; }
     const minFrameMs = 1000 / 60;
     if (now - last < minFrameMs - 0.75) return;
-    const dt = Math.min(0.05, (now - last) / 1000);
+    const spacingMs = now - last;
+    const dt = Math.min(0.05, spacingMs / 1000);
     last = now;
+    updateQuality(now, spacingMs);
 
     measureCardGeometry(now);
 
@@ -2076,6 +2129,7 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
       cancelAnimationFrame(frameId);
       resizeObserver?.disconnect();
       window.removeEventListener("resize", resize);
+      document.removeEventListener("visibilitychange", onPageVisibility);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", onBlur);
