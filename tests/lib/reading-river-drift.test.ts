@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  DRIFT_RULES,
   drawRiver,
   effectivePriority,
   driftWeight,
@@ -54,7 +55,7 @@ describe("drift weights", () => {
     expect(driftWeight(item("a", { lastSurfacedAt: now }), now)).toBeGreaterThan(0);
   });
 
-  it("makes priority items appear more often without excluding the rest", () => {
+  it("gives every piece the same chance, whatever priority it once had", () => {
     const candidates = [
       item("priority", { priorityScore: 10, createdAt: daysAgo(1) }),
       ...Array.from({ length: 9 }, (_, index) => item(`plain-${index}`)),
@@ -62,11 +63,13 @@ describe("drift weights", () => {
     const rng = seeded(7);
     const counts = new Map<string, number>();
     for (let round = 0; round < 3000; round += 1) {
-      for (const item of drawRiver({ candidates, now, rng })) {
+      for (const item of drawRiver({ candidates, now, rng, count: 3 })) {
         counts.set(item.id, (counts.get(item.id) ?? 0) + 1);
       }
     }
-    expect(counts.get("priority")!).toBeGreaterThan(counts.get("plain-0")! * 2);
+    const plain = counts.get("plain-0")!;
+    expect(counts.get("priority")!).toBeLessThan(plain * 1.4);
+    expect(counts.get("priority")!).toBeGreaterThan(plain * 0.6);
     for (let index = 0; index < 9; index += 1) expect(counts.get(`plain-${index}`)).toBeGreaterThan(0);
   });
 });
@@ -74,7 +77,7 @@ describe("drift weights", () => {
 describe("drawing afloat", () => {
   it("draws three distinct items and keeps steady afloat in place", () => {
     const candidates = ["a", "b", "c", "d", "e"].map((id) => item(id));
-    const afloat = drawRiver({ candidates, keep: [candidates[3]], now, rng: seeded(1) });
+    const afloat = drawRiver({ candidates, keep: [candidates[3]], now, rng: seeded(1), count: 3 });
     expect(afloat).toHaveLength(3);
     expect(afloat[0].id).toBe("d");
     expect(new Set(afloat.map((item) => item.id)).size).toBe(3);
@@ -84,7 +87,7 @@ describe("drawing afloat", () => {
     const candidates = ["a", "b", "c", "d", "e", "f"].map((id) => item(id));
     const avoid = new Set(["a", "b", "c"]);
     for (let seed = 0; seed < 50; seed += 1) {
-      const afloat = drawRiver({ candidates, avoid, now, rng: seeded(seed) });
+      const afloat = drawRiver({ candidates, avoid, now, rng: seeded(seed), count: 3 });
       expect(afloat.map((item) => item.id).sort()).toEqual(["d", "e", "f"]);
     }
   });
@@ -96,9 +99,15 @@ describe("drawing afloat", () => {
       item("c"),
       item("d"),
     ];
-    const afloat = drawRiver({ candidates, avoid: new Set(["c", "d"]), now, rng: seeded(3) });
+    const afloat = drawRiver({ candidates, avoid: new Set(["c", "d"]), now, rng: seeded(3), count: 3 });
     expect(afloat.map((item) => item.id).slice(0, 2).sort()).toEqual(["a", "b"]);
     expect(afloat).toHaveLength(3);
+  });
+
+  it("carries a whole small collection on a full day's stream", () => {
+    const candidates = Array.from({ length: 30 }, (_, index) => item(`i${index}`));
+    expect(drawRiver({ candidates, now, rng: seeded(2) })).toHaveLength(DRIFT_RULES.streamLength);
+    expect(drawRiver({ candidates: candidates.slice(0, 5), now, rng: seeded(2) })).toHaveLength(5);
   });
 
   it("never surfaces snoozed items and copes with fewer than three", () => {

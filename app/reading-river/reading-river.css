@@ -202,6 +202,9 @@ hr {
   color: hsl(var(--foreground));
 }
 
+/* The menu's river mark only appears on the glade; elsewhere the links sit in a row. */
+.river-shell-menu-toggle { display: none; }
+
 .editorial-page {
   padding: clamp(0.8rem, 2vw, 1.4rem) 0 clamp(3.5rem, 7vw, 5.5rem);
 }
@@ -1486,19 +1489,24 @@ summary.auth-text-button::-webkit-details-marker {
 .river-eddy-edit-membership { padding-bottom: 1rem; border-bottom: 1px solid hsl(var(--border)); }
 
 /* ------------------------------------------------------------------ */
-/* The garden river                                                    */
-/* A still garden — raked gravel, stones, moss — with a slow river      */
-/* carrying three pieces past. Motion is slow and stops when you look.  */
+/* The glade                                                           */
+/* A sunlit clearing with a river running through it, in the colours  */
+/* of Repin's "Barge Haulers on the Volga": hazy sky, sand-gold,       */
+/* ochre, umber, silver water and a single red.                        */
 /* ------------------------------------------------------------------ */
 
 :root {
-  --garden-gravel: 38 24% 92%;
-  --garden-rake: 34 16% 80%;
-  --garden-bank: 36 18% 84%;
-  --garden-moss: 96 18% 48%;
-  --garden-water: 188 34% 81%;
-  --garden-water-deep: 191 36% 72%;
-  --garden-paper: 40 45% 98%;
+  --garden-gravel: 40 48% 90%;
+  --garden-rake: 37 36% 74%;
+  --garden-paper: 42 56% 95%;
+  --glade-ink: 27 38% 15%;
+  --glade-umber: 28 42% 25%;
+  --glade-earth: 29 30% 38%;
+  --glade-ochre: 37 49% 54%;
+  --glade-sand: 39 55% 72%;
+  --glade-sky: 200 18% 74%;
+  --glade-water: 172 9% 70%;
+  --glade-red: 9 59% 45%;
   --garden-ease-drift: cubic-bezier(0.25, 0.6, 0.3, 1);
   --garden-ease-leave: cubic-bezier(0.5, 0, 0.85, 0.4);
 }
@@ -1556,321 +1564,633 @@ body {
   border: 0;
 }
 
-/* The garden ----------------------------------------------------------- */
+/* The glade home page ------------------------------------------------- */
+/* One screen, no scroll. The 3D glade fills the window; the three pieces  */
+/* ride the river on rafts, and everything else waits behind small chips.  */
 
-.river-drift {
+html:has(.glade-home), body:has(.glade-home) { overflow: hidden; }
+body:has(.glade-home) .editorial-shell { background: transparent; }
+body:has(.glade-home) .editorial-shell::before { display: none; }
+
+body:has(.glade-home) .editorial-shell-frame {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-height: 0;
+  padding-top: 0.9rem;
+}
+
+/* On the glade the header folds away into a small river mark in the corner. */
+body:has(.glade-home) .river-shell-header {
+  position: fixed;
+  top: 0.9rem;
+  right: max(1rem, env(safe-area-inset-right));
+  left: auto;
+  width: auto;
+  margin: 0;
+  z-index: 6;
+  padding: 0;
+}
+body:has(.glade-home) .river-shell-brand { display: none; }
+body:has(.glade-home) .river-shell-menu { position: relative; }
+body:has(.glade-home) .river-shell-menu-toggle {
   display: grid;
-  gap: clamp(1.4rem, 3vw, 2rem);
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid hsl(var(--garden-paper) / 0.35);
+  border-radius: 999px;
+  background: hsl(var(--garden-paper) / 0.22);
+  backdrop-filter: blur(3px);
+  cursor: pointer;
+  opacity: 0.82;
+  transition: opacity 180ms ease, background-color 180ms ease;
 }
-
-.garden {
-  position: relative;
-  container-type: size;
-  /* Breathe a little wider than the text column on large screens. */
-  width: min(calc(100% + 6rem), calc(100vw - 2rem));
-  margin-inline: calc((100% - min(calc(100% + 6rem), calc(100vw - 2rem))) / 2);
-  aspect-ratio: 1200 / 440;
-  overflow: hidden;
-  border-radius: 2.25rem;
-  background: hsl(var(--garden-gravel));
-  box-shadow: 0 0 0 1px hsl(var(--garden-rake) / 0.6) inset;
+body:has(.glade-home) .river-shell-menu-toggle img { width: 30px; height: 30px; border-radius: 999px; }
+body:has(.glade-home) .river-shell-menu-toggle:hover,
+body:has(.glade-home) .river-shell-menu[data-open] .river-shell-menu-toggle {
+  opacity: 1;
+  background: hsl(var(--garden-paper) / 0.5);
 }
-
-.garden-scene {
+body:has(.glade-home) .river-shell-menu-toggle:focus-visible { outline: 2px solid hsl(var(--glade-umber)); outline-offset: 2px; }
+body:has(.glade-home) .river-shell-nav {
   position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-wrap: nowrap;
+  gap: 0.15rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 0.9rem;
+  background: hsl(var(--garden-paper) / 0.86);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 24px -14px hsl(var(--glade-umber) / 0.7);
+  white-space: nowrap;
+  animation: glade-pop 200ms ease;
+}
+body:has(.glade-home) .river-shell-menu:not([data-open]) .river-shell-nav { display: none; }
+/* The same lettering and ink as "Pick your next read" and the controls. */
+body:has(.glade-home) .river-shell-nav-link {
+  padding: 0.3rem 0;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: hsl(var(--glade-ink) / 0.85);
+  text-decoration: underline transparent;
+  text-underline-offset: 0.25em;
+  transition: color 160ms ease, text-decoration-color 160ms ease;
+}
+body:has(.glade-home) .river-shell-nav-link:hover { color: hsl(var(--glade-ink)); text-decoration-color: hsl(var(--glade-ink) / 0.4); }
+/* Leave the corner clear for the river mark. */
+/* Add sits just left of the menu, pinned at the same height so the two line up. */
+body:has(.glade-home) .glade-menus {
+  position: fixed;
+  top: 0.9rem;
+  right: calc(max(1rem, env(safe-area-inset-right)) + 44px + 0.5rem);
+  z-index: 6;
+}
+
+.editorial-shell-frame > main.glade-home {
+  position: static;
+  z-index: auto;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+}
+
+.glade-home-layout {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 0;
+  padding: 0.25rem 0 1.25rem;
+  pointer-events: none;
+  color: hsl(var(--glade-ink));
+}
+
+/* The glade itself, behind everything. */
+.glade-stage {
+  position: fixed;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  z-index: 0;
+  pointer-events: auto;
+  background:
+    radial-gradient(ellipse 22% 60% at 50% 100%, hsl(var(--glade-water)) 0 60%, transparent 61%),
+    linear-gradient(180deg, hsl(var(--glade-sky)) 0%, hsl(40 52% 86%) 34%, hsl(var(--glade-sand)) 36%, hsl(var(--glade-ochre)) 100%);
 }
 
-/* The current: very slow, faster only while things drift on. */
-.garden-current-line {
-  animation: garden-flow 26s linear infinite;
-}
-.garden-current-line-1 { animation-duration: 34s; animation-delay: -9s; }
-.garden-current-line-2 { animation-duration: 30s; animation-delay: -17s; }
-.garden-current-line-3 { animation-duration: 38s; animation-delay: -4s; }
+.glade-canvas { position: absolute; inset: 0; }
+.glade-gl { display: block; width: 100%; height: 100%; touch-action: manipulation; }
 
-.river-drift[data-phase="leaving"] .garden-current-line,
-.river-drift[data-phase="arriving"] .garden-current-line {
-  animation-duration: 7s;
-}
+.glade-home-layout > :not(.glade-stage) { position: relative; z-index: 1; }
+.glade-home-layout > .river-sr-only { position: absolute; }
 
-@keyframes garden-flow {
-  from { stroke-dashoffset: 400; }
-  to { stroke-dashoffset: 0; }
-}
-
-.garden-petal {
-  animation: garden-petal 70s linear infinite;
-}
-.garden-petal-1 { animation-duration: 84s; animation-delay: -30s; }
-.garden-petal-2 { animation-duration: 76s; animation-delay: -52s; }
-.garden-petal-3 { animation-duration: 92s; animation-delay: -12s; }
-
-@keyframes garden-petal {
-  from { transform: translateX(-40px) rotate(0deg); }
-  to { transform: translateX(1240px) rotate(240deg); }
-}
-
-/* Pieces afloat -------------------------------------------------------- */
-
-.garden-afloat {
+/* Pieces afloat. The scene moves each one onto its raft every frame. */
+.glade-afloat {
   position: absolute;
   inset: 0;
   margin: 0;
   padding: 0;
   list-style: none;
+  pointer-events: none;
 }
 
-.garden-float {
+.glade-float {
   position: absolute;
-  left: calc(var(--x) * 100%);
-  top: calc(var(--y) * 100%);
-  width: clamp(12rem, 23cqw, 17.5rem);
-  transform: translate(-50%, -50%);
+  left: 0;
+  top: 0;
+  width: clamp(14.5rem, 21vw, 19rem);
+  pointer-events: auto;
+  will-change: transform, opacity;
 }
 
-/* Slow wandering along the current and a gentle bob, paused on hover,
-   focus or while one is on the bank, so it is easy to settle. */
-.garden-float-drift {
-  animation:
-    garden-wander calc(36s + var(--i) * 7s) ease-in-out infinite alternate,
-    garden-bob calc(6.5s + var(--i) * 1.3s) ease-in-out infinite alternate;
-  animation-delay: calc(var(--i) * -9s), calc(var(--i) * -2s);
-}
+.glade-float-lifted { width: clamp(17rem, 24vw, 21rem); }
+/* Pieces turning in the eddies wear the pool's colour. */
+/* In the eddies the paper has a wash of the pool's green-blue. */
+.glade-float-pool .glade-card { --paper: 150 30% 93%; --wash: 182 30% 48%; }
+.glade-float-pool .glade-card-meta { color: hsl(186 26% 30%); }
+.glade-float-pool[data-state="drifting"] .glade-card { opacity: 0.85; }
+/* In the column above the pool, each piece is a single compact line. */
+.glade-float-pool:not(.glade-float-lifted):not([data-state="drifting"]) .glade-card { gap: 0.1rem; padding: 0.5rem 0.9rem 0.45rem; }
+.glade-float-pool:not(.glade-float-lifted):not([data-state="drifting"]) .glade-card::before { background-image: radial-gradient(120% 80% at 100% 100%, hsl(var(--wash) / 0.28), transparent 60%), linear-gradient(172deg, hsl(var(--paper)), hsl(var(--paper) / 0.96)); }
+.glade-float-pool:not(.glade-float-lifted):not([data-state="drifting"]) .glade-card::after { display: none; }
+.glade-float-pool:not(.glade-float-lifted):not([data-state="drifting"]) .glade-card-title { font-size: 0.95rem; -webkit-line-clamp: 1; }
+.glade-float-pool:not(.glade-float-lifted) .glade-card-meta { font-size: 0.72rem; }
+.glade-float[data-state="leaving"] { pointer-events: none; }
 
-.garden:hover .garden-float-drift,
-.garden:focus-within .garden-float-drift,
-.river-drift:has(.river-bank-lifted) .garden-float-drift {
-  animation-play-state: paused;
-}
+/* Until the scene is up (or without WebGL) pieces sit down the middle. */
+.glade-afloat:not([data-placed]) .glade-float:not([data-slot]) { display: none; }
+.glade-afloat:not([data-placed]) .glade-float { left: 50%; transform: translate(-50%, -100%); transition: opacity 400ms ease; }
+.glade-afloat:not([data-placed]) .glade-float[data-slot="0"] { top: 40%; margin-left: -5rem; }
+.glade-afloat:not([data-placed]) .glade-float[data-slot="1"] { top: 60%; margin-left: 5rem; }
+.glade-afloat:not([data-placed]) .glade-float[data-slot="2"] { top: 82%; margin-left: -3rem; }
+.glade-afloat:not([data-placed]) .glade-float-lifted { top: 14% !important; transform: translate(-50%, 0); }
+.glade-afloat:not([data-placed]) .glade-float[data-state="leaving"] { opacity: 0.3; }
+.glade-home-layout[data-scene="loading"] .glade-float { opacity: 0; }
 
-@keyframes garden-wander {
-  from { translate: -2.2cqw 0; }
-  to { translate: 2.2cqw 0; }
-}
-
-@keyframes garden-bob {
-  from { transform: translateY(-3px) rotate(var(--tilt)); }
-  to { transform: translateY(3px) rotate(calc(var(--tilt) * -0.4)); }
-}
-
-.garden-float-card {
+/* Cards are paper labels tied to the rafts: torn-edged, sun-faded paper with a
+   painted wash, a punched hole and a twist of twine down to the boat. Each
+   hangs at a slight angle of its own, and straightens as you reach for it. */
+.glade-card {
+  --paper: 43 62% 92%;
+  --wash: 37 55% 62%;
+  --tilt: 0deg;
+  position: relative;
+  isolation: isolate;
   display: grid;
-  gap: 0.35rem;
+  gap: 0.3rem;
   width: 100%;
-  padding: 1rem 1.15rem 0.95rem;
-  border: 1px solid hsl(var(--garden-rake) / 0.9);
-  border-radius: 0.9rem 1.15rem 1rem 0.8rem;
-  background:
-    linear-gradient(135deg, hsl(0 0% 100% / 0.7), transparent 45%),
-    hsl(var(--garden-paper));
-  color: hsl(var(--foreground));
+  padding: 1.05rem 1.1rem 0.8rem;
+  border: 0;
+  background: none;
+  color: hsl(var(--glade-ink));
+  font-family: var(--font-serif);
   text-align: left;
   cursor: pointer;
-  box-shadow:
-    0 1px 0 hsl(0 0% 100%) inset,
-    0 14px 18px -12px hsl(195 40% 22% / 0.38),
-    0 3px 6px -2px hsl(195 40% 22% / 0.12);
-  transition: box-shadow 400ms var(--garden-ease-drift), transform 400ms var(--garden-ease-drift);
+  /* Far off, the paper takes on the haze of the air between. */
+  filter:
+    drop-shadow(0 calc(10px - var(--far, 0) * 6px) calc(12px - var(--far, 0) * 6px) hsl(var(--glade-umber) / calc(0.32 - var(--far, 0) * 0.16)))
+    drop-shadow(0 1px 1px hsl(var(--glade-umber) / 0.25))
+    saturate(calc(1 - var(--far, 0) * 0.4))
+    brightness(calc(1 + var(--far, 0) * 0.06))
+    contrast(calc(1 - var(--far, 0) * 0.22));
+  transform: rotate(var(--tilt));
+  transition: transform 320ms cubic-bezier(0.3, 0.7, 0.3, 1), filter 320ms ease;
 }
 
-.garden-float-card:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 1px 0 hsl(0 0% 100%) inset,
-    0 20px 24px -14px hsl(195 40% 22% / 0.42),
-    0 3px 6px -2px hsl(195 40% 22% / 0.12);
+/* The paper itself, with deckled edges, a painted wash and grain. */
+.glade-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 50% 0.55rem, hsl(var(--glade-umber) / 0.55) 0 0.2rem, hsl(var(--glade-umber) / 0.12) 0.24rem, transparent 0.32rem),
+    radial-gradient(120% 80% at 100% 100%, hsl(var(--wash) / 0.28), transparent 60%),
+    radial-gradient(90% 70% at 0% 0%, hsl(var(--wash) / 0.18), transparent 55%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 0.36 0 0 0 0 0.26 0 0 0 0 0.14 0 0 0 0.13 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+    linear-gradient(172deg, hsl(var(--paper)), hsl(var(--paper) / 0.96) 60%, hsl(40 48% 86%));
+  box-shadow: inset 0 0 1.4rem hsl(var(--wash) / 0.35), inset 0 0 0 1px hsl(var(--glade-umber) / 0.12);
+  clip-path: polygon(0.8% 2.5%, 9% 0.6%, 21% 1.8%, 34% 0.3%, 48% 1.4%, 61% 0.2%, 74% 1.6%, 87% 0.4%, 99.2% 1.8%, 100% 18%, 99.3% 41%, 100% 63%, 99.4% 86%, 99.6% 98.6%, 86% 99.6%, 72% 98.4%, 57% 100%, 43% 98.6%, 28% 99.8%, 14% 98.3%, 0.6% 99.5%, 0 80%, 0.7% 57%, 0 33%);
 }
 
-.garden-float-card:focus-visible {
-  outline: 2px solid hsl(var(--ring));
-  outline-offset: 4px;
+/* A twist of twine down to the raft. */
+.glade-card::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - 1px);
+  bottom: -9px;
+  width: 2px;
+  height: 10px;
+  background: repeating-linear-gradient(180deg, hsl(var(--glade-umber) / 0.75) 0 2px, hsl(var(--glade-ochre) / 0.7) 2px 4px);
 }
 
-.garden-float-card:disabled { cursor: default; }
-
-.garden-float-lifted .garden-float-card {
-  border-color: hsl(var(--river-teal));
-  box-shadow:
-    0 0 0 3px hsl(var(--river-teal) / 0.22),
-    0 20px 24px -14px hsl(195 40% 22% / 0.42);
+.glade-card:hover:not(:disabled),
+.glade-card[aria-pressed="true"] {
+  transform: rotate(0deg) translateY(-4px);
+  filter: drop-shadow(0 16px 16px hsl(var(--glade-umber) / 0.36)) drop-shadow(0 1px 1px hsl(var(--glade-umber) / 0.25));
 }
+.glade-card:focus-visible { outline: 3px solid hsl(var(--glade-umber)); outline-offset: 4px; }
+.glade-card:disabled { cursor: default; }
+.glade-float-lifted .glade-card::after { display: none; }
 
-.garden-float-title {
-  font-family: var(--font-serif);
-  font-size: clamp(1rem, 1.5cqw, 1.2rem);
+.glade-card-title {
+  font-size: 1.08rem;
+  font-style: italic;
   font-weight: 500;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
+  line-height: 1.22;
+  letter-spacing: -0.005em;
+  overflow-wrap: anywhere;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  overflow-wrap: anywhere;
 }
 
-.garden-float-meta,
+/* A short painted stroke above the details, like a brush wiped on the label. */
+.glade-card-meta {
+  position: relative;
+  padding-top: 0.4rem;
+  font-variant: small-caps;
+  letter-spacing: 0.03em;
+}
+.glade-card-meta::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2.4rem;
+  height: 0.22rem;
+  border-radius: 0.2rem 0.6rem 0.3rem 0.8rem;
+  background: linear-gradient(90deg, hsl(var(--wash) / 0.9), hsl(var(--wash) / 0.35));
+  transform: rotate(-1.5deg);
+}
+
+.glade-card-meta,
 .river-bank-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.25rem 0.6rem;
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: hsl(var(--glade-earth));
+}
+
+/* A lifted piece opens its actions on a larger sheet of the same paper. */
+.glade-actions {
+  position: relative;
+  isolation: isolate;
+  margin-top: 0.6rem;
+  padding: 0.95rem 1.1rem 0.7rem;
+  filter: drop-shadow(0 18px 18px hsl(var(--glade-umber) / 0.32));
+  animation: glade-pop 260ms cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+.glade-actions::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(120% 70% at 100% 100%, hsl(37 55% 62% / 0.22), transparent 60%),
+    linear-gradient(175deg, hsl(43 62% 94%), hsl(40 48% 88%));
+  box-shadow: inset 0 0 1.6rem hsl(37 55% 62% / 0.3), inset 0 0 0 1px hsl(var(--glade-umber) / 0.12);
+  clip-path: polygon(0.6% 1.4%, 15% 0.3%, 32% 1.1%, 50% 0.2%, 68% 1%, 84% 0.2%, 99.4% 1.2%, 100% 30%, 99.5% 62%, 100% 98.8%, 82% 99.7%, 63% 98.9%, 45% 100%, 26% 99%, 8% 99.8%, 0.3% 99%, 0 66%, 0.6% 33%);
+}
+.glade-actions:focus { outline: none; }
+.glade-actions:focus-visible { outline: 3px solid hsl(var(--glade-umber)); outline-offset: 3px; }
+
+@keyframes glade-pop { from { opacity: 0; transform: translateY(-6px) scale(0.98); } }
+
+/* A lifted piece: its label opens into one larger sheet of the same paper.
+   Tap the title or the reading time to change them. */
+.glade-sheet {
+  gap: 0.45rem;
+  padding: 1.15rem 1.2rem 0.85rem;
+  cursor: default;
+  transform: none;
+  animation: glade-pop 260ms cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+.glade-sheet:hover:not(:disabled) { transform: none; }
+.glade-sheet:focus { outline: none; }
+.glade-sheet:focus-visible { outline: 3px solid hsl(var(--glade-umber)); outline-offset: 4px; }
+.glade-sheet-title { font-size: 1.22rem; -webkit-line-clamp: unset; display: block; }
+.glade-sheet-meta { min-height: 1.9rem; }
+.glade-sheet-editable {
+  margin: -0.1rem -0.25rem;
+  padding: 0.1rem 0.25rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  text-decoration: underline dotted hsl(var(--glade-umber) / 0);
+  text-underline-offset: 0.2em;
+  cursor: text;
+  transition: background-color 160ms ease, text-decoration-color 160ms ease;
+}
+.glade-sheet-editable:hover { background: hsl(var(--wash) / 0.16); text-decoration-color: hsl(var(--glade-umber) / 0.5); }
+.glade-sheet-editable:focus-visible { outline: 2px solid hsl(var(--glade-umber) / 0.7); outline-offset: 1px; }
+.glade-sheet-field {
+  width: 100%;
+  margin: -0.1rem 0;
+  padding: 0.1rem 0.25rem;
+  border: 0;
+  border-bottom: 1.5px solid hsl(var(--glade-umber) / 0.45);
+  border-radius: 3px 3px 0 0;
+  background: hsl(43 70% 98% / 0.7);
+  color: hsl(var(--glade-ink));
+  font: inherit;
+  resize: none;
+}
+.glade-sheet-field:focus { outline: none; border-bottom-color: hsl(var(--glade-umber)); background: hsl(43 70% 98% / 0.95); }
+.glade-sheet-minutes { display: inline-flex; align-items: center; gap: 0.3rem; }
+.glade-sheet-field-minutes { width: 4.2rem; font-variant: normal; }
+.glade-sheet-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem 0.6rem; margin-top: 0.4rem; }
+.glade-sheet-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 40px;
+  padding: 0.4rem 1rem;
+  border: 1px solid hsl(var(--glade-umber) / 0.22);
+  border-radius: 999px;
+  background: hsl(var(--wash) / 0.16);
+  color: hsl(var(--glade-ink));
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+.glade-sheet-button:hover { background: hsl(var(--wash) / 0.32); transform: translateY(-1px); }
+.glade-sheet-button:focus-visible, .glade-sheet-quiet:focus-visible { outline: 3px solid hsl(var(--glade-umber)); outline-offset: 2px; }
+.glade-sheet-primary { background: hsl(var(--wash) / 0.42); border-color: hsl(var(--glade-umber) / 0.3); }
+.glade-sheet-primary::after { content: "→"; font-weight: 500; }
+.glade-sheet-primary:hover { background: hsl(var(--wash) / 0.6); }
+.glade-sheet-danger { background: hsl(8 55% 45% / 0.12); border-color: hsl(8 50% 40% / 0.3); color: hsl(8 55% 30%); }
+.glade-sheet-danger:hover { background: hsl(8 55% 45% / 0.22); }
+.glade-sheet-quiet {
+  min-height: 36px;
+  margin-left: auto;
+  padding: 0 0.2rem;
+  border: 0;
+  background: none;
+  color: hsl(var(--glade-earth));
   font-family: var(--font-sans);
   font-size: 0.8rem;
-  line-height: 1.45;
-  color: hsl(var(--muted-foreground));
+  text-decoration: underline hsl(var(--glade-earth) / 0.35);
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+.glade-sheet-remove:hover { color: hsl(8 55% 36%); text-decoration-color: currentColor; }
+.glade-sheet-confirm p { margin: 0.3rem 0 0; font-size: 0.92rem; font-style: italic; line-height: 1.35; }
+.glade-sheet-message { margin: 0; font-family: var(--font-sans); font-size: 0.76rem; color: hsl(8 55% 34%); }
+.glade-sheet-message:empty { display: none; }
+
+/* Finished: the label catches the light as its raft becomes a ship. */
+.glade-float-pool[data-state="sailing"] .glade-card {
+  --paper: 46 80% 91%;
+  --wash: 42 78% 55%;
+  animation: glade-hooray 1600ms cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+.glade-float-pool[data-state="sailing"] .glade-card-meta { color: hsl(36 60% 28%); }
+@keyframes glade-hooray {
+  0% { transform: scale(1); filter: drop-shadow(0 0 0 hsl(45 90% 60% / 0)); }
+  30% { transform: scale(1.08) rotate(-1.5deg); filter: drop-shadow(0 0 18px hsl(45 95% 62% / 0.9)); }
+  60% { transform: scale(1.02) rotate(0.8deg); filter: drop-shadow(0 0 10px hsl(45 95% 62% / 0.6)); }
+  100% { transform: scale(1); }
 }
 
-.garden-float-priority {
-  padding: 0 0.5rem;
-  border-radius: 999px;
-  background: hsl(var(--river-accent-surface));
-  color: hsl(var(--accent-foreground));
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-/* Drifting on: everything floats downstream; newcomers come from upstream. */
-.garden-float-leaving {
-  animation: garden-leave 1300ms var(--garden-ease-leave) forwards;
-  animation-delay: calc((2 - var(--i)) * 90ms);
-  pointer-events: none;
-}
-
-.garden-float-arriving {
-  animation: garden-arrive 2300ms var(--garden-ease-drift) both;
-  animation-delay: calc(var(--i) * 260ms);
-}
-
-@keyframes garden-leave {
-  to {
-    transform: translate(calc(-50% + 75cqw), -50%) rotate(6deg);
-    opacity: 0;
-  }
-}
-
-@keyframes garden-arrive {
-  from {
-    transform: translate(calc(-50% - 70cqw), calc(-50% + 1.5cqh)) rotate(-5deg);
-    opacity: 0;
-  }
-  35% { opacity: 1; }
-  to {
-    transform: translate(-50%, -50%);
-    opacity: 1;
-  }
-}
-
-/* Controls ------------------------------------------------------------- */
-
-.river-drift-controls {
+/* The top line: a title, then small chips that open dropdowns. */
+.glade-top {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 1.25rem 2.5rem;
+  gap: 0.75rem 1.25rem;
 }
 
-.river-drift-on-group {
-  display: grid;
-  justify-items: start;
-  gap: 0.35rem;
-  max-width: 28rem;
+.glade-title {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 0.4rem;
+  /* The same quiet lettering as Add and the controls at the bottom. */
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.2;
+  color: hsl(var(--glade-ink) / 0.85);
+  /* No backing: just a soft glow lifting it off the painting. */
+  text-shadow: 0 0 10px hsl(var(--garden-paper) / 0.95), 0 0 3px hsl(var(--garden-paper) / 0.8);
+  pointer-events: auto;
 }
 
-.river-drift-on {
+/* Add: as quiet as the controls at the bottom, opening a small paper sheet. */
+.glade-add { position: relative; }
+.glade-add-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
-  min-height: 48px;
-  padding: 0.6rem 1.35rem 0.6rem 1.05rem;
-  border: 1px solid hsl(190 30% 70%);
+  gap: 0.35rem;
+  min-height: 44px;
+  padding: 0.4rem 1rem;
+  border: 1px solid hsl(var(--garden-paper) / 0.4);
   border-radius: 999px;
-  background: hsl(188 34% 88% / 0.6);
-  color: hsl(var(--foreground));
+  background: hsl(var(--garden-paper) / 0.24);
+  backdrop-filter: blur(3px);
+  color: hsl(var(--glade-ink) / 0.85);
+  text-shadow: 0 0 8px hsl(var(--garden-paper) / 0.8);
   font-family: var(--font-sans);
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 220ms ease;
+  transition: background-color 180ms ease, transform 180ms ease;
+}
+.glade-add-toggle:hover, .glade-add[data-open] .glade-add-toggle { background: hsl(var(--garden-paper) / 0.55); color: hsl(var(--glade-ink)); }
+.glade-add-toggle:focus-visible { outline: 3px solid hsl(var(--glade-umber)); outline-offset: 3px; }
+.glade-add-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 30;
+  width: min(22rem, calc(100vw - 2rem));
+  padding: 0.85rem 0.95rem 0.7rem;
+  border-radius: 0.9rem;
+  background: hsl(var(--garden-paper) / 0.9);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 14px 30px -16px hsl(var(--glade-umber) / 0.75);
+  color: hsl(var(--glade-ink));
+  animation: glade-pop 200ms ease;
+}
+.glade-add-panel[hidden] { display: none; }
+.glade-add-form { display: grid; gap: 0.45rem; }
+.glade-add-label { font-family: var(--font-serif); font-style: italic; font-size: 0.92rem; }
+.glade-add-row { display: flex; align-items: center; gap: 0.4rem; }
+.glade-add-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid hsl(var(--glade-ochre) / 0.55);
+  border-radius: 0.6rem;
+  background: hsl(43 60% 97% / 0.9);
+  color: hsl(var(--glade-ink));
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+}
+.glade-add-input:focus { outline: 2px solid hsl(var(--glade-umber) / 0.6); outline-offset: 1px; }
+.glade-add-minutes { flex: 0 0 5rem; }
+.glade-add-unit { font-size: 0.85rem; color: hsl(var(--glade-earth)); margin-right: auto; }
+.glade-add-submit {
+  min-height: 40px;
+  padding: 0.35rem 0.95rem;
+  border: 0;
+  border-radius: 0.6rem;
+  background: hsl(var(--glade-umber));
+  color: hsl(var(--garden-paper));
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.glade-add-submit:disabled { opacity: 0.6; cursor: progress; }
+.glade-add-more { display: grid; gap: 0.35rem; }
+.glade-add-message, .glade-add-status { margin: 0; font-size: 0.84rem; color: hsl(var(--glade-earth)); }
+.glade-add-status:empty { display: none; }
+.glade-add-title { margin: 0; font-family: var(--font-serif); font-style: italic; font-size: 0.95rem; }
+.glade-add-elsewhere { justify-self: end; font-size: 0.78rem; color: hsl(var(--glade-earth)); text-decoration: underline; text-underline-offset: 2px; }
+
+.glade-menus { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; pointer-events: auto; }
+.glade-menu { position: relative; }
+
+.glade-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 44px;
+  padding: 0.4rem 0.95rem;
+  border: 1px solid hsl(var(--glade-ochre) / 0.55);
+  border-radius: 999px;
+  background: hsl(var(--garden-paper) / 0.86);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 8px 20px -12px hsl(var(--glade-umber) / 0.7);
+  color: hsl(var(--glade-ink));
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 180ms ease, color 180ms ease, transform 180ms ease;
+}
+.glade-chip:hover { background: hsl(var(--garden-paper)); transform: translateY(-1px); }
+.glade-chip:focus-visible { outline: 3px solid hsl(var(--glade-umber)); outline-offset: 2px; }
+.glade-chip[aria-expanded="true"] { background: hsl(var(--glade-ink)); color: hsl(var(--garden-paper)); }
+
+.glade-chip-count {
+  min-width: 1.45rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: hsl(var(--glade-sand) / 0.75);
+  color: hsl(var(--glade-ink));
+  font-size: 0.75rem;
+  line-height: 1.45rem;
+  text-align: center;
 }
 
-.river-drift-on:hover:not(:disabled) { background: hsl(188 34% 84%); }
-.river-drift-on:disabled { cursor: default; opacity: 0.6; }
-.river-drift-on:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 3px; }
+.glade-chip-caret { width: 0.75rem; height: 0.75rem; transition: rotate 200ms ease; }
+.glade-chip[aria-expanded="true"] .glade-chip-caret { rotate: 180deg; }
 
-.river-drift-on-mark { width: 1.35rem; height: 1.35rem; }
+.glade-chip-add { border-color: transparent; background: hsl(var(--glade-umber)); color: hsl(var(--garden-paper)); }
+.glade-chip-add:hover { background: hsl(var(--glade-ink)); }
 
-.river-drift[data-phase="leaving"] .river-drift-on-mark {
-  animation: garden-mark 1.3s ease-in-out infinite;
+.glade-menu-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  z-index: 10;
+  width: min(24rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 10rem);
+  overflow-y: auto;
+  padding: 1rem 1.1rem;
+  border: 1px solid hsl(var(--glade-ochre) / 0.45);
+  border-radius: 1rem;
+  background: hsl(var(--garden-paper) / 0.98);
+  box-shadow: 0 28px 50px -22px hsl(var(--glade-umber) / 0.75);
+  scrollbar-width: thin;
+  animation: glade-pop 220ms cubic-bezier(0.3, 0.7, 0.3, 1);
 }
+.glade-menu-panel[hidden] { display: none; }
 
-@keyframes garden-mark {
-  50% { transform: translateX(3px); }
-}
-
-.river-drift-hint,
-.river-bank-hint {
-  margin: 0;
+/* What lives inside the dropdowns. */
+.glade-menu-panel .river-time-picker { display: grid; gap: 0.6rem; padding: 0; border: 0; background: none; box-shadow: none; }
+.glade-menu-panel .river-time-picker .river-section-label { margin: 0; }
+.glade-menu-panel .river-time-picker-options { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.glade-menu-panel .river-time-pill {
+  min-height: 40px;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid hsl(var(--glade-ochre) / 0.5);
+  border-radius: 999px;
+  background: hsl(0 0% 100% / 0.6);
+  color: hsl(var(--glade-ink));
   font-family: var(--font-sans);
   font-size: 0.88rem;
-  line-height: 1.55;
-  color: hsl(var(--muted-foreground));
+  text-decoration: none;
 }
+.glade-menu-panel .river-time-pill-active { border-color: transparent; background: hsl(var(--glade-ink)); color: hsl(var(--garden-paper)); }
 
-.river-drift .river-time-picker { gap: 0.5rem; padding-top: 0; border-top: 0; }
-.river-drift .river-time-picker-options { gap: 0.35rem; }
+.glade-menu-panel .river-eddies { display: grid; gap: 0.5rem; padding: 0; border: 0; background: none; }
+.glade-menu-panel .river-eddies-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.8rem; }
+.glade-menu-panel .river-eddies-heading h2 { margin: 0; font-size: 1.15rem; }
+.glade-menu-panel .river-eddies-list { margin: 0; padding: 0; list-style: none; }
+.glade-menu-panel .river-eddies-list li { padding: 0.55rem 0 0.35rem; border-bottom: 1px solid hsl(var(--glade-ochre) / 0.3); }
+.glade-menu-panel .river-eddies-list h3 { margin: 0; font-size: 1rem; font-weight: 500; line-height: 1.3; }
+.glade-menu-panel .river-eddies-meta { margin: 0.1rem 0 0; font-size: 0.78rem; }
+.glade-menu-panel .river-eddy-actions { gap: 0 0.8rem; }
+.glade-menu-panel .river-eddy-actions .river-eddy-text-action { min-height: 32px; font-size: 0.8rem; }
 
-.river-drift .river-time-pill {
-  min-height: 44px;
-  padding: 0.5rem 0.9rem;
-  border-color: transparent;
+/* Still reading and Drifted past. */
+.river-bank-section { display: flex; flex-direction: column; min-height: 0; }
+
+.river-bank-tabs { display: flex; gap: 0.25rem; margin: -0.25rem 0 0.35rem -0.5rem; }
+
+.river-bank-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 40px;
+  padding: 0.25rem 0.75rem;
+  border: 0;
+  border-radius: 999px;
   background: transparent;
-  color: hsl(var(--muted-foreground));
+  color: hsl(var(--glade-earth));
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  cursor: pointer;
 }
+.river-bank-tab[aria-selected="true"] { background: hsl(var(--glade-sand) / 0.55); color: hsl(var(--glade-ink)); }
+.river-bank-tab:focus-visible { outline: 2px solid hsl(var(--glade-umber)); outline-offset: 2px; }
 
-.river-drift .river-time-pill:hover {
-  transform: none;
-  color: hsl(var(--foreground));
-  background: hsl(var(--garden-gravel));
-}
-
-.river-drift .river-time-pill-active {
-  background: hsl(var(--accent));
-  color: hsl(var(--accent-foreground));
-}
-
-/* The bank ------------------------------------------------------------- */
-
-.river-bank-lifted-region:focus { outline: none; }
-.river-bank-lifted-region:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 6px; border-radius: 1.5rem; }
-
-.river-bank-lifted {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-  gap: 1.25rem 2.5rem;
-  padding: clamp(1.4rem, 3vw, 2.1rem) clamp(1.4rem, 3vw, 2.4rem);
-  border-radius: 1.75rem;
-  background: hsl(var(--garden-gravel) / 0.75);
-  box-shadow: 0 0 0 1px hsl(var(--garden-rake) / 0.7) inset;
-  animation: river-bank-in 420ms var(--garden-ease-drift);
-}
-
-@keyframes river-bank-in {
-  from { opacity: 0; transform: translateY(8px); }
-}
-
-.river-bank-lifted-copy { display: grid; gap: 0.55rem; align-content: start; }
-
-.river-bank-lifted-title {
-  margin: 0;
-  font-size: clamp(1.6rem, 3vw, 2.2rem);
-  font-weight: 500;
-  line-height: 1.15;
-  overflow-wrap: anywhere;
-}
+.river-bank-count { font-family: var(--font-sans); font-size: 0.78rem; color: hsl(var(--glade-earth)); }
+.river-bank-list { margin: 0; padding: 0; list-style: none; }
+.river-bank-row { padding: 0.5rem 0 0.3rem; border-bottom: 1px solid hsl(var(--glade-ochre) / 0.3); }
+.river-bank-row-title { margin: 0; font-size: 1rem; font-weight: 500; line-height: 1.3; overflow-wrap: anywhere; }
+.river-bank-row-actions { display: flex; flex-wrap: wrap; gap: 0 0.9rem; }
+.river-bank-row-actions .river-eddy-text-action { min-height: 32px; font-size: 0.8rem; }
 
 .river-bank-lifted-title a,
 .river-bank-row-title a {
@@ -1881,261 +2201,287 @@ body {
   text-decoration-thickness: 1px;
   transition: text-decoration-color 200ms ease;
 }
-
 .river-bank-lifted-title a:hover,
-.river-bank-row-title a:hover { text-decoration-color: hsl(var(--river-teal) / 0.6); }
+.river-bank-row-title a:hover { text-decoration-color: hsl(var(--glade-ochre)); }
 
 .river-bank-lifted-title a:focus-visible,
 .river-bank-row-title a:focus-visible,
-.river-button:focus-visible,
-.river-bank-heading:focus-visible {
-  outline: 2px solid hsl(var(--ring));
+.river-button:focus-visible {
+  outline: 2px solid hsl(var(--glade-umber));
   outline-offset: 3px;
   border-radius: 0.4rem;
 }
 
-.river-bank-meta { font-size: 0.88rem; }
+.river-bank-lifted { display: flex; flex-direction: column; gap: 0.4rem; }
+.river-bank-lifted-title { margin: 0; font-size: 1.25rem; font-weight: 500; line-height: 1.2; overflow-wrap: anywhere; }
+.river-bank-primary-row { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.river-bank-quiet-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0 0.9rem; }
+.river-bank-quiet-row .river-eddy-actions { gap: 0 0.9rem; }
+.river-bank-quiet-row .river-eddy-text-action { min-height: 36px; font-size: 0.82rem; }
 
-.river-drift .river-spotlight-tags,
-.river-drift .river-spotlight-tags-toggle {
+.river-bank-hint {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: hsl(var(--glade-earth));
+}
+
+.glade-home-layout .river-spotlight-tags,
+.glade-home-layout .river-spotlight-tags-toggle {
   margin: 0;
   padding: 0;
   border: 0;
   background: none;
   font-family: var(--font-sans);
-  font-size: 0.85rem;
-  color: hsl(var(--muted-foreground));
+  font-size: 0.8rem;
+  color: hsl(var(--glade-earth));
   text-align: left;
   cursor: pointer;
 }
-
-.river-bank-lifted-actions { display: grid; gap: 0.5rem; align-content: start; }
-.river-bank-primary-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-
-.river-bank-quiet-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0 1.1rem;
-}
-
-.river-bank-quiet-row .river-eddy-actions { gap: 0 1.1rem; }
 
 .river-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
-  padding: 0.5rem 1.1rem;
-  border: 1px solid hsl(var(--garden-rake));
+  min-height: 42px;
+  padding: 0.45rem 1rem;
+  border: 1px solid hsl(var(--glade-ochre) / 0.6);
   border-radius: 999px;
   background: hsl(0 0% 100% / 0.6);
-  color: hsl(var(--foreground));
+  color: hsl(var(--glade-ink));
   font-family: var(--font-sans);
-  font-size: 0.94rem;
+  font-size: 0.9rem;
   font-weight: 500;
+  text-decoration: none;
   cursor: pointer;
   transition: background-color 180ms ease;
 }
-
 .river-button:hover { background: hsl(0 0% 100%); }
 .river-button:disabled { cursor: wait; opacity: 0.6; }
-
-.river-button-primary {
-  border-color: transparent;
-  background: hsl(var(--foreground));
-  color: hsl(var(--garden-paper));
-}
-
-.river-button-primary:hover { background: hsl(var(--river-accent-foreground)); }
+.river-button-primary { border-color: transparent; background: hsl(var(--glade-umber)); color: hsl(var(--garden-paper)); }
+.river-button-primary:hover { background: hsl(var(--glade-ink)); }
 
 /* The existing remove confirmation, quietened to a text action. */
-.river-drift .river-spotlight-remove-action > .river-spotlight-action-button {
-  min-height: 44px;
-  padding: 0.35rem 0;
+.glade-home-layout .river-spotlight-remove-action > .river-spotlight-action-button {
+  min-height: 36px;
+  padding: 0.25rem 0;
   border: 0;
   background: none;
   box-shadow: none;
-  color: hsl(var(--river-danger-rest-fg));
+  color: hsl(var(--glade-red));
   font-family: var(--font-sans);
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 400;
   text-decoration: underline;
-  text-decoration-color: hsl(var(--river-danger-rest-border));
+  text-decoration-color: hsl(var(--glade-red) / 0.4);
   text-underline-offset: 0.2em;
   cursor: pointer;
 }
+.glade-home-layout .river-spotlight-remove-action-open { flex-basis: 100%; }
+.glade-home-layout .river-spotlight-remove-confirmation-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
-.river-drift .river-spotlight-remove-action-open { flex-basis: 100%; }
-.river-drift .river-spotlight-remove-confirmation-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+/* Looking around, at the water's edge. */
+.glade-foot { display: flex; align-items: flex-end; justify-content: center; gap: 0.5rem; pointer-events: none; }
+.glade-face-wrap { display: grid; justify-items: center; gap: 0.3rem; }
+/* While a piece is lifted, its actions take the space at the bottom. */
+.glade-home-layout:has(.glade-float-lifted) .glade-foot { visibility: hidden; }
 
-.river-bank-lists { display: grid; gap: 1.75rem; }
-.river-bank-section { display: grid; gap: 0.25rem; }
-
-.river-bank-heading {
-  margin: 0;
-  font-family: var(--font-serif);
-  font-size: 1.3rem;
-  font-weight: 500;
-  color: hsl(var(--foreground));
-}
-
-summary.river-bank-heading {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  min-height: 44px;
-  cursor: pointer;
-  list-style: none;
-}
-
-summary.river-bank-heading::-webkit-details-marker { display: none; }
-
-summary.river-bank-heading::before {
-  content: "";
-  width: 0.5rem;
-  height: 0.5rem;
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  transform: rotate(-45deg);
-  transition: transform 200ms ease;
-}
-
-.river-bank-passed[open] > summary.river-bank-heading::before { transform: rotate(45deg); }
-
-.river-bank-count {
+.glade-hint {
+  padding: 0.05rem 0.5rem;
+  color: hsl(var(--glade-ink) / 0.62);
   font-family: var(--font-sans);
-  font-size: 0.85rem;
-  color: hsl(var(--muted-foreground));
+  font-size: 0.7rem;
+  text-shadow: 0 0 8px hsl(var(--garden-paper) / 0.9), 0 0 2px hsl(var(--garden-paper) / 0.7);
 }
 
-.river-bank-list { margin: 0; padding: 0; list-style: none; }
-
-.river-bank-row {
-  display: flex;
-  flex-wrap: wrap;
+.glade-turn,
+.glade-face {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.25rem 1.5rem;
-  padding: 0.85rem 0;
-  border-bottom: 1px solid hsl(var(--border));
-}
-
-.river-bank-row-copy { min-width: 0; flex: 1 1 22rem; }
-
-.river-bank-row-title {
-  margin: 0;
-  font-size: 1.15rem;
-  font-weight: 500;
-  line-height: 1.35;
-  letter-spacing: -0.01em;
-  overflow-wrap: anywhere;
-}
-
-.river-bank-row-actions { display: flex; flex-wrap: wrap; gap: 0 1.1rem; }
-
-/* Small and empty rivers ----------------------------------------------- */
-
-.garden-empty {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: 0.45rem;
-  padding: 1.5rem;
-  text-align: center;
-  font-family: var(--font-sans);
-  color: hsl(var(--muted-foreground));
-}
-
-.garden-empty > * {
-  max-width: 28rem;
-  margin: 0;
-}
-
-.garden-empty-title {
-  padding: 0.2rem 0.9rem;
+  justify-content: center;
+  min-width: 46px;
+  min-height: 46px;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid hsl(var(--garden-paper) / 0.4);
   border-radius: 999px;
-  background: hsl(var(--garden-paper) / 0.85);
-  font-family: var(--font-serif);
-  font-size: clamp(1.3rem, 2.4vw, 1.7rem);
-  color: hsl(var(--foreground));
+  background: hsl(var(--garden-paper) / 0.24);
+  backdrop-filter: blur(3px);
+  color: hsl(var(--glade-ink) / 0.85);
+  text-shadow: 0 0 8px hsl(var(--garden-paper) / 0.8);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 500;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: background-color 180ms ease, transform 180ms ease;
 }
+.glade-turn { padding: 0.5rem; }
+.glade-turn svg { width: 1.2rem; height: 1.2rem; }
+.glade-turn:hover, .glade-face:hover { background: hsl(var(--garden-paper) / 0.55); color: hsl(var(--glade-ink)); transform: translateY(-1px); }
+.glade-turn:focus-visible, .glade-face:focus-visible { outline: 3px solid hsl(var(--glade-umber)); outline-offset: 3px; }
 
-.garden-empty p:not(.garden-empty-title) {
-  padding: 0.15rem 0.7rem;
-  border-radius: 0.6rem;
-  background: hsl(var(--garden-paper) / 0.8);
+.glade-gl { cursor: grab; touch-action: none; }
+.glade-gl.glade-gl-turning { cursor: grabbing; }
+
+/* Empty and resting states, floating over the water. */
+.glade-empty {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  width: min(24rem, calc(100vw - 2rem));
+  padding: 1.4rem 1.5rem;
+  border: 1px solid hsl(var(--glade-ochre) / 0.5);
+  border-radius: 1rem;
+  background: hsl(var(--garden-paper) / 0.94);
+  box-shadow: 0 24px 44px -20px hsl(var(--glade-umber) / 0.7);
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  text-align: center;
+  transform: translate(-50%, -50%);
 }
+.glade-empty > * { margin: 0; }
+.glade-empty-title { font-family: var(--font-serif); font-size: 1.3rem; color: hsl(var(--glade-ink)); }
+.glade-empty .river-button { margin-top: 0.4rem; }
 
-.garden-empty .river-button { margin-top: 0.6rem; }
-
-/* With one or two pieces, let them sit more centrally on the water. */
-.garden[data-count="1"] .garden-float { --x: 0.5 !important; --y: 0.54 !important; }
-.garden[data-count="2"] .garden-float:nth-child(1) { --x: 0.32 !important; --y: 0.55 !important; }
-.garden[data-count="2"] .garden-float:nth-child(2) { --x: 0.68 !important; --y: 0.46 !important; }
-
-/* Narrow screens: the garden turns so the river runs top to bottom. ---- */
-
-@media (max-width: 44rem) {
-  .garden {
-    width: 100%;
-    margin-inline: 0;
-    aspect-ratio: 440 / 860;
-    border-radius: 1.75rem;
+/* Phones: the same glade; dropdowns become sheets from the bottom. */
+@media (max-width: 40rem) {
+  body:has(.glade-home) .editorial-shell-frame { padding-top: 0.6rem; }
+  .glade-top { gap: 0.5rem; }
+  .glade-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; padding: 0; }
+  .glade-chip-long { display: none; }
+  body:has(.glade-home) .river-shell-header { top: 0.6rem; }
+  body:has(.glade-home) .glade-menus { top: 0.6rem; }
+  .glade-menus { justify-content: flex-start; gap: 0.35rem; }
+  .glade-add-panel { position: fixed; top: 3.6rem; left: 1rem; right: 1rem; width: auto; }
+  .glade-add-toggle { min-height: 40px; padding: 0.3rem 0.8rem; font-size: 0.84rem; }
+  .glade-chip { min-height: 40px; padding: 0.3rem 0.7rem; font-size: 0.84rem; }
+  .glade-menu { position: static; }
+  .glade-menu-panel {
+    position: fixed;
+    left: 0.75rem;
+    right: 0.75rem;
+    top: auto;
+    bottom: 0.75rem;
+    width: auto;
+    max-height: 72dvh;
   }
-
-  .garden-scene {
-    inset: auto;
-    top: 0;
-    left: 100%;
-    width: 100cqh;
-    height: 100cqw;
-    transform-origin: top left;
-    transform: rotate(90deg);
-  }
-
-  .garden-float,
-  .garden[data-count] .garden-float {
-    left: calc((1 - var(--y)) * 100%);
-    top: calc(var(--x) * 100% + 2%);
-    width: min(78cqw, 20rem);
-  }
-
-  .garden-float-title { font-size: 1.1rem; }
-
-  @keyframes garden-wander {
-    from { translate: 0 -1.2cqh; }
-    to { translate: 0 1.2cqh; }
-  }
-
-  @keyframes garden-leave {
-    to { transform: translate(-50%, calc(-50% + 60cqh)) rotate(5deg); opacity: 0; }
-  }
-
-  @keyframes garden-arrive {
-    from { transform: translate(calc(-50% + 3cqw), calc(-50% - 55cqh)) rotate(-4deg); opacity: 0; }
-    35% { opacity: 1; }
-    to { transform: translate(-50%, -50%); opacity: 1; }
-  }
-
-  .river-bank-lifted { grid-template-columns: minmax(0, 1fr); }
-  .river-drift-controls { flex-direction: column; }
+  .glade-float { width: min(13rem, 62vw); }
+  .glade-float-lifted { width: min(21rem, calc(100vw - 1.5rem)); }
+  .glade-card { padding: 0.65rem 0.8rem; }
+  .glade-card-title { font-size: 0.96rem; -webkit-line-clamp: 2; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .garden-current-line,
-  .garden-petal,
-  .garden-float-drift,
-  .river-drift[data-phase="leaving"] .river-drift-on-mark,
-  .river-bank-lifted { animation: none; }
-  .garden-float-drift { transform: rotate(var(--tilt)); }
-  .garden-float-leaving { animation: none; opacity: 0.35; }
-  .garden-float-arriving { animation: garden-fade-in 200ms linear both; animation-delay: 0ms; }
-  .garden-float-card, .river-button, .river-drift-on { transition: none; }
+  .glade-actions, .glade-menu-panel, .glade-sheet, .glade-float-pool[data-state="sailing"] .glade-card { animation: none; }
+  .glade-card, .glade-chip, .glade-turn, .glade-face, .river-button, .glade-chip-caret { transition: none; }
+  .glade-card:hover:not(:disabled), .glade-chip:hover, .glade-turn:hover, .glade-face:hover { transform: none; }
 }
 
-@keyframes garden-fade-in {
-  from { opacity: 0; }
+/* ------------------------------------------------------------------------------
+   Afloat, a piece is just its title written in Spectral italic,
+   on a small soft cloud drifting down the river with its raft.
+   ------------------------------------------------------------------------------ */
+.glade-card-title {
+  font-family: var(--font-spectral), var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0;
 }
+.glade-card-meta {
+  font-family: var(--font-spectral), var(--font-serif);
+  font-variant: small-caps;
+  letter-spacing: 0.05em;
+}
+.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card {
+  --cloud: 43 60% 95%;
+  --cloud-belly: 36 32% 72%;
+  justify-items: center;
+  gap: 0.15rem;
+  padding: 0.6rem 1.1rem 0.55rem;
+  text-align: center;
+  filter: saturate(calc(1 - var(--far, 0) * 0.4)) contrast(calc(1 - var(--far, 0) * 0.3));
+  text-shadow: 0 0 10px hsl(var(--cloud)), 0 0 4px hsl(var(--cloud) / 0.95), 0 0 1px hsl(var(--cloud) / 0.9);
+}
+.glade-home-layout .glade-afloat .glade-float-pool:not(.glade-float-lifted) .glade-card {
+  --cloud: 168 30% 94%;
+  --cloud-belly: 186 22% 62%;
+}
+/* The cloud: a few soft puffs, a little grey underneath, edges lost in the air. */
+.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card::before {
+  --puff: 0.86;
+  inset: -0.45rem -0.8rem;
+  background:
+    radial-gradient(34% 54% at 30% 42%, hsl(var(--cloud) / var(--puff)), transparent 74%),
+    radial-gradient(30% 58% at 58% 34%, hsl(var(--cloud) / var(--puff)), transparent 74%),
+    radial-gradient(26% 48% at 80% 50%, hsl(var(--cloud) / calc(var(--puff) - 0.06)), transparent 74%),
+    radial-gradient(24% 46% at 14% 58%, hsl(var(--cloud) / calc(var(--puff) - 0.1)), transparent 74%),
+    radial-gradient(48% 44% at 50% 62%, hsl(var(--cloud) / var(--puff)), transparent 76%),
+    radial-gradient(52% 26% at 50% 88%, hsl(var(--cloud-belly) / 0.42), transparent 78%);
+  box-shadow: none;
+  clip-path: none;
+  filter: blur(2px) drop-shadow(0 6px 8px hsl(var(--glade-umber) / calc(0.14 - var(--far, 0) * 0.08)));
+  transition: opacity 200ms ease;
+}
+.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card:hover:not(:disabled) { filter: none; }
+.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card:hover:not(:disabled)::before { --puff: 0.96; }
+.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card::after { display: none; }
+/* The titles are what you came for: large, and a long one stops gracefully
+   after three lines (the whole of it is there when you lift the piece). */
+.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  font-size: 1.26rem;
+  line-height: 1.14;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  /* Room for the glow, which overflow: hidden would otherwise clip. */
+  padding: 0.1rem 0.3rem;
+}
+.glade-home-layout .glade-afloat .glade-float-pool:not(.glade-float-lifted) .glade-card-title { font-size: 1.12rem; -webkit-line-clamp: 1; }
+.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card-meta { padding-top: 0; font-size: 0.9rem; color: hsl(var(--glade-ink) / 0.75); }
+.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card-meta::before { display: none; }
+/* Finished, its cloud catches the light. */
+.glade-home-layout .glade-afloat .glade-float-pool[data-state="sailing"] .glade-card { --cloud: 46 90% 90%; --cloud-belly: 42 70% 60%; }
+
+/* Add is just a "+" in a quiet circle, beside the menu. */
+.glade-add-toggle {
+  justify-content: center;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0;
+  font-size: 1.45rem;
+  font-weight: 400;
+  line-height: 1;
+}
+@media (max-width: 40rem) {
+  .glade-add-toggle { min-height: 44px; padding: 0; font-size: 1.45rem; }
+}
+
+
+/* Sound on/off: a quiet circle beside the "+", in the same paper. */
+.glade-sound-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid hsl(var(--garden-paper) / 0.4);
+  border-radius: 999px;
+  background: hsl(var(--garden-paper) / 0.24);
+  backdrop-filter: blur(3px);
+  color: hsl(var(--glade-ink) / 0.85);
+  cursor: pointer;
+}
+.glade-sound-toggle svg { width: 20px; height: 20px; filter: drop-shadow(0 0 6px hsl(var(--garden-paper) / 0.8)); }
+.glade-sound-toggle:hover { background: hsl(var(--garden-paper) / 0.55); color: hsl(var(--glade-ink)); }
+.glade-sound-toggle:focus-visible { outline: 3px solid hsl(var(--glade-umber)); outline-offset: 3px; }
+.glade-sound-toggle[aria-pressed="false"] { color: hsl(var(--glade-ink) / 0.55); }

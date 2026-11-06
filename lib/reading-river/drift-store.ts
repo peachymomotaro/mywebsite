@@ -1,5 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { getPrismaClient } from "@/lib/reading-river/db";
+import { setEddyMembership, withEddyTransaction } from "@/lib/reading-river/eddies";
+import { clearedEddyMembership } from "@/lib/reading-river/eddy-state";
 import {
   clearedDriftHistory,
   dayKeyFor,
@@ -340,23 +342,30 @@ export async function noteDriftSeen(userId: string, key: TimeBudgetKey, ids: str
 }
 
 /**
- * Following a river item's link lifts it onto the bank: it becomes "still
- * reading", leaves the water and stays findable on later days until it is
- * marked read or put back. Its unread history is cleared.
+ * Following a river item's link carries it into the eddies: it becomes "still
+ * reading", leaves the stream and waits in the pool on later days until it is
+ * marked read or let go. Its unread history is cleared. If the eddies were
+ * full, the one there longest drifts back into the river; that one is returned.
  */
 export async function noteDriftOpened(userId: string, id: string, now = new Date()) {
-  const prisma = getPrismaClient();
-  await prisma.readingItem.updateMany({
-    where: { userId, id, status: { in: ["unread", "reading"] }, readEvent: { is: null } },
-    data: { status: "reading", lastOpenedAt: now, restingUntil: null, ...clearedDriftHistory },
+  return withEddyTransaction(userId, async (tx) => {
+    const opened = await tx.readingItem.updateMany({
+      where: { userId, id, status: { in: ["unread", "reading"] }, readEvent: { is: null } },
+      data: { status: "reading", lastOpenedAt: now, restingUntil: null, ...clearedDriftHistory },
+    });
+    if (opened.count === 0) return { drifted: null };
+    const item = await tx.readingItem.findUnique({ where: { userId_id: { userId, id } }, select: { sourceType: true } });
+    if (!item || item.sourceType === "manual" || item.sourceType === "book_chapter") return { drifted: null };
+    const change = await setEddyMembership(tx, userId, id, true);
+    return { drifted: change.drifted };
   });
 }
 
-/** Put a still-reading item back in the water, as ordinary unread. */
+/** Put a still-reading item back in the water, as ordinary unread, out of the eddies. */
 export function putBackInRiver(userId: string, id: string) {
   return getPrismaClient().readingItem.updateMany({
     where: { userId, id, status: "reading" },
-    data: { status: "unread", restingUntil: null },
+    data: { status: "unread", restingUntil: null, ...clearedEddyMembership },
   });
 }
 

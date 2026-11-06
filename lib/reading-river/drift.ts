@@ -1,4 +1,4 @@
-// The river: three reading possibilities drawn by simple weighted chance.
+// The river: a slow stream of reading possibilities drawn by simple weighted chance.
 //
 // Everything here is pure so the rules can be read, tested and tuned in one
 // place. Storage and orchestration live in drift-store.ts.
@@ -7,11 +7,13 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
 
 export const DRIFT_RULES = {
-  itemCount: 3,
-  /** Priority counts for this long after it was set or renewed. */
+  /**
+   * How many pieces ride the stream each day. They drift past slowly, so you
+   * see a few at a time; small collections simply carry everything.
+   */
+  streamLength: 16,
+  /** Old priority settings counted for this long; priority no longer weights the draw. */
   priorityLifetimeDays: 14,
-  /** Weight multiplier added per priority point (1–10). 10 → 5× as likely. */
-  priorityWeightPerPoint: 0.4,
   /** An item surfaced today keeps this fraction of its chance… */
   recencyFloor: 0.25,
   /** …and recovers this much per day until it is back to full chance. */
@@ -71,10 +73,12 @@ export function recencyFactor(item: Pick<DriftCandidate, "lastSurfacedAt">, now:
   return Math.min(1, DRIFT_RULES.recencyFloor + DRIFT_RULES.recencyRecoveryPerDay * days);
 }
 
-/** Always positive: every eligible item keeps some chance of surfacing. */
+/**
+ * Always positive: every eligible item keeps some chance of surfacing. There's
+ * no priority any more; only having just drifted past lowers a piece's chance.
+ */
 export function driftWeight(item: DriftCandidate, now: Date) {
-  const priority = 1 + DRIFT_RULES.priorityWeightPerPoint * effectivePriority(item, now);
-  return priority * recencyFactor(item, now);
+  return recencyFactor(item, now);
 }
 
 export function isSnoozed(item: Pick<DriftCandidate, "snoozedUntil">, now: Date) {
@@ -129,7 +133,7 @@ export function drawRiver<T extends DriftCandidate>({
   candidates,
   keep = [],
   avoid = new Set(),
-  count = DRIFT_RULES.itemCount,
+  count = DRIFT_RULES.streamLength,
   now,
   rng = Math.random,
 }: DrawOptions<T>) {

@@ -40,10 +40,10 @@ describe.skipIf(!isLocal)("river drift against PostgreSQL", () => {
     await prisma.user.deleteMany({ where: { id: { in: userIds } } });
   });
 
-  it("keeps the same three afloat on reloads within a day", async () => {
-    const userId = await userWith(8);
+  it("keeps the same stream afloat on reloads within a day", async () => {
+    const userId = await userWith(20);
     const first = await afloat(userId, day(0, 9));
-    expect(first).toHaveLength(3);
+    expect(first).toHaveLength(16);
     expect(await afloat(userId, day(0, 18))).toEqual(first);
   });
 
@@ -64,10 +64,10 @@ describe.skipIf(!isLocal)("river drift against PostgreSQL", () => {
   it("lists seen pieces that drifted past, so yesterday's can still be found", async () => {
     const userId = await userWith(8);
     const today = await afloat(userId, day(0));
-    await store.noteDriftSeen(userId, "any", today, day(0, 11));
-    const tomorrow = await afloat(userId, day(1));
-    const passed = (await store.getRiverBank(userId, tomorrow, day(1))).recentlyPassed.map((item) => item.id);
-    for (const id of today.filter((id) => !tomorrow.includes(id))) expect(passed).toContain(id);
+    await store.noteDriftSeen(userId, "any", today.slice(0, 2), day(0, 11));
+    await afloat(userId, day(1));
+    const passed = (await store.getRiverBank(userId, [], day(1))).recentlyPassed.map((item) => item.id);
+    expect(passed.sort()).toEqual(today.slice(0, 2).sort());
   });
 
   it("snoozes after two seen, unread days; unseen days and reloads don't count", async () => {
@@ -87,15 +87,19 @@ describe.skipIf(!isLocal)("river drift against PostgreSQL", () => {
     expect(rows.every((row) => row.snoozeLevel === 1 && row.snoozedUntil?.getTime() === day(6).getTime())).toBe(true);
   });
 
-  it("letting them drift on never counts as an unread appearance and avoids repeats", async () => {
-    const userId = await userWith(9);
+  it("Not now never counts as an unread appearance and brings in something new", async () => {
+    const userId = await userWith(20);
     const first = await afloat(userId, day(0));
-    await store.noteDriftSeen(userId, "any", first, day(0, 11));
-    const next = await store.letDriftOn(userId, "any", { now: day(0, 12) });
-    expect(next.afloat.map((item) => item.id).some((id) => first.includes(id))).toBe(false);
+    const [leaving] = first;
+    await store.noteDriftSeen(userId, "any", [leaving], day(0, 11));
+    const next = await store.letDriftOn(userId, "any", { now: day(0, 12), onlyId: leaving });
+    const ids = next.afloat.map((item) => item.id);
+    expect(ids).not.toContain(leaving);
+    expect(ids).toHaveLength(16);
+    expect(ids.filter((id) => !first.includes(id))).toHaveLength(1);
     await afloat(userId, day(1));
-    const rows = await prisma.readingItem.findMany({ where: { userId, id: { in: first } } });
-    expect(rows.every((row) => row.driftMisses === 0)).toBe(true);
+    const row = await prisma.readingItem.findFirstOrThrow({ where: { userId, id: leaving } });
+    expect(row.driftMisses).toBe(0);
   });
 
   it("says when nothing new is upstream in a small collection", async () => {

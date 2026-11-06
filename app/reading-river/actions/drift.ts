@@ -7,6 +7,7 @@ import { letDriftOn, noteDriftSeen, putBackInRiver, renewPriority, wakeSnoozed }
 import { readingRiverPath } from "@/lib/reading-river/routes";
 import { TIME_BUDGET_SELECTIONS, getTimeBudgetKey } from "@/lib/reading-river/time-budgets";
 import { readingItemIdSchema } from "@/lib/reading-river/validators/reading-item";
+import { DRIFT_RULES } from "@/lib/reading-river/drift";
 
 const budgetKeySchema = z.enum(TIME_BUDGET_SELECTIONS.map(getTimeBudgetKey) as [string, ...string[]])
   .transform((key) => key as ReturnType<typeof getTimeBudgetKey>);
@@ -26,7 +27,7 @@ export async function letOneDriftOnAction(budgetKey: string, id: string) {
 
 export async function noteDriftSeenAction(budgetKey: string, ids: string[]) {
   const user = await requireCurrentUser();
-  const parsedIds = z.array(readingItemIdSchema).max(3).parse(ids);
+  const parsedIds = z.array(readingItemIdSchema).max(DRIFT_RULES.streamLength).parse(ids);
   await noteDriftSeen(user.id, budgetKeySchema.parse(budgetKey), parsedIds);
 }
 

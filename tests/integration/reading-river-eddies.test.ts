@@ -18,11 +18,11 @@ vi.mock("@/lib/reading-river/rate-limit", () => ({
 }));
 
 import { EddyError, getEddyArticles, setEddyMembership, withEddyTransaction } from "@/lib/reading-river/eddies";
-import { EDDIES_FULL_MESSAGE } from "@/lib/reading-river/eddy-state";
+import { EDDY_CAPACITY } from "@/lib/reading-river/eddy-state";
+import { noteDriftOpened } from "@/lib/reading-river/drift-store";
 import { changeEddyArticle } from "@/app/reading-river/actions/eddies";
 import { deleteReadingItem, markAsRead, setReadingStatus, updateReadingItem } from "@/app/reading-river/actions/reading-items";
-import { ingestUrl, submitUrlIntake } from "@/app/reading-river/actions/ingest-url";
-import type { IntakeFormState } from "@/lib/reading-river/intake-form-state";
+import { ingestUrl } from "@/app/reading-river/actions/ingest-url";
 
 // Opt-in only. Refuse remote/shared databases, even if DATABASE_URL is present.
 const testUrl = process.env.EDDIES_TEST_DATABASE_URL;
@@ -70,46 +70,64 @@ describe.skipIf(!testUrl)("eddies on isolated PostgreSQL", () => {
     }
   });
 
-  it("adds the first article, then the tenth, and rejects an eleventh", async () => {
-    const first = await article();
-    await add(first.id);
-    expect(await getEddyArticles(context.userId)).toHaveLength(1);
-    await fill(9);
+  it("holds five; a sixth lets the longest-kept piece drift back into the river", async () => {
+    expect(EDDY_CAPACITY).toBe(5);
+    const [oldest] = await fill(5);
+    await prisma.readingItem.update({ where: { id: oldest.id }, data: { status: "reading", eddyAddedAt: new Date("2020-01-01") } });
     const extra = await article();
-    await expect(add(extra.id)).rejects.toThrow(EDDIES_FULL_MESSAGE);
-    expect(await getEddyArticles(context.userId)).toHaveLength(10);
-    expect((await prisma.readingItem.findUniqueOrThrow({ where: { id: extra.id } })).eddySlot).toBeNull();
+    const change = await add(extra.id);
+    expect(change.drifted).toEqual({ id: oldest.id, title: oldest.title });
+    const ids = (await getEddyArticles(context.userId)).map((item) => item.id);
+    expect(ids).toHaveLength(5);
+    expect(ids[0]).toBe(extra.id);
+    expect(ids).not.toContain(oldest.id);
+    expect(await prisma.readingItem.findUniqueOrThrow({ where: { id: oldest.id } })).toMatchObject({ status: "unread", eddySlot: null, eddyAddedAt: null });
   });
 
-  it("allows exactly one of twelve concurrent requests to fill the final slot", async () => {
-    await fill(9);
+  it("keeps exactly five when twelve additions arrive at once", async () => {
+    await fill(4);
     const candidates = await Promise.all(Array.from({ length: 12 }, () => article()));
     const outcomes = await Promise.allSettled(candidates.map((item) => add(item.id)));
-    expect(outcomes.filter((result) => result.status === "fulfilled")).toHaveLength(1);
-    const failures = outcomes.filter((result) => result.status === "rejected");
-    expect(failures).toHaveLength(11);
-    for (const failure of failures) expect(failure.reason).toEqual(new EddyError(EDDIES_FULL_MESSAGE));
-    expect(await getEddyArticles(context.userId)).toHaveLength(10);
+    expect(outcomes.every((result) => result.status === "fulfilled")).toBe(true);
+    expect(await getEddyArticles(context.userId)).toHaveLength(5);
+    const slots = (await prisma.readingItem.findMany({ where: { userId: context.userId, eddySlot: { not: null } } })).map((item) => item.eddySlot);
+    expect(new Set(slots).size).toBe(5);
+  });
+
+  it("opening a piece from the river carries it into the eddies", async () => {
+    const items = await fill(5);
+    const opened = await article();
+    const result = await noteDriftOpened(context.userId, opened.id);
+    expect(result.drifted?.id).toBe(items[0].id);
+    expect(await prisma.readingItem.findUniqueOrThrow({ where: { id: opened.id } })).toMatchObject({ status: "reading" });
+    expect((await getEddyArticles(context.userId))[0].id).toBe(opened.id);
   });
 
   it("makes concurrent repeated adds idempotent even when full", async () => {
-    const items = await fill(10);
+    const items = await fill(5);
     const before = await prisma.readingItem.findUniqueOrThrow({ where: { id: items[0].id } });
     await Promise.all(Array.from({ length: 8 }, () => add(items[0].id)));
     const after = await prisma.readingItem.findUniqueOrThrow({ where: { id: items[0].id } });
     expect(after.eddySlot).toBe(before.eddySlot);
     expect(after.eddyAddedAt).toEqual(before.eddyAddedAt);
-    expect(await getEddyArticles(context.userId)).toHaveLength(10);
+    expect(await getEddyArticles(context.userId)).toHaveLength(5);
   });
 
   it("releases a slot without deleting the article, and permits another addition", async () => {
-    const items = await fill(10);
+    const items = await fill(5);
     await remove(items[0].id);
     const removed = await prisma.readingItem.findUniqueOrThrow({ where: { id: items[0].id } });
     expect(removed).toMatchObject({ status: "unread", eddySlot: null, eddyAddedAt: null });
     const next = await article();
-    await add(next.id);
-    expect(await getEddyArticles(context.userId)).toHaveLength(10);
+    expect((await add(next.id)).drifted).toBeNull();
+    expect(await getEddyArticles(context.userId)).toHaveLength(5);
+  });
+
+  it("letting a piece go from the eddies puts a half-read piece back in the river", async () => {
+    const [item] = await fill(1);
+    await prisma.readingItem.update({ where: { id: item.id }, data: { status: "reading" } });
+    await remove(item.id);
+    expect(await prisma.readingItem.findUniqueOrThrow({ where: { id: item.id } })).toMatchObject({ status: "unread", eddySlot: null });
   });
 
   it("uses the existing read event workflow and releases the slot", async () => {
@@ -156,38 +174,37 @@ describe.skipIf(!testUrl)("eddies on isolated PostgreSQL", () => {
   });
 
   it("isolates ownership and capacity per user", async () => {
-    await fill(10);
+    await fill(5);
     const other = await article({ userId: otherUserId });
     await expect(add(other.id)).rejects.toThrow("That article was not found.");
     await expect(remove(other.id)).rejects.toThrow("That article was not found.");
     await add(other.id, otherUserId);
     expect(await getEddyArticles(otherUserId)).toHaveLength(1);
-    expect(await getEddyArticles(context.userId)).toHaveLength(10);
+    expect(await getEddyArticles(context.userId)).toHaveLength(5);
   });
 
-  it("returns an inline capacity error from the same action used on the edit page", async () => {
-    await fill(10);
+  it("says which piece drifted out when adding from the edit page", async () => {
+    const [oldest] = await fill(5);
+    await prisma.readingItem.update({ where: { id: oldest.id }, data: { eddyAddedAt: new Date("2020-01-01") } });
     const item = await article();
     const result = await changeEddyArticle(item.id, "add", { status: "idle" }, new FormData());
-    expect(result).toEqual({ status: "error", message: EDDIES_FULL_MESSAGE });
-    const [kept] = await getEddyArticles(context.userId);
-    await changeEddyArticle(kept.id, "remove", { status: "idle" }, new FormData());
-    expect(await changeEddyArticle(item.id, "add", { status: "idle" }, new FormData())).toMatchObject({ status: "success" });
+    expect(result).toEqual({ status: "success", message: `Kept in the eddies. "${oldest.title}" drifted back into the river.` });
     expect(context.revalidatePath).toHaveBeenCalledWith(`/reading-river/items/${item.id}/edit`);
   });
 
-  it("saves URL intake and membership atomically, rolling back the article and tags at capacity", async () => {
+  it("saves URL intake and membership together, letting the oldest drift out when full", async () => {
     const input = { url: `https://example.com/${randomUUID()}`, title: "Intake article", addToEddies: true,
       estimatedMinutes: 8, tagNames: ["intake"], lengthEstimationMethod: "manual" as const, lengthEstimationConfidence: "unknown" as const };
     const item = await ingestUrl(input);
     expect(await getEddyArticles(context.userId)).toHaveLength(1);
     expect((await prisma.readingItem.findUniqueOrThrow({ where: { id: item.id } })).eddySlot).not.toBeNull();
-    await fill(9);
-    const failedUrl = `https://example.com/${randomUUID()}`;
-    await expect(ingestUrl({ ...input, url: failedUrl, tagNames: ["rolled-back"] })).rejects.toThrow(EDDIES_FULL_MESSAGE);
-    expect(await prisma.readingItem.count({ where: { userId: context.userId, sourceUrl: failedUrl } })).toBe(0);
-    expect(await prisma.tag.count({ where: { userId: context.userId, name: "rolled-back" } })).toBe(0);
-    expect(await ingestUrl({ ...input, url: failedUrl, addToEddies: false })).toBeTruthy();
+    await fill(4);
+    await prisma.readingItem.update({ where: { id: item.id }, data: { eddyAddedAt: new Date("2020-01-01") } });
+    const later = await ingestUrl({ ...input, url: `https://example.com/${randomUUID()}`, tagNames: ["later"] });
+    const ids = (await getEddyArticles(context.userId)).map((entry) => entry.id);
+    expect(ids).toHaveLength(5);
+    expect(ids[0]).toBe(later.id);
+    expect(ids).not.toContain(item.id);
   });
 
   it("does not duplicate a URL when concurrent intake requests both select the eddies", async () => {
@@ -207,20 +224,6 @@ describe.skipIf(!testUrl)("eddies on isolated PostgreSQL", () => {
     expect(await getEddyArticles(context.userId)).toHaveLength(1);
   });
 
-  it("preserves the reviewed URL draft and allows retrying ordinary intake after a capacity error", async () => {
-    await fill(10);
-    const url = `https://example.com/${randomUUID()}`;
-    const previous: IntakeFormState = { status: "review", draftValues: { url, title: "Reviewed", estimatedMinutes: "8", priorityScore: "5", tagNames: "", notes: "", addToEddies: true },
-      reviewMetadata: { fetchSucceeded: false, estimatedMinutesRequired: true, extractedTitle: null, extractedText: null, titleWasPrefilled: false, siteName: null, author: null, wordCount: null, estimatedMinutes: null, lengthEstimationMethod: "manual", lengthEstimationConfidence: "unknown" } };
-    const form = new FormData();
-    for (const [key, value] of Object.entries(previous.draftValues!)) form.set(key, value === true ? "on" : String(value));
-    const result = await submitUrlIntake(previous, form);
-    expect(result).toMatchObject({ status: "review", message: EDDIES_FULL_MESSAGE, draftValues: { addToEddies: true } });
-    expect(result.reviewMetadata).toEqual(previous.reviewMetadata);
-    form.delete("addToEddies");
-    expect(await submitUrlIntake(result, form)).toMatchObject({ status: "success" });
-  });
-
   it("orders by most recent addition, with removal and re-addition moving an article to the top", async () => {
     const [first, second] = await fill(2);
     await prisma.readingItem.update({ where: { id: first.id }, data: { eddyAddedAt: new Date("2020-01-01") } });
@@ -234,7 +237,7 @@ describe.skipIf(!testUrl)("eddies on isolated PostgreSQL", () => {
   it("enforces range, uniqueness, paired timestamps and eligibility even for direct database writes", async () => {
     const first = await article();
     const second = await article();
-    for (const slot of [0, 11, -1]) {
+    for (const slot of [0, 6, -1]) {
       await expect(prisma.readingItem.update({ where: { id: first.id }, data: { eddySlot: slot, eddyAddedAt: new Date() } })).rejects.toThrow();
     }
     await expect(prisma.readingItem.update({ where: { id: first.id }, data: { eddySlot: 1 } })).rejects.toThrow();

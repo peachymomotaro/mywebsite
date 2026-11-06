@@ -32,7 +32,7 @@ describe("ReadingRiverHowItWorksPage", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        /Put the things you think are worthwhile into the river, where they become fiches\. Set how important a fiche is to you by using the priority setting\./i,
+        /Put the things you think are worthwhile into the river, where they become fiches\. Paste a link and we fetch its title and reading time for you\./i,
       ),
     ).toBeInTheDocument();
 
@@ -47,7 +47,7 @@ describe("ReadingRiverHowItWorksPage", () => {
     );
     expect(
       screen.getByText(
-        /Priority makes a piece up to five times as likely to appear, for fourteen days after you set it/i,
+        /every piece has the same chance as any other/i,
       ),
     ).toBeInTheDocument();
     expect(

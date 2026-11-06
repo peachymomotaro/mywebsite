@@ -46,7 +46,7 @@ export default function HowItWorksPage() {
             <h2>The Basics</h2>
             <p>1. Find things that you think are worth reading.</p>
             <p> 2. Put the things you think are worthwhile into the river, where they
-              become fiches. Set how important a fiche is to you by using the priority setting.</p>
+              become fiches. Paste a link and we fetch its title and reading time for you.</p>
             <p> 3. When you want to read something, return to the river and go ficheing. </p>
             <p> 4. Three pieces drift by at a time. Choose one to bring it to the bank,
               or let them drift on and three others will come into view.</p>
@@ -89,22 +89,23 @@ export default function HowItWorksPage() {
               If you&apos;re interested, here is how the river chooses what drifts by:
             </p>
             <p>
-              If you set how long you have to read, only pieces that fit that time drift by.
-              Then three are chosen by gentle chance. Priority makes a piece up to five times
-              as likely to appear, for fourteen days after you set it; after that it returns to
-              ordinary chance unless you renew it. Anything that has just drifted past is less
-              likely for a few days. Everything keeps some chance of appearing.
+              Each day a slow stream of them is chosen by gentle chance, and every piece has
+              the same chance as any other. Anything that has just drifted past is less likely
+              for a few days.
+              Everything keeps some chance of appearing.
             </p>
             <p>
-              The same three stay put for the day so you can settle on one. If you look at a
-              piece on two separate days without opening it, it rests upstream for three days;
-              if it comes back and passes you again, it rests for a week. Letting them drift on
-              never counts against anything, and nothing is marked or deleted.
+              You walk along the bank to see what is passing; a piece only opens up when you
+              are close to it. Once you have stood beside a piece for a few seconds without
+              opening it, it counts as seen. If that happens on two separate days, it rests
+              upstream for three days; if it comes back and passes you again, it rests for a
+              week. Pieces you never went to look at don&apos;t count, and nothing is marked or
+              deleted.
             </p>
             <p>
               Anything you open stays on the bank, under Still reading, until you mark it as read
               or put it back in the river. Pieces that drifted past in the last week can be found
-              again just below.
+              again there too.
             </p>
              <p>
               Here are some of the sites that influenced the design of the Reading River:
@@ -124,6 +125,16 @@ export default function HowItWorksPage() {
                 </li>
               ))}
             </ul>
+          </section>
+
+          <section className="editorial-panel-soft river-how-section" aria-labelledby="river-how-music">
+            <h2 id="river-how-music">Music</h2>
+            <p>
+              The river plays Johann Strauss II&apos;s <em>The Blue Danube</em>, performed by the
+              United States Marine Band; as a work of the US government, the recording is in the
+              public domain. It has been compressed and evened in volume for the web. The running water is a
+              looped field recording; the birds and the rain are made in your browser as you walk.
+            </p>
           </section>
         </section>
       </div>
