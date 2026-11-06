@@ -70,7 +70,7 @@ describe("saveReadingItemEditAction", () => {
     );
   });
 
-  it("rejects priority zero from edited items", async () => {
+  it("ignores any priority sent and clears it, since priority is gone", async () => {
     const formData = new FormData();
 
     formData.set("id", "item-1");
@@ -80,9 +80,7 @@ describe("saveReadingItemEditAction", () => {
     formData.set("estimatedMinutes", "12");
     formData.set("priorityScore", "0");
 
-    await expect(saveReadingItemEditAction(formData)).rejects.toThrow(
-      "redirect:/reading-river/items/item-1/edit?error=invalid_input",
-    );
-    expect(readingItemMocks.updateReadingItem).not.toHaveBeenCalled();
+    await saveReadingItemEditAction(formData).catch(() => undefined);
+    expect(readingItemMocks.updateReadingItem).toHaveBeenCalledWith(expect.objectContaining({ priorityScore: null }));
   });
 });

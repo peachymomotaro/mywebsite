@@ -16,15 +16,15 @@ describe("In the eddies", () => {
   it("renders the quiet empty state and preselected intake link", () => {
     render(<EddiesSection items={[]} />);
     expect(screen.getByRole("heading", { name: "In the eddies" })).toBeInTheDocument();
-    expect(screen.getByText("0 of 10")).toBeInTheDocument();
-    expect(screen.getByText("Keep up to ten articles here when you want to give them your attention.")).toBeInTheDocument();
+    expect(screen.getByText("0 of 5")).toBeInTheDocument();
+    expect(screen.getByText("Whatever you start reading turns here in the pool beside the river, five at a time.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Add an article" })).toHaveAttribute("href", "/reading-river/add?eddies=1");
   });
-  it("shows ten articles, explains capacity and leaves ordinary intake available", () => {
-    render(<EddiesSection items={Array.from({ length: 10 }, (_, i) => item(String(i)))} />);
-    expect(screen.getByText("10 of 10")).toBeInTheDocument();
+  it("shows five articles, explains what happens next and leaves ordinary intake available", () => {
+    render(<EddiesSection items={Array.from({ length: 5 }, (_, i) => item(String(i)))} />);
+    expect(screen.getByText("5 of 5")).toBeInTheDocument();
     expect(screen.getByText(EDDIES_FULL_MESSAGE)).toBeInTheDocument();
-    expect(screen.getAllByRole("listitem")).toHaveLength(10);
+    expect(screen.getAllByRole("listitem")).toHaveLength(5);
     expect(screen.getByRole("link", { name: "Add to stream" })).toHaveAttribute("href", "/reading-river/add");
   });
   it("preserves supplied newest-first order, metadata and source links without truncation", () => {

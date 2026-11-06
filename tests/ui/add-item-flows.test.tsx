@@ -75,12 +75,7 @@ describe("AddPage", () => {
     expect(screen.getByRole("heading", { name: "Paste a link" })).toBeInTheDocument();
     const fetchButton = screen.getByRole("button", { name: "Fetch details" });
     expect(fetchButton).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Priority" })).toHaveValue("5");
-    expect(screen.getByRole("option", { name: "No priority (stream only)" })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "0" })).not.toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "1" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "10" })).toBeInTheDocument();
-    expect(screen.getByText(/never appear in the left column/i)).toBeInTheDocument();
     const tagsField = screen.getByLabelText("Tags");
     expect(tagsField.compareDocumentPosition(fetchButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Add a book" })).not.toBeInTheDocument();
@@ -164,10 +159,7 @@ describe("AddPage", () => {
     expect(screen.getByLabelText("URL")).toHaveValue("https://example.com/essay");
     expect(screen.getByLabelText("Title")).toHaveValue("Essay");
     expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Priority" })).toHaveValue("7");
-    expect(screen.getByRole("option", { name: "No priority (stream only)" })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "0" })).not.toBeInTheDocument();
-    expect(screen.getByText("1-10, where 10 is highest priority.")).toBeInTheDocument();
     expect(screen.getByLabelText("Tags")).toHaveValue("work, essays");
     expect(screen.getByRole("button", { name: "Save article" })).toBeInTheDocument();
   });
@@ -215,7 +207,6 @@ describe("AddPage", () => {
       "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2033231",
     );
     expect(screen.getByLabelText("Title")).toHaveValue("Essay override");
-    expect(screen.getByRole("option", { name: "No priority (stream only)" })).toBeInTheDocument();
     expect(screen.queryByLabelText("Notes")).not.toBeInTheDocument();
   });
 

@@ -24,6 +24,7 @@ import type {
   UrlIntakeDraftValues,
   UrlIntakeReviewMetadata,
 } from "@/lib/reading-river/intake-form-state";
+import type { QuickAddState } from "@/lib/reading-river/quick-add-state";
 import { readingRiverPath } from "@/lib/reading-river/routes";
 import {
   assertNoDuplicateReadingItemSourceUrl,
@@ -57,7 +58,6 @@ const FETCH_FAILED_REVIEW_MESSAGE =
   "I couldn't fetch this page. Review the title and add a reading time before saving it manually.";
 const REVIEW_ESTIMATE_REQUIRED_MESSAGE = "Add an estimated reading time before saving this article.";
 const INVALID_URL_MESSAGE = "Add a valid link before saving it.";
-const INVALID_PRIORITY_MESSAGE = "Add a valid priority setting before saving it.";
 const DUPLICATE_URL_MESSAGE = "That link is already in your stream.";
 const FETCH_TIMEOUT_MS = 10_000;
 const MAX_FETCH_REDIRECTS = 5;
@@ -67,7 +67,6 @@ type IngestUrlInput = {
   url: string;
   title?: string | null;
   notes?: string | null;
-  priorityScore?: number | null;
   estimatedMinutes: number;
   tagNames?: string[];
   estimation?: ArticleLengthEstimate | null;
@@ -94,16 +93,6 @@ function buildTagWrite(userId: string, tagNames: string[]) {
       },
     })),
   };
-}
-
-function parsePriorityScore(value: string, fallback: number) {
-  if (value.trim() === "none") {
-    return null;
-  }
-
-  const parsed = Number(value);
-
-  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 function parseEstimatedMinutes(value: string) {
@@ -547,7 +536,8 @@ export async function ingestUrl(input: IngestUrlInput) {
         sourceUrl: normalizedSourceUrl,
         notes: normalizeOptionalLimitedString(input.notes, READING_RIVER_LIMITS.notesLength),
         estimatedMinutes: input.estimatedMinutes,
-        priorityScore: input.priorityScore === undefined ? 5 : input.priorityScore,
+        // Priority is gone: everything drifts by with an even chance.
+        priorityScore: null,
         status: "unread",
         siteName: estimation?.siteName ?? null,
         author: normalizeOptionalLimitedString(estimation?.author, READING_RIVER_LIMITS.authorLength),
@@ -597,19 +587,9 @@ export async function submitUrlIntake(
   const url = normalizedUrl;
   const titleOverride = draftValues.title;
   const notes = draftValues.notes;
-  const priorityScore = parsePriorityScore(draftValues.priorityScore, 5);
   const estimatedMinutes = parseEstimatedMinutes(draftValues.estimatedMinutes);
   const tagNames = parseTagNames(draftValues.tagNames);
   const fallbackTitle = titleOverride || url;
-
-  if (priorityScore !== null && (priorityScore < 1 || priorityScore > 10)) {
-    return {
-      status: "error",
-      message: INVALID_PRIORITY_MESSAGE,
-      draftValues,
-      submittedAt: Date.now(),
-    };
-  }
 
   try {
     const currentUser = await requireCurrentUser();
@@ -667,7 +647,6 @@ export async function submitUrlIntake(
           addToEddies: draftValues.addToEddies,
           title: titleOverride,
           notes,
-          priorityScore,
           estimatedMinutes: effectiveEstimatedMinutes,
           tagNames,
           estimation,
@@ -775,5 +754,81 @@ export async function submitUrlIntake(
       message: "Couldn't add that link. Try again.",
       submittedAt: Date.now(),
     };
+  }
+}
+
+/**
+ * The glade's small Add dropdown: paste a link and we fetch its title and
+ * reading time and save it straight away. Only when the page doesn't say how
+ * long it is do we ask for the minutes, and save on the next submit.
+ */
+export async function quickAddUrl(previousState: QuickAddState, formData: FormData): Promise<QuickAddState> {
+  const rawUrl = String(formData.get("url") ?? "").trim();
+  const url = normalizeSubmittedUrl(rawUrl);
+  const now = Date.now();
+
+  if (!url) {
+    return { status: "error", url: rawUrl.slice(0, READING_RIVER_LIMITS.urlLength), message: INVALID_URL_MESSAGE, submittedAt: now };
+  }
+
+  try {
+    const currentUser = await requireCurrentUser();
+    const prisma = getPrismaClient();
+
+    if (await findDuplicateReadingItemBySourceUrl(prisma, currentUser.id, url)) {
+      return { status: "error", url, message: DUPLICATE_URL_MESSAGE, submittedAt: now };
+    }
+
+    // The second step: we asked for the minutes, and here they are.
+    if (previousState.status === "needsMinutes" && previousState.url === url) {
+      const minutes = parseEstimatedMinutes(String(formData.get("estimatedMinutes") ?? ""));
+      if (minutes === null) {
+        return { ...previousState, message: "How many minutes will it take to read?", submittedAt: now };
+      }
+      const title = normalizeOptionalLimitedString(String(formData.get("title") ?? ""), READING_RIVER_LIMITS.titleLength)
+        ?? previousState.title;
+      const item = await ingestUrl({
+        url,
+        title,
+        estimatedMinutes: minutes,
+        lengthEstimationMethod: "manual",
+        lengthEstimationConfidence: "unknown",
+      });
+      return { status: "saved", title: item.title, minutes, submittedAt: now };
+    }
+
+    const fetchRateLimit = await consumeUrlFetchRateLimit(currentUser.id);
+    const estimation = fetchRateLimit.allowed ? await fetchExtractedArticle(url, currentUser.id) : null;
+    const minutes = estimation?.estimatedMinutes ?? null;
+
+    if (!estimation || minutes === null || minutes <= 0) {
+      return {
+        status: "needsMinutes",
+        url,
+        title: normalizeOptionalLimitedString(estimation?.title, READING_RIVER_LIMITS.titleLength),
+        message: estimation ? "We couldn't tell how long it is." : "We couldn't read that page.",
+        submittedAt: now,
+      };
+    }
+
+    const item = await ingestUrl({
+      url,
+      estimatedMinutes: Math.round(minutes),
+      estimation,
+      lengthEstimationMethod: estimation.method,
+      lengthEstimationConfidence: estimation.confidence,
+    });
+    return { status: "saved", title: item.title, minutes: Math.round(minutes), submittedAt: now };
+  } catch (error) {
+    unstable_rethrow(error);
+
+    if (isDuplicateReadingItemUrlError(error)) {
+      return { status: "error", url, message: DUPLICATE_URL_MESSAGE, submittedAt: now };
+    }
+    if (isRateLimitExceededError(error)) {
+      return { status: "error", url, message: "You've added a lot today. Try again tomorrow.", submittedAt: now };
+    }
+    console.error("Reading River quick add failed.", { ...getUrlLogFields(url), ...getFetchErrorDetails(error) });
+    return { status: "error", url, message: "Couldn't add that link. Try again.", submittedAt: now };
   }
 }

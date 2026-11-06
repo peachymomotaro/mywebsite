@@ -20,7 +20,7 @@ export function EddiesSection({ items }: { items: EddyArticle[] }) {
       {full ? <p className="river-eddies-note">{EDDIES_FULL_MESSAGE}</p> : null}
       {items.length === 0 ? (
         <div className="river-eddies-empty">
-          <p>Keep up to ten articles here when you want to give them your attention.</p>
+          <p>Whatever you start reading turns here in the pool beside the river, five at a time.</p>
           <Link prefetch={false} className="river-eddy-text-action" href={readingRiverPath("/add?eddies=1")}>Add an article</Link>
         </div>
       ) : (

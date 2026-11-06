@@ -6,7 +6,6 @@ import { submitUrlIntake } from "@/app/reading-river/actions/ingest-url";
 import { initialIntakeFormState } from "@/lib/reading-river/intake-form-state";
 import { TagInput } from "@/components/reading-river/tag-input";
 
-const PRIORITY_OPTIONS = Array.from({ length: 10 }, (_, index) => String(index + 1));
 
 function SubmitButton({
   idleLabel,
@@ -122,29 +121,6 @@ export function UrlIntakeForm({ knownTagNames = [], defaultAddToEddies = false }
           />
         </label>
         <div className="grid gap-8 sm:grid-cols-2">
-          <div className="grid gap-2 text-sm">
-            <label htmlFor="url-intake-priority-score">Priority</label>
-            <select
-              id="url-intake-priority-score"
-              name="priorityScore"
-              defaultValue={draftValues.priorityScore}
-              aria-describedby="url-intake-priority-help url-intake-priority-scale"
-              className="intake-input"
-            >
-              <option value="none">No priority (stream only)</option>
-              {PRIORITY_OPTIONS.map((priorityValue) => (
-                <option key={priorityValue} value={priorityValue}>
-                  {priorityValue}
-                </option>
-              ))}
-            </select>
-            <p id="url-intake-priority-help" className="intake-helper-text">
-              No priority items stay in the stream and never appear in the left column.
-            </p>
-            <p id="url-intake-priority-scale" className="intake-helper-text">
-              1-10, where 10 is highest priority.
-            </p>
-          </div>
           <TagInput
             knownTagNames={knownTagNames}
             defaultValue={draftValues.tagNames}

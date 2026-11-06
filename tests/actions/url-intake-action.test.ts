@@ -279,20 +279,19 @@ describe("submitUrlIntake", () => {
     );
   });
 
-  it("rejects priority zero during URL intake", async () => {
+  it("ignores any priority sent with the form: priority is gone", async () => {
     const { submitUrlIntake } = await import("@/app/reading-river/actions/ingest-url");
     const formData = buildUrlFormData(undefined, { priorityScore: "0" });
-    const fetchMock = vi.fn();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => `<html><head><title>Essay</title></head><body><article><p>${repeatWords(220)}</p></article></body></html>`,
+    });
 
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await submitUrlIntake(initialIntakeFormState, formData);
 
-    expect(result).toMatchObject({
-      status: "error",
-      message: "Add a valid priority setting before saving it.",
-    });
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(result.status).toBe("review");
   });
 
   it("rejects non-http URL schemes before fetching", async () => {
@@ -693,7 +692,7 @@ describe("submitUrlIntake", () => {
         sourceType: "url",
         sourceUrl: "https://example.com/essay",
         estimatedMinutes: 12,
-        priorityScore: 7,
+        priorityScore: null,
         lengthEstimationMethod: "manual",
         lengthEstimationConfidence: "unknown",
         siteName: null,
@@ -814,7 +813,7 @@ describe("submitUrlIntake", () => {
         sourceType: "url",
         sourceUrl: "https://example.com/essay",
         notes: "Why this belongs in the stream",
-        priorityScore: 7,
+        priorityScore: null,
         estimatedMinutes: 2,
         siteName: "Example",
         extractedText: expect.any(String),
@@ -1240,5 +1239,81 @@ describe("submitUrlIntake", () => {
       },
       submittedAt: expect.any(Number),
     });
+  });
+});
+
+describe("quickAddUrl", () => {
+  const article = (words: number) => ({
+    ok: true,
+    text: async () =>
+      `<html><head><title>A Quiet Essay</title><meta property="og:site_name" content="Example" /></head><body><article><h1>A Quiet Essay</h1><p>${repeatWords(words)}</p></article></body></html>`,
+  });
+  const form = (fields: Record<string, string>) => {
+    const formData = new FormData();
+    Object.entries(fields).forEach(([key, value]) => formData.set(key, value));
+    return formData;
+  };
+
+  beforeEach(() => {
+    createMock.mockReset();
+    findAppSettingsMock.mockReset();
+    findAppSettingsMock.mockResolvedValue(null);
+    findExistingReadingItemMock.mockReset();
+    findExistingReadingItemMock.mockResolvedValue(null);
+    requireCurrentUserMock.mockReset();
+    requireCurrentUserMock.mockResolvedValue(createCurrentUser());
+    dnsLookupMock.mockReset();
+    dnsLookupMock.mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
+    rateLimitMocks.consumeUrlFetchRateLimit.mockReset();
+    rateLimitMocks.consumeUrlFetchRateLimit.mockResolvedValue({ allowed: true });
+    rateLimitMocks.consumeItemCreateRateLimit.mockReset();
+    rateLimitMocks.consumeItemCreateRateLimit.mockResolvedValue({ allowed: true });
+    vi.restoreAllMocks();
+    vi.resetModules();
+  });
+
+  it("fetches the title and reading time and saves straight away, without priority", async () => {
+    const { quickAddUrl } = await import("@/app/reading-river/actions/ingest-url");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(article(1100)));
+    createMock.mockImplementation(async ({ data }) => ({ id: "new", title: data.title }));
+
+    const result = await quickAddUrl({ status: "idle" }, form({ url: "example.com/quiet" }));
+
+    expect(result).toMatchObject({ status: "saved", title: "A Quiet Essay" });
+    expect(createMock).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        sourceUrl: "https://example.com/quiet",
+        title: "A Quiet Essay",
+        priorityScore: null,
+        estimatedMinutes: expect.any(Number),
+      }),
+    });
+    vi.unstubAllGlobals();
+  });
+
+  it("asks for the minutes when the page can't be read, then saves them", async () => {
+    const { quickAddUrl } = await import("@/app/reading-river/actions/ingest-url");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500, text: async () => "" }));
+    createMock.mockImplementation(async ({ data }) => ({ id: "new", title: data.title }));
+
+    const asked = await quickAddUrl({ status: "idle" }, form({ url: "https://example.com/locked" }));
+    expect(asked).toMatchObject({ status: "needsMinutes", url: "https://example.com/locked" });
+    expect(createMock).not.toHaveBeenCalled();
+
+    const saved = await quickAddUrl(asked, form({ url: "https://example.com/locked", estimatedMinutes: "9", title: "" }));
+    expect(saved).toMatchObject({ status: "saved", minutes: 9 });
+    expect(createMock).toHaveBeenCalledWith({
+      data: expect.objectContaining({ estimatedMinutes: 9, lengthEstimationMethod: "manual", priorityScore: null }),
+    });
+    vi.unstubAllGlobals();
+  });
+
+  it("turns away a link that's already in the stream, and nonsense", async () => {
+    const { quickAddUrl } = await import("@/app/reading-river/actions/ingest-url");
+    expect(await quickAddUrl({ status: "idle" }, form({ url: "not a link" }))).toMatchObject({ status: "error" });
+    findExistingReadingItemMock.mockResolvedValueOnce({ id: "old" });
+    expect(await quickAddUrl({ status: "idle" }, form({ url: "https://example.com/old" })))
+      .toMatchObject({ status: "error", message: "That link is already in your stream." });
+    expect(createMock).not.toHaveBeenCalled();
   });
 });

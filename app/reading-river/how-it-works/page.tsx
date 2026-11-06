@@ -46,11 +46,10 @@ export default function HowItWorksPage() {
             <h2>The Basics</h2>
             <p>1. Find things that you think are worth reading.</p>
             <p> 2. Put the things you think are worthwhile into the river, where they
-              become fiches. Set how important a fiche is to you by using the priority setting.</p>
+              become fiches. Paste a link and we fetch its title and reading time for you.</p>
             <p> 3. When you want to read something, return to the river and go ficheing. </p>
-            <p> 4. The left option is the &apos;most important&apos; option based on the
-              priority setting and the amount of time you have. The right button is a
-              randomly selected piece of reading.</p>
+            <p> 4. Three pieces drift by at a time. Choose one to bring it to the bank,
+              or let them drift on and three others will come into view.</p>
             <p>
               5. I&apos;d recommend installing the Firefox extension, found{" "}
               <a
@@ -87,22 +86,26 @@ export default function HowItWorksPage() {
               clear whether it was worth reading.
             </p>
             <p>
-              If you&apos;re interested, the priority algorithm for Reading River is
-              as follows: 
+              If you&apos;re interested, here is how the river chooses what drifts by:
             </p>
             <p>
-              If you set how long you have to read, it first winnows your list down to pieces
-              that fit that budget, falling back to shorter options if needed. 
-              Then it sorts by a simple equation that considers the priority, reading
-              time, and age.
+              Each day a slow stream of them is chosen by gentle chance, and every piece has
+              the same chance as any other. Anything that has just drifted past is less likely
+              for a few days.
+              Everything keeps some chance of appearing.
             </p>
             <p>
-              If you do not choose a time budget, it prefers high-priority short reads, 
-              then high-priority long reads, then lower-priority short reads, and then 
-              everything else. 
+              You walk along the bank to see what is passing; a piece only opens up when you
+              are close to it. Once you have stood beside a piece for a few seconds without
+              opening it, it counts as seen. If that happens on two separate days, it rests
+              upstream for three days; if it comes back and passes you again, it rests for a
+              week. Pieces you never went to look at don&apos;t count, and nothing is marked or
+              deleted.
             </p>
             <p>
-              Skipping a read lowers its priority score, making it less likely to appear in future.
+              Anything you open stays on the bank, under Still reading, until you mark it as read
+              or put it back in the river. Pieces that drifted past in the last week can be found
+              again there too.
             </p>
              <p>
               Here are some of the sites that influenced the design of the Reading River:
@@ -122,6 +125,16 @@ export default function HowItWorksPage() {
                 </li>
               ))}
             </ul>
+          </section>
+
+          <section className="editorial-panel-soft river-how-section" aria-labelledby="river-how-music">
+            <h2 id="river-how-music">Music</h2>
+            <p>
+              The river plays Johann Strauss II&apos;s <em>The Blue Danube</em>, performed by the
+              United States Marine Band; as a work of the US government, the recording is in the
+              public domain. It has been compressed and evened in volume for the web. The running water is a
+              looped field recording; the birds and the rain are made in your browser as you walk.
+            </p>
           </section>
         </section>
       </div>
