@@ -12,16 +12,6 @@ function parseInteger(value: FormDataEntryValue | null) {
   return Number.isInteger(parsed) ? parsed : null;
 }
 
-function parsePriorityScore(value: FormDataEntryValue | null) {
-  const raw = String(value ?? "").trim();
-
-  if (raw === "none") {
-    return null;
-  }
-
-  return parseInteger(value);
-}
-
 function parseTagNames(value: string) {
   return value
     .split(",")
@@ -62,21 +52,18 @@ export async function saveReadingItemEditAction(formData: FormData) {
   const sourceType = String(formData.get("sourceType") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
   const estimatedMinutes = parseInteger(formData.get("estimatedMinutes"));
-  const priorityScore = parsePriorityScore(formData.get("priorityScore"));
 
   if (
     !id ||
     !title ||
     title.length > READING_RIVER_LIMITS.titleLength ||
     estimatedMinutes === null ||
-    estimatedMinutes <= 0 ||
-    (priorityScore !== null && (priorityScore < 1 || priorityScore > 10))
+    estimatedMinutes <= 0
   ) {
     redirectToEdit(id, "invalid_input");
   }
 
   const validatedEstimatedMinutes = estimatedMinutes;
-  const validatedPriorityScore = priorityScore;
 
   const updateInput: {
     id: string;
@@ -89,7 +76,8 @@ export async function saveReadingItemEditAction(formData: FormData) {
     id,
     title,
     estimatedMinutes: validatedEstimatedMinutes,
-    priorityScore: validatedPriorityScore,
+    // Priority is gone; saving clears any left over.
+    priorityScore: null,
     tagNames: parseTagNames(String(formData.get("tagNames") ?? "")),
   };
 

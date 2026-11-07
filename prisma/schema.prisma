@@ -80,6 +80,7 @@ model User {
   sessions        Session[]
   extensionTokens ExtensionToken[]
   passwordResetTokens PasswordResetToken[]
+  driftState       DriftState?
 }
 
 model Invite {
@@ -175,6 +176,17 @@ model ReadingItem {
   pinned                     Boolean                    @default(false)
   eddySlot                   Int?
   eddyAddedAt                DateTime?
+  /// River drift: when priority was set or renewed; priority stops counting 14 days later.
+  priorityAssignedAt         DateTime?
+  /// River drift: last time the item sat on a pad that was actually looked at.
+  lastSurfacedAt             DateTime?
+  /// River drift: unread appearances on separate viewed days since the last snooze.
+  driftMisses                 Int                        @default(0)
+  /// River drift: 0 = never snoozed, 1 = snoozed once (3 days), 2 = snoozed again (a week).
+  snoozeLevel                Int                        @default(0)
+  snoozedUntil               DateTime?
+  /// River drift: stirred away; out of circulation until this time, with no penalty.
+  restingUntil               DateTime?
   userId                     String
   bookId                     String?
   chapterIndex               Int?
@@ -270,6 +282,15 @@ model NameRankingSubmission {
   comparisons Json
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+/// The pads currently on the water, one selection per time budget.
+/// draws: { [budgetKey]: { ids: string[], drawnOn: "YYYY-MM-DD", seenIds: string[] } }
+model DriftState {
+  userId    String   @id
+  draws     Json     @default("{}")
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // ---------------------------------------------------------------------------

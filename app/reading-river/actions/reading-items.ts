@@ -1,6 +1,7 @@
 "use server";
 
 import { clearedEddyMembership } from "@/lib/reading-river/eddy-state";
+import { clearedDriftHistory } from "@/lib/reading-river/drift";
 import { revalidatePath } from "next/cache";
 import { getPrismaClient } from "@/lib/reading-river/db";
 import { requireCurrentUser } from "@/lib/reading-river/current-user";
@@ -102,6 +103,9 @@ export async function updateReadingItem(input: unknown) {
       data: {
         userId: currentUser.id,
         ...restData,
+        // Setting a different priority is an explicit renewal of its 14 days.
+        ...(restData.priorityScore !== undefined && restData.priorityScore !== ownedItem.priorityScore
+          ? { priorityAssignedAt: new Date(), ...clearedDriftHistory } : {}),
         ...((restData.status && !["unread", "reading"].includes(restData.status)) ||
             restData.sourceType === "manual" || restData.sourceType === "book_chapter"
           ? clearedEddyMembership : {}),

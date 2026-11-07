@@ -17,7 +17,17 @@ export function withEddyTransaction<T>(
   }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, timeout: 10_000 });
 }
 
-// Additions must run inside withEddyTransaction, including create-and-add intake.
+export type EddyChange = { id: string; drifted: { id: string; title: string } | null };
+
+/**
+ * Adds or removes an article from the eddies. Additions must run inside
+ * withEddyTransaction (or another transaction holding the same user lock),
+ * including create-and-add intake.
+ *
+ * The eddies hold five. When a sixth arrives, the one that has been there
+ * longest drifts back out into the river: it leaves the eddies and, if it was
+ * being read, becomes ordinary unread again so it can come round once more.
+ */
 export async function setEddyMembership(
   tx: Prisma.TransactionClient,
   userId: string,
@@ -35,11 +45,13 @@ export async function setEddyMembership(
   if (!item) throw new EddyError("That article was not found.");
 
   if (!keep) {
-    return tx.readingItem.update({
+    // Letting a piece go from the eddies puts it back in the river.
+    await tx.readingItem.update({
       where: { userId_id: { userId, id } },
-      data: clearedEddyMembership,
+      data: { ...clearedEddyMembership, ...(item.status === "reading" ? { status: "unread" as const, restingUntil: null } : {}) },
       select: { id: true },
     });
+    return { id, drifted: null } satisfies EddyChange;
   }
 
   if (item.sourceType === "manual" || item.sourceType === "book_chapter" ||
@@ -47,23 +59,37 @@ export async function setEddyMembership(
     throw new EddyError("Only unread or in-progress articles can enter the eddies.");
   }
   // Repeated additions preserve both the slot and the original addition time.
-  if (item.eddySlot !== null) return;
+  if (item.eddySlot !== null) return { id, drifted: null } satisfies EddyChange;
 
   const occupied = await tx.readingItem.findMany({
     where: { userId, eddySlot: { not: null } },
-    select: { eddySlot: true },
-    take: EDDY_CAPACITY,
+    select: { id: true, title: true, status: true, eddySlot: true },
+    orderBy: [{ eddyAddedAt: "asc" }, { id: "asc" }],
   });
   const slots = new Set(occupied.map((entry) => entry.eddySlot));
-  const slot = Array.from({ length: EDDY_CAPACITY }, (_, index) => index + 1)
+  let slot = Array.from({ length: EDDY_CAPACITY }, (_, index) => index + 1)
     .find((candidate) => !slots.has(candidate));
-  if (slot === undefined) throw new EddyError(EDDIES_FULL_MESSAGE);
+  let drifted: EddyChange["drifted"] = null;
 
-  return tx.readingItem.update({
+  if (slot === undefined) {
+    // Full: the longest-kept piece drifts back out into the river.
+    const oldest = occupied[0];
+    if (!oldest?.eddySlot) throw new EddyError(EDDIES_FULL_MESSAGE);
+    await tx.readingItem.update({
+      where: { userId_id: { userId, id: oldest.id } },
+      data: { ...clearedEddyMembership, ...(oldest.status === "reading" ? { status: "unread" as const, restingUntil: null } : {}) },
+      select: { id: true },
+    });
+    slot = oldest.eddySlot;
+    drifted = { id: oldest.id, title: oldest.title };
+  }
+
+  await tx.readingItem.update({
     where: { userId_id: { userId, id } },
     data: { eddySlot: slot, eddyAddedAt: new Date() },
     select: { id: true },
   });
+  return { id, drifted } satisfies EddyChange;
 }
 
 export function getEddyArticles(userId: string) {

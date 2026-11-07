@@ -8,7 +8,6 @@ import { getPrismaClient } from "@/lib/reading-river/db";
 import { getKnownTagNames } from "@/lib/reading-river/known-tags";
 import { readingRiverPath } from "@/lib/reading-river/routes";
 
-const PRIORITY_OPTIONS = Array.from({ length: 10 }, (_, index) => String(index + 1));
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +21,7 @@ type ReadingRiverEditItemPageProps = {
 function getErrorMessage(error: string | null) {
   switch (error) {
     case "invalid_input":
-      return "Add a title, reading time, priority setting, and a valid URL before saving.";
+      return "Add a title, reading time and a valid URL before saving.";
     case "duplicate_url":
       return "That link is already in your stream.";
     case "save_failed":
@@ -141,30 +140,6 @@ export default async function ReadingRiverEditItemPage({
               />
             </label>
 
-            <div className="grid gap-2 text-sm">
-              <label htmlFor="edit-item-priority-score">Priority</label>
-              <select
-                id="edit-item-priority-score"
-                name="priorityScore"
-                required
-                defaultValue={item.priorityScore === null ? "none" : String(item.priorityScore)}
-                aria-describedby="edit-item-priority-help edit-item-priority-scale"
-                className="intake-input"
-              >
-                <option value="none">No priority (stream only)</option>
-                {PRIORITY_OPTIONS.map((priorityValue) => (
-                  <option key={priorityValue} value={priorityValue}>
-                    {priorityValue}
-                  </option>
-                ))}
-              </select>
-              <p id="edit-item-priority-help" className="intake-helper-text">
-                No priority items stay in the stream and never appear in the left column.
-              </p>
-              <p id="edit-item-priority-scale" className="intake-helper-text">
-                1-10, where 10 is highest priority.
-              </p>
-            </div>
           </div>
 
           <TagInput
