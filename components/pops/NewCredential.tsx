@@ -12,13 +12,16 @@ export function NewCredential({ scopes }: { scopes: readonly string[] }) {
         <input name="name" placeholder="Name, e.g. ChatGPT connector" required maxLength={80} aria-label="Credential name" />
         <button type="submit" disabled={pending}>Create credential</button>
       </div>
-      <div style={{ marginTop: 8 }}>
-        {scopes.map((scope) => (
-          <label key={scope} className="pops-check pops-small">
-            <input type="checkbox" name="scopes" value={scope} defaultChecked /> <code>{scope}</code>
-          </label>
-        ))}
-      </div>
+      <details className="pops-more">
+        <summary>Limit what it can do</summary>
+        <div>
+          {scopes.map((scope) => (
+            <label key={scope} className="pops-check pops-check--inline pops-small">
+              <input type="checkbox" name="scopes" value={scope} defaultChecked /> <code>{scope}</code>
+            </label>
+          ))}
+        </div>
+      </details>
       {state.error ? <p className="pops-error" role="alert">{state.error}</p> : null}
       {state.token ? (
         <div className="pops-notice" role="status">

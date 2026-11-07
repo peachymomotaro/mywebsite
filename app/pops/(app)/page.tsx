@@ -6,10 +6,7 @@ export default async function EverythingPage({ searchParams }: { searchParams: P
   const { view, tag, error } = await searchParams;
   return (
     <>
-      <div className="pops-pagehead">
-        <h1>Everything</h1>
-      </div>
-      <p className="pops-lede">All tasks across the four workspaces. Agents do the work; you decide what is done.</p>
+      <h1 style={{ marginBottom: 20 }}>Everything</h1>
       <TaskIndex basePath="/pops" view={view} tag={tag} error={error} />
     </>
   );

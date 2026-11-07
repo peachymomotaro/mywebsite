@@ -36,13 +36,16 @@ export default async function PipelinePage({
         <h1>{pipeline.name}</h1>
         {!editing ? <Link href={`${back}?edit=1`}>Edit</Link> : null}
       </div>
-      <p className="pops-meta">
-        {slug} · v{pipeline.currentVersion} · {pipeline.workspace ? WORKSPACES[pipeline.workspace].label : "any workspace"}
-        {stats ? ` · ${stats.runs} runs, ${stats.useful} useful, ${stats.notUseful} not useful` : ""}
-        {pipeline.archived ? " · archived" : ""}
+      <p className="pops-lede">
+        {pipeline.summary}
+        <br />
+        <span className="pops-small">
+          {pipeline.workspace ? WORKSPACES[pipeline.workspace].label : "Any workspace"} · version {pipeline.currentVersion}
+          {stats ? ` · ${stats.runs} ${stats.runs === 1 ? "run" : "runs"}, ${stats.useful} useful, ${stats.notUseful} not` : ""}
+          {pipeline.archived ? " · archived" : ""}
+        </span>
       </p>
       {error ? <p className="pops-notice pops-error" role="alert">{error}</p> : null}
-      <p className="pops-lede">{pipeline.summary}</p>
 
       {editing ? (
         <form action={savePipelineAction}>
@@ -66,19 +69,17 @@ export default async function PipelinePage({
         </form>
       ) : (
         <>
-          <h2>Instructions</h2>
           <div className="pops-pre">{current.instructions}</div>
-          <h2>Expected evidence</h2>
-          <p>{current.expectedEvidence || "—"}</p>
+          {current.expectedEvidence ? <p className="pops-small pops-muted" style={{ marginTop: 12 }}>Expected evidence: {current.expectedEvidence}</p> : null}
         </>
       )}
 
       {pipeline.proposals.length && !applying ? (
         <section aria-labelledby="h-proposals">
-          <h2 id="h-proposals">Proposals</h2>
+          <h2 id="h-proposals">Suggested changes</h2>
           {pipeline.proposals.map((p) => (
             <div key={p.id} className="pops-proposal">
-              <strong>{p.title}</strong> <span className="pops-meta">{formatDateTime(p.createdAt)}</span>
+              <h3>{p.title}</h3>
               {p.rationale ? <p className="pops-small">{p.rationale}</p> : null}
               <div className="pops-actions">
                 <Link href={`${back}?proposal=${p.id}`}>Review and apply</Link>
@@ -94,26 +95,29 @@ export default async function PipelinePage({
         </section>
       ) : null}
 
-      <h2>Versions</h2>
-      <ol className="pops-history">
-        {pipeline.versions.map((v) => (
-          <li key={v.id}>
-            <details>
-              <summary>
-                <span className="pops-meta">{formatDateTime(v.createdAt)}</span>
-                <span className="pops-kind" data-actor={v.author}>v{v.version}</span>
-                <span>{v.changeNote}</span>
-              </summary>
-              <div className="pops-entry-body"><div className="pops-pre">{v.instructions}</div></div>
-            </details>
-          </li>
-        ))}
-      </ol>
+      <details className="pops-more" style={{ marginTop: 32 }}>
+        <summary>Version history ({pipeline.versions.length})</summary>
+        <ol className="pops-history">
+          {pipeline.versions.map((v) => (
+            <li key={v.id}>
+              <details>
+                <summary>
+                  <span className="pops-when">v{v.version}</span>
+                  <span className="pops-summary">
+                    {v.changeNote} <span className="pops-meta">· {formatDateTime(v.createdAt)}{v.author !== "human" ? ` · ${v.author}` : ""}</span>
+                  </span>
+                </summary>
+                <div className="pops-entry-body"><div className="pops-pre">{v.instructions}</div></div>
+              </details>
+            </li>
+          ))}
+        </ol>
+      </details>
 
-      <form action={archivePipelineAction} style={{ marginTop: 24 }}>
+      <form action={archivePipelineAction}>
         <input type="hidden" name="slug" value={slug} />
         <input type="hidden" name="archived" value={pipeline.archived ? "false" : "true"} />
-        <button type="submit" className="pops-secondary">{pipeline.archived ? "Restore pipeline" : "Archive pipeline"}</button>
+        <button type="submit" className="pops-link-button pops-small">{pipeline.archived ? "Restore this pipeline" : "Archive this pipeline"}</button>
       </form>
     </>
   );

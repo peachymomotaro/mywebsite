@@ -4,79 +4,64 @@ import { getPipelineStats, listPipelines, listProposals } from "@/lib/pops/libra
 
 export const metadata = { title: "Pipelines" };
 
-export default async function PipelinesPage() {
-  const [pipelines, stats, proposals] = await Promise.all([
-    listPipelines({ includeArchived: true }),
-    getPipelineStats(),
-    listProposals("pending"),
-  ]);
+export default async function PipelinesPage({ searchParams }: { searchParams: Promise<{ archived?: string }> }) {
+  const { archived } = await searchParams;
+  const showArchived = archived === "1";
+  const [all, stats, proposals] = await Promise.all([listPipelines({ includeArchived: true }), getPipelineStats(), listProposals("pending")]);
+  const pipelines = all.filter((p) => p.archived === showArchived);
+  const archivedCount = all.filter((p) => p.archived).length;
   const pipelineProposals = proposals.filter((p) => p.kind === "pipeline_change" || p.kind === "new_pipeline");
 
   return (
     <>
       <div className="pops-pagehead">
         <h1>Pipelines</h1>
-        <Link href="/pops/pipelines/new">New pipeline</Link>
+        <Link href="/pops/pipelines/new" className="pops-small">New pipeline</Link>
       </div>
-      <p className="pops-lede">
-        Small, reusable instruction sets. Editing saves a new version; earlier versions are kept and runs record the version they used.
-      </p>
+      <p className="pops-lede">Reusable instructions you hand to ChatGPT. Edits are saved as new versions.</p>
 
       {pipelineProposals.length ? (
-        <section className="pops-strip pops-strip--decisions" aria-labelledby="h-props">
-          <h2 id="h-props">Agent proposals to review</h2>
-          <ul>
+        <section className="pops-attention" aria-labelledby="h-props">
+          <h2 id="h-props">Suggested by agents</h2>
+          <ul className="pops-list">
             {pipelineProposals.map((p) => (
               <li key={p.id}>
-                {p.kind === "new_pipeline" ? (
-                  <Link href={`/pops/pipelines/new?proposal=${p.id}`}>New: {p.title}</Link>
-                ) : (
-                  <Link href={`/pops/pipelines/${p.pipeline?.slug}?proposal=${p.id}`}>{p.pipeline?.name}: {p.title}</Link>
-                )}
-                {p.task ? <span className="pops-meta">from {p.task.title}</span> : null}
+                <div className="pops-row">
+                  {p.kind === "new_pipeline" ? (
+                    <Link href={`/pops/pipelines/new?proposal=${p.id}`}>New pipeline: {p.title}</Link>
+                  ) : (
+                    <Link href={`/pops/pipelines/${p.pipeline?.slug}?proposal=${p.id}`}>{p.pipeline?.name}: {p.title}</Link>
+                  )}
+                  <span className="pops-meta">review</span>
+                </div>
               </li>
             ))}
           </ul>
         </section>
       ) : null}
 
-      <table className="pops-library">
-        <thead>
-          <tr>
-            <th scope="col">Pipeline</th>
-            <th scope="col">Workspace</th>
-            <th scope="col">Version</th>
-            <th scope="col">Feedback</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pipelines.map((p) => {
-            const s = stats.get(p.slug);
-            return (
-              <tr key={p.slug}>
-                <td>
-                  <Link href={`/pops/pipelines/${p.slug}`}>{p.name}</Link>
-                  {p.archived ? <span className="pops-tag"> archived</span> : null}
-                  <div className="pops-small pops-muted">{p.summary}</div>
-                </td>
-                <td className="pops-ws">{p.workspace ? WORKSPACES[p.workspace].label : "Any"}</td>
-                <td className="pops-meta">v{p.currentVersion}</td>
-                <td className="pops-meta">
-                  {s ? (
-                    <>
-                      {s.runs} {s.runs === 1 ? "run" : "runs"}
-                      <br />
-                      {s.useful} useful · {s.notUseful} not
-                    </>
-                  ) : (
-                    "—"
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <ul className="pops-list" style={{ borderTop: "var(--pops-rule)" }}>
+        {pipelines.map((p) => {
+          const s = stats.get(p.slug);
+          return (
+            <li key={p.slug}>
+              <div className="pops-row">
+                <Link href={`/pops/pipelines/${p.slug}`} className="pops-plain">{p.name}</Link>
+                <span className="pops-meta">{p.workspace ? WORKSPACES[p.workspace].label : "Any workspace"}</span>
+              </div>
+              <div className="pops-sub">
+                {p.summary}
+                {s ? ` · ${s.runs} ${s.runs === 1 ? "run" : "runs"}${s.useful + s.notUseful ? `, ${s.useful} useful, ${s.notUseful} not` : ""}` : ""}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      {archivedCount ? (
+        <p className="pops-small" style={{ marginTop: 14 }}>
+          {showArchived ? <Link href="/pops/pipelines">Back to active pipelines</Link> : <Link href="/pops/pipelines?archived=1">Archived ({archivedCount})</Link>}
+        </p>
+      ) : null}
     </>
   );
 }

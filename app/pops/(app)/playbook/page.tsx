@@ -22,16 +22,35 @@ export default async function PlaybookPage({ searchParams }: { searchParams: Pro
         <h1>Playbook</h1>
         {!editing ? <Link href="/pops/playbook?edit=1">Edit</Link> : null}
       </div>
-      <p className="pops-lede">
-        Shared instructions included in every pipeline prompt. Agents can record observations and propose changes; nothing they write takes effect until you apply it here.
-      </p>
+      <p className="pops-lede">Shared instructions included in every prompt. Agents can suggest changes; only you can apply them.</p>
       {error ? <p className="pops-notice pops-error" role="alert">{error}</p> : null}
-
-      <div className="pops-boundaries">
-        <strong>Foundational permission boundaries</strong>
-        <span className="pops-small pops-muted"> — defined in code, appended after the playbook in every prompt, not editable here.</span>
-        <ul className="pops-small">{FOUNDATIONAL_BOUNDARIES.map((b) => <li key={b}>{b}</li>)}</ul>
-      </div>
+      {proposals.length && !editing ? (
+        <section className="pops-attention">
+          <h2>Suggested by agents</h2>
+          {proposals.map((p) => (
+          <div key={p.id} className="pops-proposal">
+            <h3>{p.title}</h3>
+            <p className="pops-meta">{KIND_LABEL[p.kind]}{p.task ? ` · from ${p.task.title}` : ""}</p>
+            <p className="pops-description pops-small">{p.body.length > 800 ? `${p.body.slice(0, 800)}…` : p.body}</p>
+            {p.rationale ? <p className="pops-small pops-muted">{p.rationale}</p> : null}
+            <div className="pops-actions">
+              <Link href={`/pops/playbook?proposal=${p.id}`}>Apply in editor</Link>
+              <form action={reviewProposalAction}>
+                <input type="hidden" name="proposalId" value={p.id} />
+                <input type="hidden" name="decision" value="accept" />
+                <input type="hidden" name="reviewNote" value="Noted without changing the playbook" />
+                <button type="submit" className="pops-link-button">Mark noted</button>
+              </form>
+              <form action={reviewProposalAction}>
+                <input type="hidden" name="proposalId" value={p.id} />
+                <input type="hidden" name="decision" value="reject" />
+                <button type="submit" className="pops-link-button">Reject</button>
+              </form>
+            </div>
+          </div>
+          ))}
+        </section>
+      ) : null}
 
       {editing ? (
         <form action={savePlaybookAction}>
@@ -56,54 +75,35 @@ export default async function PlaybookPage({ searchParams }: { searchParams: Pro
         </form>
       ) : (
         <>
-          <p className="pops-meta">v{current.version} · {formatDateTime(current.createdAt)} · {current.changeNote}</p>
           <div className="pops-pre">{current.content}</div>
         </>
       )}
 
-      <h2>Observations and proposals</h2>
-      {proposals.length ? (
-        proposals.map((p) => (
-          <div key={p.id} className="pops-proposal">
-            <span className="pops-tag">{KIND_LABEL[p.kind]}</span> <strong>{p.title}</strong>{" "}
-            <span className="pops-meta">{formatDateTime(p.createdAt)}{p.task ? ` · ${p.task.title}` : ""}</span>
-            <p className="pops-description pops-small">{p.body.length > 800 ? `${p.body.slice(0, 800)}…` : p.body}</p>
-            {p.rationale ? <p className="pops-small pops-muted">{p.rationale}</p> : null}
-            <div className="pops-actions">
-              <Link href={`/pops/playbook?proposal=${p.id}`}>Apply in editor</Link>
-              <form action={reviewProposalAction}>
-                <input type="hidden" name="proposalId" value={p.id} />
-                <input type="hidden" name="decision" value="accept" />
-                <input type="hidden" name="reviewNote" value="Noted without changing the playbook" />
-                <button type="submit" className="pops-link-button">Mark noted</button>
-              </form>
-              <form action={reviewProposalAction}>
-                <input type="hidden" name="proposalId" value={p.id} />
-                <input type="hidden" name="decision" value="reject" />
-                <button type="submit" className="pops-link-button">Reject</button>
-              </form>
-            </div>
-          </div>
-        ))
-      ) : (
-        <p className="pops-muted">None waiting.</p>
-      )}
-
-      <h2>Versions</h2>
-      <ol className="pops-history">
-        {versions.map((v) => (
-          <li key={v.id}>
-            <details>
-              <summary>
-                <span className="pops-meta">{formatDateTime(v.createdAt)}</span>
-                <span className="pops-kind" data-actor={v.author}>v{v.version}</span>
-                <span>{v.changeNote}{v.proposalId ? " (from an agent proposal)" : ""}</span>
-              </summary>
-              <div className="pops-entry-body"><div className="pops-pre">{v.content}</div></div>
-            </details>
-          </li>
-        ))}
-      </ol>
+      <details className="pops-more" style={{ marginTop: 32 }}>
+        <summary>Permission boundaries that always apply ({FOUNDATIONAL_BOUNDARIES.length})</summary>
+        <div className="pops-boundaries">
+          <p className="pops-small pops-muted">Set in code and placed after the playbook in every prompt, so playbook edits cannot weaken them.</p>
+          <ul>{FOUNDATIONAL_BOUNDARIES.map((b) => <li key={b}>{b}</li>)}</ul>
+        </div>
+      </details>
+      <details className="pops-more">
+        <summary>Version history ({versions.length})</summary>
+        <ol className="pops-history">
+          {versions.map((v) => (
+            <li key={v.id}>
+              <details>
+                <summary>
+                  <span className="pops-when">v{v.version}</span>
+                  <span className="pops-summary">
+                    {v.changeNote}{v.proposalId ? " (from an agent suggestion)" : ""} <span className="pops-meta">· {formatDateTime(v.createdAt)}</span>
+                  </span>
+                </summary>
+                <div className="pops-entry-body"><div className="pops-pre">{v.content}</div></div>
+              </details>
+            </li>
+          ))}
+        </ol>
+      </details>
     </>
   );
 }

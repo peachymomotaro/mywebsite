@@ -39,23 +39,25 @@ export default async function PromptPage({
       </p>
       <h1>{pipeline.name}</h1>
       <p className="pops-lede">
-        Copy this into any ChatGPT conversation. It carries the task, previous work and decisions, the playbook (v{playbook.version}),
-        permission boundaries and write-back instructions. When ChatGPT replies, paste its <code>pops-report</code> block back on the task page,
-        unless it wrote to POps directly.
+        Copy this into ChatGPT. When it replies, paste its report back on the task.
       </p>
       <div className="pops-actions">
         <CopyButton text={prompt} label="Copy prompt" />
         <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Open ChatGPT ↗</a>
-        <span className="pops-muted pops-small">·</span>
-        {includeReview ? (
-          <Link className="pops-small" href={`/pops/tasks/${id}/prompt?pipeline=${slug}`}>Without pipeline review</Link>
-        ) : (
-          <Link className="pops-small" href={`/pops/tasks/${id}/prompt?pipeline=${slug}&review=1`}>Add pipeline review step</Link>
-        )}
-        <Link className="pops-small" href={`/pops/pipelines/${slug}`}>View pipeline</Link>
       </div>
-      <p className="pops-meta">idempotencyKey {idempotencyKey} · {prompt.length.toLocaleString("en-GB")} characters</p>
-      <textarea className="pops-prompt" readOnly value={prompt} aria-label="Generated prompt" />
+      <details className="pops-more" style={{ marginTop: 28 }}>
+        <summary>Read the prompt ({prompt.length.toLocaleString("en-GB")} characters)</summary>
+        <textarea className="pops-prompt" readOnly value={prompt} aria-label="Generated prompt" />
+      </details>
+      <p className="pops-small pops-muted">
+        {includeReview ? (
+          <>Includes a pipeline review step. <Link href={`/pops/tasks/${id}/prompt?pipeline=${slug}`}>Remove it</Link></>
+        ) : (
+          <Link href={`/pops/tasks/${id}/prompt?pipeline=${slug}&review=1`}>Also ask ChatGPT to review this pipeline</Link>
+        )}
+        {" · "}
+        <Link href={`/pops/pipelines/${slug}`}>Edit pipeline</Link>
+      </p>
     </>
   );
 }

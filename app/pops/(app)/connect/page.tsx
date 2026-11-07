@@ -7,6 +7,19 @@ import { ago, formatDate } from "@/lib/pops/format";
 
 export const metadata = { title: "Connect" };
 
+const ENDPOINTS = [
+  ["GET", "/api/pops/v1/tasks", "List tasks (?workspace, ?status, ?tag)"],
+  ["POST", "/api/pops/v1/tasks", "Create a task (idempotencyKey optional)"],
+  ["GET", "/api/pops/v1/tasks/{id}", "Task context: runs, decisions, notes, pipelines"],
+  ["GET", "/api/pops/v1/tasks/{id}/prompt?pipeline=slug", "Full pipeline prompt"],
+  ["POST", "/api/pops/v1/tasks/{id}/runs", "Record an agent run (idempotent)"],
+  ["POST", "/api/pops/v1/tasks/{id}/decisions", "Ask for a decision"],
+  ["POST", "/api/pops/v1/runs/{id}/feedback", "Relay your feedback"],
+  ["POST", "/api/pops/v1/proposals", "Suggest a pipeline or playbook change"],
+  ["GET", "/api/pops/v1/pipelines", "Pipeline templates"],
+  ["GET", "/api/pops/v1/playbook", "Current playbook"],
+];
+
 export default async function ConnectPage() {
   const credentials = await getPopsDb().popsAgentCredential.findMany({ orderBy: { createdAt: "desc" } });
   const base = siteBaseUrl();
@@ -15,56 +28,31 @@ export default async function ConnectPage() {
   return (
     <>
       <h1>Connect</h1>
-      <p className="pops-lede">
-        How ChatGPT and other agents read tasks and write results back. Every route below is private: it needs an agent credential, and
-        agents can never change a task&rsquo;s status, edit the playbook or edit pipelines directly.
-      </p>
+      <p className="pops-lede">How ChatGPT reads tasks and writes results back. Agents can never complete tasks or edit the playbook.</p>
 
       <h2>Ways to connect</h2>
-      <ol>
+      <ol className="pops-list" style={{ borderTop: "var(--pops-rule)" }}>
         <li>
-          <strong>Copy and paste (always works).</strong> Choose a pipeline on a task, copy the prompt into any ChatGPT conversation, then
-          paste ChatGPT&rsquo;s <code>pops-report</code> block into the task page. No credential needed.
+          <strong>Copy and paste.</strong> <span className="pops-muted">Copy a pipeline prompt into ChatGPT, then paste its report back on the task. No setup.</span>
         </li>
         <li>
-          <strong>Custom GPT action.</strong> Create a GPT, add an action, import the schema from <code>{base}/api/pops/v1/openapi.json</code>,
-          and set authentication to API key → Bearer with a credential from below. The GPT can then create tasks, read context and record runs.
+          <strong>Custom GPT action.</strong>{" "}
+          <span className="pops-muted">
+            Import <code>{base}/api/pops/v1/openapi.json</code> as an action, with API key → Bearer auth using a credential below.
+          </span>
         </li>
         <li>
-          <strong>MCP connector.</strong> Server URL <code>{base}/api/pops/mcp</code> (Streamable HTTP, bearer token). Works with MCP clients
-          that accept a bearer token. ChatGPT&rsquo;s developer-mode connectors currently expect OAuth, which POps V1 does not implement — see
-          the README for the upgrade path.
+          <strong>MCP.</strong>{" "}
+          <span className="pops-muted">
+            <code>{base}/api/pops/mcp</code> with a bearer credential. ChatGPT&rsquo;s own connectors need OAuth, which isn&rsquo;t built yet.
+          </span>
         </li>
       </ol>
-
-      <h2>REST endpoints</h2>
-      <table className="pops-library pops-small">
-        <tbody>
-          {[
-            ["GET", "/api/pops/v1/tasks", "List tasks (?workspace, ?status, ?tag)"],
-            ["POST", "/api/pops/v1/tasks", "Create a task (idempotencyKey optional)"],
-            ["GET", "/api/pops/v1/tasks/{id}", "Task context: runs, decisions, notes, pipelines"],
-            ["GET", "/api/pops/v1/tasks/{id}/prompt?pipeline=slug", "Full pipeline prompt"],
-            ["POST", "/api/pops/v1/tasks/{id}/runs", "Record an agent run (idempotent)"],
-            ["POST", "/api/pops/v1/tasks/{id}/decisions", "Ask for a decision"],
-            ["POST", "/api/pops/v1/runs/{id}/feedback", "Relay Peter's feedback"],
-            ["POST", "/api/pops/v1/proposals", "Propose a pipeline/playbook change"],
-            ["GET", "/api/pops/v1/pipelines", "Pipeline templates"],
-            ["GET", "/api/pops/v1/playbook", "Current playbook"],
-          ].map(([method, path, note]) => (
-            <tr key={method + path}>
-              <td className="pops-meta">{method}</td>
-              <td><code>{path}</code></td>
-              <td className="pops-muted">{note}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
 
       <h2>Agent credentials</h2>
       <NewCredential scopes={AGENT_SCOPES} />
       {credentials.length ? (
-        <table className="pops-library pops-small" style={{ marginTop: 16 }}>
+        <table className="pops-table" style={{ marginTop: 16 }}>
           <thead>
             <tr><th scope="col">Name</th><th scope="col">Token</th><th scope="col">Scopes</th><th scope="col">Used</th><th scope="col" /></tr>
           </thead>
@@ -90,6 +78,21 @@ export default async function ConnectPage() {
           </tbody>
         </table>
       ) : null}
+
+      <details className="pops-more" style={{ marginTop: 32 }}>
+        <summary>API reference</summary>
+        <table className="pops-table">
+          <tbody>
+            {ENDPOINTS.map(([method, path, note]) => (
+              <tr key={method + path}>
+                <td className="pops-mono">{method}</td>
+                <td><code>{path}</code></td>
+                <td className="pops-muted">{note}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </details>
     </>
   );
 }
