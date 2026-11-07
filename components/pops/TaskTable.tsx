@@ -11,11 +11,10 @@ export function TaskTable({ tasks, showWorkspace = true, now = new Date() }: { t
   return (
     <ul className="pops-list">
       {tasks.map((task) => {
-        const context = [
-          showWorkspace ? WORKSPACES[task.workspace].label : null,
-          task.status !== "active" ? task.status : null,
-          task.suggestedNextAction ? `Next: ${task.suggestedNextAction}` : null,
-        ].filter(Boolean);
+        const where = showWorkspace ? `${WORKSPACES[task.workspace].label}, ` : "";
+        const sub = [task.status === "paused" ? "Paused." : null, task.suggestedNextAction ? `Next: ${task.suggestedNextAction}` : null]
+          .filter(Boolean)
+          .join(" ");
         return (
           <li key={task.id}>
             <div className="pops-row">
@@ -23,9 +22,9 @@ export function TaskTable({ tasks, showWorkspace = true, now = new Date() }: { t
                 <Link href={`/pops/tasks/${task.id}`} className="pops-plain">{task.title}</Link>
                 {task._count.decisions ? <span className="pops-flag">decision waiting</span> : null}
               </span>
-              <span className="pops-meta">{ago(task.lastHumanEngagementAt, now)}</span>
+              <span className="pops-meta">{where}{ago(task.lastHumanEngagementAt, now)}</span>
             </div>
-            {context.length ? <div className="pops-sub">{context.join(" · ")}</div> : null}
+            {sub ? <div className="pops-sub">{sub}</div> : null}
           </li>
         );
       })}

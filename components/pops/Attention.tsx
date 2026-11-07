@@ -44,7 +44,7 @@ export async function Attention({ workspace, back, now = new Date() }: { workspa
                 <button type="submit" className="pops-link-button pops-small">Not now</button>
               </form>
             </div>
-            <div className="pops-sub">Untouched {ago(task.lastHumanEngagementAt, now).replace(" ago", "")}{task.status === "paused" ? " · paused" : ""}</div>
+            <div className="pops-sub">{task.status === "paused" ? "Paused, untouched for " : "Untouched for "}{ago(task.lastHumanEngagementAt, now).replace(" ago", "")}</div>
           </li>
         ))}
       </ul>

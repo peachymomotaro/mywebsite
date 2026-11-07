@@ -31,7 +31,7 @@ export default async function PipelinePage({
 
   return (
     <>
-      <p className="pops-small pops-muted"><Link href="/pops/pipelines">← Pipelines</Link></p>
+      <p className="pops-small pops-muted"><Link href="/pops/pipelines">All pipelines</Link></p>
       <div className="pops-pagehead">
         <h1>{pipeline.name}</h1>
         {!editing ? <Link href={`${back}?edit=1`}>Edit</Link> : null}
@@ -40,9 +40,9 @@ export default async function PipelinePage({
         {pipeline.summary}
         <br />
         <span className="pops-small">
-          {pipeline.workspace ? WORKSPACES[pipeline.workspace].label : "Any workspace"} · version {pipeline.currentVersion}
-          {stats ? ` · ${stats.runs} ${stats.runs === 1 ? "run" : "runs"}, ${stats.useful} useful, ${stats.notUseful} not` : ""}
-          {pipeline.archived ? " · archived" : ""}
+          For {pipeline.workspace ? WORKSPACES[pipeline.workspace].label : "any workspace"}, version {pipeline.currentVersion}.
+          {stats ? ` Used ${stats.runs} ${stats.runs === 1 ? "time" : "times"}, ${stats.useful} marked useful, ${stats.notUseful} not.` : ""}
+          {pipeline.archived ? " Archived." : ""}
         </span>
       </p>
       {error ? <p className="pops-notice pops-error" role="alert">{error}</p> : null}
@@ -104,7 +104,7 @@ export default async function PipelinePage({
                 <summary>
                   <span className="pops-when">v{v.version}</span>
                   <span className="pops-summary">
-                    {v.changeNote} <span className="pops-meta">· {formatDateTime(v.createdAt)}{v.author !== "human" ? ` · ${v.author}` : ""}</span>
+                    {v.changeNote} <span className="pops-meta">{formatDateTime(v.createdAt)}{v.author === "system" ? ", initial template" : ""}</span>
                   </span>
                 </summary>
                 <div className="pops-entry-body"><div className="pops-pre">{v.instructions}</div></div>

@@ -38,7 +38,7 @@ export default async function ConnectPage() {
         <li>
           <strong>Custom GPT action.</strong>{" "}
           <span className="pops-muted">
-            Import <code>{base}/api/pops/v1/openapi.json</code> as an action, with API key → Bearer auth using a credential below.
+            Import <code>{base}/api/pops/v1/openapi.json</code> as an action, choosing API key, then Bearer, using a credential below.
           </span>
         </li>
         <li>

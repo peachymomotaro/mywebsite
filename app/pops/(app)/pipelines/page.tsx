@@ -51,7 +51,7 @@ export default async function PipelinesPage({ searchParams }: { searchParams: Pr
               </div>
               <div className="pops-sub">
                 {p.summary}
-                {s ? ` · ${s.runs} ${s.runs === 1 ? "run" : "runs"}${s.useful + s.notUseful ? `, ${s.useful} useful, ${s.notUseful} not` : ""}` : ""}
+                {s ? ` Used ${s.runs} ${s.runs === 1 ? "time" : "times"}${s.useful + s.notUseful ? `, ${s.useful} marked useful` : ""}.` : ""}
               </div>
             </li>
           );

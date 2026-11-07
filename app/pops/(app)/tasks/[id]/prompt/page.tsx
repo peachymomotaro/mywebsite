@@ -35,7 +35,7 @@ export default async function PromptPage({
   return (
     <>
       <p className="pops-small pops-muted">
-        <Link href={`/pops/tasks/${id}`}>← {loaded.task.title}</Link>
+        <Link href={`/pops/tasks/${id}`}>Back to {loaded.task.title}</Link>
       </p>
       <h1>{pipeline.name}</h1>
       <p className="pops-lede">
@@ -43,19 +43,18 @@ export default async function PromptPage({
       </p>
       <div className="pops-actions">
         <CopyButton text={prompt} label="Copy prompt" />
-        <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Open ChatGPT ↗</a>
+        <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Open ChatGPT</a>
       </div>
       <details className="pops-more" style={{ marginTop: 28 }}>
         <summary>Read the prompt ({prompt.length.toLocaleString("en-GB")} characters)</summary>
         <textarea className="pops-prompt" readOnly value={prompt} aria-label="Generated prompt" />
       </details>
-      <p className="pops-small pops-muted">
+      <p className="pops-small pops-muted pops-actions">
         {includeReview ? (
           <>Includes a pipeline review step. <Link href={`/pops/tasks/${id}/prompt?pipeline=${slug}`}>Remove it</Link></>
         ) : (
           <Link href={`/pops/tasks/${id}/prompt?pipeline=${slug}&review=1`}>Also ask ChatGPT to review this pipeline</Link>
         )}
-        {" · "}
         <Link href={`/pops/pipelines/${slug}`}>Edit pipeline</Link>
       </p>
     </>

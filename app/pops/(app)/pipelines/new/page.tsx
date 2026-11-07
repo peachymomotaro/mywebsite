@@ -12,7 +12,7 @@ export default async function NewPipelinePage({ searchParams }: { searchParams: 
 
   return (
     <>
-      <p className="pops-small pops-muted"><Link href="/pops/pipelines">← Pipelines</Link></p>
+      <p className="pops-small pops-muted"><Link href="/pops/pipelines">All pipelines</Link></p>
       <h1>New pipeline</h1>
       {error ? <p className="pops-notice pops-error" role="alert">{error}</p> : null}
       <form action={createPipelineAction}>

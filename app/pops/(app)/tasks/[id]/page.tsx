@@ -109,7 +109,7 @@ export default async function TaskPage({
       <h1>{task.title}</h1>
       <div className="pops-taskmeta">
         <span className="pops-meta">
-          {task.status === "active" ? "Active" : task.status[0].toUpperCase() + task.status.slice(1)} · touched {ago(task.lastHumanEngagementAt, now)}
+          {task.status === "active" ? "Active" : task.status[0].toUpperCase() + task.status.slice(1)}, last touched {ago(task.lastHumanEngagementAt, now)}
           <span className="pops-tags">
             {task.projectTags.map((tag) => (
               <Link key={tag} href={`/pops?tag=${encodeURIComponent(tag)}`}>#{tag}</Link>
@@ -173,8 +173,7 @@ export default async function TaskPage({
           {task.description ? <p className="pops-description">{task.description}</p> : null}
 
           {openDecisions.length ? (
-            <section id="decisions" aria-labelledby="h-decisions">
-              <h2 id="h-decisions">{openDecisions.length === 1 ? "Decision" : "Decisions"}</h2>
+            <section id="decisions" aria-label="Decisions">
               {openDecisions.map((d) => {
                 const options = d.options as Option[];
                 const evidence = d.evidence as Evidence[];
@@ -182,14 +181,14 @@ export default async function TaskPage({
                   <form key={d.id} id={`decision-${d.id}`} action={answerDecisionAction} className="pops-decision">
                     <input type="hidden" name="taskId" value={task.id} />
                     <input type="hidden" name="decisionId" value={d.id} />
-                    <h3>{d.question}</h3>
+                    <h3 className="pops-question">{d.question}</h3>
                     {d.explanation ? <p className="pops-small pops-muted">{d.explanation}</p> : null}
                     {options.map((o) => (
                       <label key={o.label} className="pops-check">
                         <input type="radio" name="chosenOption" value={o.label} defaultChecked={o.label === d.recommendation} />
                         <span>
                           {o.label}
-                          {o.label === d.recommendation ? <span className="pops-recommended">recommended</span> : null}
+                          {o.label === d.recommendation ? <span className="pops-recommended"> (recommended)</span> : null}
                           {o.explanation ? <span className="pops-option-note"> — {o.explanation}</span> : null}
                         </span>
                       </label>
@@ -223,12 +222,11 @@ export default async function TaskPage({
 
           {isOpen ? (
             <section aria-labelledby="h-next">
-              <h2 id="h-next">Hand to ChatGPT</h2>
+              <h2 id="h-next">Hand it to ChatGPT</h2>
               <ul className="pops-pipelines">
                 {suggested.map((p) => (
                   <li key={p.slug}>
                     <Link href={`/pops/tasks/${task.id}/prompt?pipeline=${p.slug}`}>{p.name}</Link>
-                    <span className="pops-meta">→</span>
                   </li>
                 ))}
               </ul>
@@ -252,10 +250,10 @@ export default async function TaskPage({
           <section aria-labelledby="h-related">
             {related.length ? (
               <>
-                <h2 id="h-related">Related</h2>
-                <ul className="pops-list" style={{ borderTop: "var(--pops-rule)" }}>
+                <h2 id="h-related">Related tasks</h2>
+                <ul className="pops-list pops-list--plain">
                   {related.map((r) => (
-                    <li key={r.id} style={{ padding: "7px 0" }}>
+                    <li key={r.id}>
                       <div className="pops-row">
                         <Link href={`/pops/tasks/${r.id}`} className="pops-plain">{r.title}</Link>
                         <span className="pops-meta">{r.note}</span>
@@ -285,11 +283,11 @@ export default async function TaskPage({
               : entry.summary;
             const head = (
               <>
-                <span className="pops-when">{shortDate(entry.createdAt)}</span>
-                <span className="pops-summary">
-                  {entry.actor === "agent" ? <span className="pops-who">Agent</span> : null}
-                  {summary}
+                <span className="pops-when">
+                  {shortDate(entry.createdAt)}
+                  {entry.actor === "agent" ? <span className="pops-who">agent</span> : null}
                 </span>
+                <span className="pops-summary">{summary}</span>
               </>
             );
             return (

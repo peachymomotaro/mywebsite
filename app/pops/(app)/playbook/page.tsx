@@ -25,12 +25,12 @@ export default async function PlaybookPage({ searchParams }: { searchParams: Pro
       <p className="pops-lede">Shared instructions included in every prompt. Agents can suggest changes; only you can apply them.</p>
       {error ? <p className="pops-notice pops-error" role="alert">{error}</p> : null}
       {proposals.length && !editing ? (
-        <section className="pops-attention">
-          <h2>Suggested by agents</h2>
+        <section>
+          <h2 style={{ marginTop: 24 }}>Suggested by agents</h2>
           {proposals.map((p) => (
           <div key={p.id} className="pops-proposal">
             <h3>{p.title}</h3>
-            <p className="pops-meta">{KIND_LABEL[p.kind]}{p.task ? ` · from ${p.task.title}` : ""}</p>
+            <p className="pops-meta">{KIND_LABEL[p.kind]}{p.task ? `, from ${p.task.title}` : ""}</p>
             <p className="pops-description pops-small">{p.body.length > 800 ? `${p.body.slice(0, 800)}…` : p.body}</p>
             {p.rationale ? <p className="pops-small pops-muted">{p.rationale}</p> : null}
             <div className="pops-actions">
@@ -95,7 +95,7 @@ export default async function PlaybookPage({ searchParams }: { searchParams: Pro
                 <summary>
                   <span className="pops-when">v{v.version}</span>
                   <span className="pops-summary">
-                    {v.changeNote}{v.proposalId ? " (from an agent suggestion)" : ""} <span className="pops-meta">· {formatDateTime(v.createdAt)}</span>
+                    {v.changeNote}{v.proposalId ? " (from an agent suggestion)" : ""} <span className="pops-meta">{formatDateTime(v.createdAt)}</span>
                   </span>
                 </summary>
                 <div className="pops-entry-body"><div className="pops-pre">{v.content}</div></div>
