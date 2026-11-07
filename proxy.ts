@@ -5,6 +5,10 @@ import {
   READING_RIVER_BASE_PATH,
 } from "@/lib/reading-river/routes";
 
+// Kept local (not imported from lib/pops/auth) so the proxy bundle stays free
+// of Node crypto and database code.
+const POPS_SESSION_COOKIE = "pops_session";
+
 function isPublicReadingRiverPath(pathname: string) {
   const extensionApiPath = readingRiverPath("/api/extension");
 
@@ -20,27 +24,40 @@ function isPublicReadingRiverPath(pathname: string) {
   );
 }
 
-function protectQB(request: NextRequest) {
+/** The Canon Explorer (QB) has been replaced by POps. */
+function retireQB(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const authCookie = request.cookies.get("qb_auth")?.value;
-  const password = process.env.QB_PASSWORD;
 
-  if (!password) {
-    return NextResponse.json(
-      { error: "QB password is not configured" },
-      { status: 503 }
-    );
+  if (pathname === "/api/qb" || pathname.startsWith("/api/qb/")) {
+    return NextResponse.json({ error: "This API has been retired." }, { status: 410 });
   }
 
-  if (authCookie === password) {
+  // Temporary (307) so the redirect is easy to reverse.
+  return NextResponse.redirect(new URL("/pops", request.url), 307);
+}
+
+/**
+ * Cheap gate only: is there a POps session cookie at all? Every POps page and
+ * server action then validates the session against the database. The private
+ * agent API under /api/pops authenticates bearer credentials itself.
+ */
+function protectPOps(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  if (pathname === "/pops/login") {
     return NextResponse.next();
   }
 
-  if (pathname.startsWith("/api/qb")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (request.cookies.get(POPS_SESSION_COOKIE)?.value) {
+    return NextResponse.next();
   }
 
-  return NextResponse.redirect(new URL("/qb-login", request.url));
+  const loginUrl = new URL("/pops/login", request.url);
+  if (pathname !== "/pops") {
+    loginUrl.searchParams.set("next", pathname);
+  }
+
+  return NextResponse.redirect(loginUrl);
 }
 
 function protectReadingRiver(request: NextRequest) {
@@ -73,10 +90,15 @@ export async function proxy(request: NextRequest) {
   if (
     pathname === "/qb" ||
     pathname.startsWith("/qb/") ||
+    pathname === "/qb-login" ||
     pathname === "/api/qb" ||
     pathname.startsWith("/api/qb/")
   ) {
-    return protectQB(request);
+    return retireQB(request);
+  }
+
+  if (pathname === "/pops" || pathname.startsWith("/pops/")) {
+    return protectPOps(request);
   }
 
   if (pathname.startsWith(READING_RIVER_BASE_PATH)) {
@@ -87,5 +109,13 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/qb", "/qb/:path*", "/api/qb/:path*", "/reading-river/:path*"],
+  matcher: [
+    "/qb",
+    "/qb/:path*",
+    "/qb-login",
+    "/api/qb/:path*",
+    "/pops",
+    "/pops/:path*",
+    "/reading-river/:path*",
+  ],
 };

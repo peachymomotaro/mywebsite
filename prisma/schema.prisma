@@ -292,3 +292,278 @@ model DriftState {
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+// ---------------------------------------------------------------------------
+// POps: personal agentic task management (/pops). Single owner, no user FK.
+// Every table is prefixed so it cannot collide with Reading River data.
+// ---------------------------------------------------------------------------
+
+enum PopsWorkspace {
+  learn
+  writing
+  experiments
+  work
+}
+
+enum PopsTaskStatus {
+  active
+  paused
+  completed
+  archived
+}
+
+enum PopsActor {
+  human
+  agent
+  system
+}
+
+enum PopsHistoryKind {
+  created
+  edited
+  status_changed
+  note
+  evidence
+  agent_run
+  decision_opened
+  decision_answered
+  feedback
+  subtask_added
+  link_added
+  resurfacing
+}
+
+enum PopsRunOutcome {
+  completed
+  partial
+  blocked
+  failed
+}
+
+enum PopsSubmissionChannel {
+  api
+  mcp
+  import
+}
+
+enum PopsDecisionStatus {
+  open
+  answered
+  withdrawn
+}
+
+enum PopsProposalKind {
+  playbook_observation
+  playbook_change
+  pipeline_change
+  new_pipeline
+}
+
+enum PopsProposalStatus {
+  pending
+  accepted
+  rejected
+}
+
+model PopsSession {
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime
+  lastUsedAt DateTime  @default(now())
+  revokedAt  DateTime?
+
+  @@index([expiresAt])
+}
+
+model PopsAgentCredential {
+  id          String    @id @default(cuid())
+  name        String
+  tokenHash   String    @unique
+  tokenPrefix String
+  scopes      String[]
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+}
+
+model PopsTask {
+  id                    String         @id @default(cuid())
+  title                 String
+  description           String         @default("")
+  workspace             PopsWorkspace
+  projectTags           String[]       @default([])
+  status                PopsTaskStatus @default(active)
+  parentId              String?
+  parent                PopsTask?      @relation("PopsSubtasks", fields: [parentId], references: [id], onDelete: SetNull)
+  subtasks              PopsTask[]     @relation("PopsSubtasks")
+  recommendedPipelines  String[]       @default([])
+  suggestedNextAction   String         @default("")
+  lastHumanEngagementAt DateTime       @default(now())
+  resurfaceAfter        DateTime?
+  createdBy             PopsActor      @default(human)
+  creationKey           String?        @unique
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  completedAt           DateTime?
+  archivedAt            DateTime?
+
+  history   PopsHistoryEntry[]
+  runs      PopsAgentRun[]
+  decisions PopsDecision[]
+  linksFrom PopsTaskLink[]     @relation("PopsLinkFrom")
+  linksTo   PopsTaskLink[]     @relation("PopsLinkTo")
+  proposals PopsProposal[]
+
+  @@index([workspace, status])
+  @@index([status, lastHumanEngagementAt])
+  @@index([parentId])
+}
+
+model PopsTaskLink {
+  id         String   @id @default(cuid())
+  fromTaskId String
+  toTaskId   String
+  note       String   @default("")
+  createdAt  DateTime @default(now())
+  fromTask   PopsTask @relation("PopsLinkFrom", fields: [fromTaskId], references: [id], onDelete: Cascade)
+  toTask     PopsTask @relation("PopsLinkTo", fields: [toTaskId], references: [id], onDelete: Cascade)
+
+  @@unique([fromTaskId, toTaskId])
+}
+
+model PopsHistoryEntry {
+  id         String          @id @default(cuid())
+  taskId     String
+  task       PopsTask        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  kind       PopsHistoryKind
+  actor      PopsActor
+  summary    String
+  detail     Json?
+  runId      String?
+  decisionId String?
+  dedupeKey  String?         @unique
+  createdAt  DateTime        @default(now())
+
+  @@index([taskId, createdAt])
+}
+
+model PopsAgentRun {
+  id                String                @id @default(cuid())
+  taskId            String
+  task              PopsTask              @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  pipelineSlug      String?
+  pipelineVersion   Int?
+  idempotencyKey    String                @unique
+  contentHash       String
+  channel           PopsSubmissionChannel
+  credentialId      String?
+  agentName         String                @default("")
+  outcome           PopsRunOutcome
+  attempted         String
+  accomplished      String
+  sources           Json                  @default("[]")
+  artefacts         Json                  @default("[]")
+  uncertainties     String                @default("")
+  blockers          String                @default("")
+  nextActions       Json                  @default("[]")
+  pipelineReview    String                @default("")
+  createdAt         DateTime              @default(now())
+  feedback          PopsRunFeedback?
+  decisions         PopsDecision[]
+
+  @@index([taskId, createdAt])
+  @@index([pipelineSlug])
+}
+
+model PopsRunFeedback {
+  id        String       @id @default(cuid())
+  runId     String       @unique
+  run       PopsAgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  useful    Boolean
+  reason    String       @default("")
+  comments  String       @default("")
+  relayed   Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model PopsDecision {
+  id             String             @id @default(cuid())
+  taskId         String
+  task           PopsTask           @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  runId          String?
+  run            PopsAgentRun?      @relation(fields: [runId], references: [id], onDelete: SetNull)
+  question       String
+  recommendation String             @default("")
+  options        Json               @default("[]")
+  explanation    String             @default("")
+  evidence       Json               @default("[]")
+  status         PopsDecisionStatus @default(open)
+  chosenOption   String             @default("")
+  response       String             @default("")
+  raisedBy       PopsActor          @default(agent)
+  dedupeKey      String?            @unique
+  createdAt      DateTime           @default(now())
+  answeredAt     DateTime?
+
+  @@index([taskId, status])
+}
+
+model PopsPipeline {
+  id             String                @id @default(cuid())
+  slug           String                @unique
+  name           String
+  workspace      PopsWorkspace?
+  summary        String                @default("")
+  currentVersion Int                   @default(1)
+  archived       Boolean               @default(false)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  versions       PopsPipelineVersion[]
+  proposals      PopsProposal[]
+}
+
+model PopsPipelineVersion {
+  id           String       @id @default(cuid())
+  pipelineId   String
+  pipeline     PopsPipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  version      Int
+  instructions String
+  expectedEvidence String   @default("")
+  changeNote   String       @default("")
+  author       PopsActor    @default(human)
+  createdAt    DateTime     @default(now())
+
+  @@unique([pipelineId, version])
+}
+
+model PopsPlaybookVersion {
+  id         String    @id @default(cuid())
+  version    Int       @unique
+  content    String
+  changeNote String    @default("")
+  author     PopsActor @default(human)
+  proposalId String?
+  createdAt  DateTime  @default(now())
+}
+
+model PopsProposal {
+  id           String             @id @default(cuid())
+  kind         PopsProposalKind
+  status       PopsProposalStatus @default(pending)
+  pipelineId   String?
+  pipeline     PopsPipeline?      @relation(fields: [pipelineId], references: [id], onDelete: SetNull)
+  taskId       String?
+  task         PopsTask?          @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  runId        String?
+  title        String
+  body         String
+  rationale    String             @default("")
+  reviewNote   String             @default("")
+  dedupeKey    String?            @unique
+  createdAt    DateTime           @default(now())
+  reviewedAt   DateTime?
+
+  @@index([status, kind])
+}

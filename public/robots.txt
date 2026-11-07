@@ -1,3 +1,5 @@
 User-agent: *
+Disallow: /pops
+Disallow: /api/pops
 Disallow: /qb
 Disallow: /api/qb
