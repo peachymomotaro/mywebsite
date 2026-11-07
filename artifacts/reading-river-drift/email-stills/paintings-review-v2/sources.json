@@ -1,0 +1,158 @@
+[
+  {
+    "filename": "constable.jpg",
+    "commons_file": "File:John Constable - The Hay Wain (1821).jpg",
+    "file_page": "https://commons.wikimedia.org/wiki/File:John_Constable_-_The_Hay_Wain_(1821).jpg",
+    "download_url": "https://upload.wikimedia.org/wikipedia/commons/5/5e/John_Constable_-_The_Hay_Wain_%281821%29.jpg",
+    "width": 6128,
+    "height": 4226,
+    "bytes": 8334977,
+    "licence_templates": [
+      "{{PD-Art|PD-old-auto-expired|deathyear=1837}}"
+    ],
+    "sha256": "a2e0a83897b3eec45b7e559e0f498fd703c0ae2ac59c59e14eb395651eacaed1"
+  },
+  {
+    "filename": "cole.jpg",
+    "commons_file": "File:Cole Thomas The Oxbow (The Connecticut River near Northampton 1836).jpg",
+    "file_page": "https://commons.wikimedia.org/wiki/File:Cole_Thomas_The_Oxbow_(The_Connecticut_River_near_Northampton_1836).jpg",
+    "download_url": "https://upload.wikimedia.org/wikipedia/commons/b/b1/Cole_Thomas_The_Oxbow_%28The_Connecticut_River_near_Northampton_1836%29.jpg",
+    "width": 3181,
+    "height": 2161,
+    "bytes": 2087939,
+    "licence_templates": [
+      "{{PD-Art|PD-old-auto-expired|deathyear=1848}}"
+    ],
+    "sha256": "fd738899dc09194624512cb6844428bd6f408badc785b66ba420c673c060ff68"
+  },
+  {
+    "filename": "seurat.jpg",
+    "commons_file": "File:A Sunday on La Grande Jatte, Georges Seurat, 1884.jpg",
+    "file_page": "https://commons.wikimedia.org/wiki/File:A_Sunday_on_La_Grande_Jatte,_Georges_Seurat,_1884.jpg",
+    "download_url": "https://upload.wikimedia.org/wikipedia/commons/archive/7/7d/20250428203259%21A_Sunday_on_La_Grande_Jatte%2C_Georges_Seurat%2C_1884.jpg",
+    "width": 6231,
+    "height": 4192,
+    "bytes": 18276240,
+    "licence_templates": [
+      "{{PD-Art|PD-old-100-expired}}"
+    ],
+    "sha256": "67b6a0d02c878d039eab92b7f03d25f6c4bde481e37bc98b6bddcf719f6f1081"
+  },
+  {
+    "filename": "turner.jpg",
+    "commons_file": "File:The Fighting Temeraire, JMW Turner, National Gallery.jpg",
+    "file_page": "https://commons.wikimedia.org/wiki/File:The_Fighting_Temeraire,_JMW_Turner,_National_Gallery.jpg",
+    "download_url": "https://upload.wikimedia.org/wikipedia/commons/3/30/The_Fighting_Temeraire%2C_JMW_Turner%2C_National_Gallery.jpg",
+    "width": 5684,
+    "height": 4223,
+    "bytes": 8438383,
+    "licence_templates": [
+      "{{PD-Art|PD-old-auto-expired|deathyear=1851}}"
+    ],
+    "sha256": "4e803970081c6cc3acfea00b6f21031eefd554595338854031a08519dd517050"
+  },
+  {
+    "filename": "waterhouse.jpg",
+    "commons_file": "File:John William Waterhouse The Lady of Shalott.jpg",
+    "file_page": "https://commons.wikimedia.org/wiki/File:John_William_Waterhouse_The_Lady_of_Shalott.jpg",
+    "download_url": "https://upload.wikimedia.org/wikipedia/commons/7/70/John_William_Waterhouse_The_Lady_of_Shalott.jpg",
+    "width": 2620,
+    "height": 1973,
+    "bytes": 806871,
+    "licence_templates": [
+      "{{PD-Art|PD-old-auto-1923|deathyear=1917}}"
+    ],
+    "sha256": "885c352bac161cf72adaf01810d24082631d744260f50c5ff8759a00bc855999"
+  },
+  {
+    "filename": "courbet.jpg",
+    "commons_file": "File:La Grotte de la Loue A23149.jpg",
+    "file_page": "https://commons.wikimedia.org/wiki/File:La_Grotte_de_la_Loue_A23149.jpg",
+    "download_url": "https://upload.wikimedia.org/wikipedia/commons/7/74/La_Grotte_de_la_Loue_A23149.jpg",
+    "width": 4000,
+    "height": 3017,
+    "bytes": 14053103,
+    "licence_templates": [
+      "{{PD-Art|PD-old-auto-expired|deathyear=1877}}"
+    ],
+    "sha256": "7c455c46d9f892a17fa4beb7bad78ddb06de1606a8186565a10d90a8348992b8"
+  },
+  {
+    "filename": "grenouillere.jpg",
+    "commons_file": "File:Claude Monet La Grenouillére.jpg",
+    "file_page": "https://commons.wikimedia.org/wiki/File:Claude_Monet_La_Grenouill%C3%A9re.jpg",
+    "download_url": "https://upload.wikimedia.org/wikipedia/commons/6/67/Claude_Monet_La_Grenouill%C3%A9re.jpg",
+    "width": 3679,
+    "height": 2752,
+    "bytes": 3644608,
+    "licence_templates": [
+      "{{PD-Art|PD-old-auto-expired|deathyear=1926}}"
+    ],
+    "sha256": "0610d21516f43b599d4bd93895656f44b204923c63cf0bd3ea7611b9cc830e0f"
+  },
+  {
+    "filename": "cuyp.jpg",
+    "commons_file": "File:Aelbert Cuyp - Cows in a River - Google Art Project.jpg",
+    "file_page": "https://commons.wikimedia.org/wiki/File:Aelbert_Cuyp_-_Cows_in_a_River_-_Google_Art_Project.jpg",
+    "download_url": "https://upload.wikimedia.org/wikipedia/commons/b/bb/Aelbert_Cuyp_-_Cows_in_a_River_-_Google_Art_Project.jpg",
+    "width": 5399,
+    "height": 4303,
+    "bytes": 4928714,
+    "licence_templates": [
+      "{{PD-Art|PD-old-100-expired|deathyear=1691}}"
+    ],
+    "sha256": "6c967e1b6d63131dc58fde3ab0d1196be2cf99f49b991074732471aaad17023f"
+  },
+  {
+    "filename": "vangogh.jpg",
+    "commons_file": "File:Van Gogh -Die Brücke von Langlois in Arles mit Wäscherinnen.jpeg",
+    "file_page": "https://commons.wikimedia.org/wiki/File:Van_Gogh_-Die_Br%C3%BCcke_von_Langlois_in_Arles_mit_W%C3%A4scherinnen.jpeg",
+    "download_url": "https://upload.wikimedia.org/wikipedia/commons/7/73/Van_Gogh_-Die_Br%C3%BCcke_von_Langlois_in_Arles_mit_W%C3%A4scherinnen.jpeg",
+    "width": 3876,
+    "height": 3228,
+    "bytes": 7402537,
+    "licence_templates": [
+      "{{PD-Art|PD-old-auto-1923|deathyear=1890}}"
+    ],
+    "sha256": "4828afdfb06951e1dfc6da5b9bc9e42daa41a65eedd9804969cc3a2ff74949c9"
+  },
+  {
+    "filename": "hiroshige.jpg",
+    "commons_file": "File:Utagawa Hiroshige - Evening Shower at Atake and the Great Bridge.jpg",
+    "file_page": "https://commons.wikimedia.org/wiki/File:Utagawa_Hiroshige_-_Evening_Shower_at_Atake_and_the_Great_Bridge.jpg",
+    "download_url": "https://upload.wikimedia.org/wikipedia/commons/2/26/Utagawa_Hiroshige_-_Evening_Shower_at_Atake_and_the_Great_Bridge.jpg",
+    "width": 6300,
+    "height": 9200,
+    "bytes": 21107922,
+    "licence_templates": [
+      "{{PD-Art|PD-old-100-1923}}"
+    ],
+    "sha256": "2cd010ac39c254fe81791c5cbae2d0bc2aea1b01f9a0c164d8a8c62e71959c69"
+  },
+  {
+    "filename": "monet.jpg",
+    "commons_file": "File:Bridge Over a Pond of Water Lilies, Claude Monet 1899.jpg",
+    "file_page": "https://commons.wikimedia.org/wiki/File:Bridge_Over_a_Pond_of_Water_Lilies,_Claude_Monet_1899.jpg",
+    "download_url": "https://upload.wikimedia.org/wikipedia/commons/1/10/Bridge_Over_a_Pond_of_Water_Lilies%2C_Claude_Monet_1899.jpg",
+    "width": 2500,
+    "height": 3123,
+    "bytes": 3812155,
+    "licence_templates": [
+      "{{PD-old-auto-1923|deathyear=1926}}"
+    ],
+    "sha256": "6492e54e19b7b38f5fd3094bcd47d0f591d687f851f9cd52411e5d3ee9509933"
+  },
+  {
+    "filename": "repin.jpg",
+    "commons_file": "File:Ilya Repin-What freedom!.jpg",
+    "file_page": "https://commons.wikimedia.org/wiki/File:Ilya_Repin-What_freedom!.jpg",
+    "download_url": "https://upload.wikimedia.org/wikipedia/commons/a/a4/Ilya_Repin-What_freedom%21.jpg",
+    "width": 2868,
+    "height": 1803,
+    "bytes": 2748215,
+    "licence_templates": [
+      "{{PD-Art|PD-old-auto-expired|deathyear=1930}}"
+    ],
+    "sha256": "c46da0bb6751b37e924afbe4dbba7599bb01b881bdef74adaf5b39c79d81ca11"
+  }
+]

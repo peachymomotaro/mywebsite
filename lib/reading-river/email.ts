@@ -153,11 +153,24 @@ function getDigestItemUrl(item: DailyDigestEmailItem) {
 }
 
 /**
- * Painted views of the river, each after a painting of water, with a branch
- * arching over "Walk down to the river". One heads each day's email, in turn.
+ * Water paintings in the river world's style, with a branch arching over
+ * the article label. One heads each day's email, in turn.
  * They live outside /reading-river so mail apps can load them without signing in.
  */
-export const DIGEST_STILLS = ["constable", "seurat", "turner", "vangogh"] as const;
+export const DIGEST_STILLS = [
+  "constable",
+  "hiroshige",
+  "cuyp",
+  "monet",
+  "repin",
+  "seurat",
+  "courbet",
+  "grenouillere",
+  "waterhouse",
+  "vangogh",
+  "turner",
+  "cole",
+] as const;
 
 function getLondonDayNumber(now: Date) {
   const parts = new Intl.DateTimeFormat("en-GB", {
@@ -201,9 +214,9 @@ function renderStillWithLinkHtml({ stillUrl, url, title, meta }: { stillUrl: str
   const still = escapeHtml(stillUrl);
   const href = escapeHtml(url);
   const label = [
-    `<a href="${href}" style="display: inline-block; max-width: 440px; padding: 12px 26px 13px; border-radius: 28px; background: rgba(248,241,226,0.96); background-color: #f8f1e2; color: ${INK}; text-decoration: none; box-shadow: 0 6px 22px rgba(24,16,8,0.35);">`,
+    `<a href="${href}" class="rr-label" style="display: inline-block; max-width: 440px; padding: 12px 26px 13px; border-radius: 28px; background: rgba(248,241,226,0.96); background-color: #f8f1e2; color: ${INK}; text-decoration: none; box-shadow: 0 6px 22px rgba(24,16,8,0.35);">`,
     `<span class="rr-title" style="display: block; font-family: ${SERIF}; font-size: 21px; line-height: 1.3; font-style: italic; color: ${INK};">${escapeHtml(shortTitle(title))}</span>`,
-    meta ? `<span style="display: block; margin-top: 3px; font-family: ${SERIF}; font-size: 13px; letter-spacing: 0.04em; color: ${MUTED};">${escapeHtml(meta)}</span>` : "",
+    meta ? `<span class="rr-meta" style="display: block; margin-top: 3px; font-family: ${SERIF}; font-size: 13px; letter-spacing: 0.04em; color: ${MUTED};">${escapeHtml(meta)}</span>` : "",
     "</a>",
   ].join("");
 
@@ -309,7 +322,7 @@ export function buildReadingRiverDailyDigestEmail({
       "<head>",
       `<meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Your Reading River for today</title>`,
       // On a phone the picture is narrower, so it needs less height to show the same scene.
-      `<style>@media (max-width: 620px) { .rr-still { height: 260px !important; padding-bottom: 22px !important; } .rr-title { font-size: 18px !important; } }</style>`,
+      `<style>@media (max-width: 620px) { .rr-still { height: 260px !important; padding: 0 12px 22px !important; } .rr-label { padding: 10px 12px 8px !important; } .rr-title { font-size: 16px !important; line-height: 1.2 !important; } .rr-meta { font-size: 12px !important; line-height: 1.2 !important; } }</style>`,
       "</head>",
       `<body style="margin: 0; padding: 24px 12px; background: #ebe1cb;">`,
       // The preview line mail apps show beside the subject.

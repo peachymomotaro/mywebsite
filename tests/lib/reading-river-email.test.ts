@@ -125,7 +125,7 @@ describe("buildReadingRiverDailyDigestEmail", () => {
   it("turns to a new still each London day, coming round in order", () => {
     process.env.READING_RIVER_BASE_URL = "https://example.com";
 
-    const days = [0, 1, 2, 3, 4].map((offset) =>
+    const days = Array.from({ length: DIGEST_STILLS.length + 1 }, (_, offset) =>
       getDigestStillUrl(new Date(Date.UTC(2026, 5, 1 + offset, 7, 15))).split("/").pop(),
     );
 

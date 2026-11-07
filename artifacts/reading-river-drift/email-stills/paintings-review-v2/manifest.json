@@ -1,0 +1,110 @@
+[
+  {
+    "filename": "constable.jpg",
+    "title": "Constable — The Hay Wain (1821)",
+    "width": 1200,
+    "height": 750,
+    "bytes": 109178,
+    "jpegQuality": 88,
+    "approvedForSite": true
+  },
+  {
+    "filename": "cole.jpg",
+    "title": "Cole — The Oxbow (1836)",
+    "width": 1200,
+    "height": 750,
+    "bytes": 114134,
+    "jpegQuality": 88,
+    "approvedForSite": true
+  },
+  {
+    "filename": "seurat.jpg",
+    "title": "Seurat — A Sunday on La Grande Jatte (1884–86)",
+    "width": 1200,
+    "height": 750,
+    "bytes": 190983,
+    "jpegQuality": 68,
+    "approvedForSite": true
+  },
+  {
+    "filename": "turner.jpg",
+    "title": "Turner — The Fighting Temeraire (1839)",
+    "width": 1200,
+    "height": 750,
+    "bytes": 88708,
+    "jpegQuality": 88,
+    "approvedForSite": true
+  },
+  {
+    "filename": "waterhouse.jpg",
+    "title": "Waterhouse — The Lady of Shalott (1888)",
+    "width": 1200,
+    "height": 750,
+    "bytes": 120349,
+    "jpegQuality": 88,
+    "approvedForSite": true
+  },
+  {
+    "filename": "courbet.jpg",
+    "title": "Courbet — La Grotte de la Loue (1864), National Gallery of Art",
+    "width": 1200,
+    "height": 750,
+    "bytes": 95972,
+    "jpegQuality": 88,
+    "approvedForSite": true
+  },
+  {
+    "filename": "grenouillere.jpg",
+    "title": "Monet — La Grenouillère (1869), Metropolitan Museum",
+    "width": 1200,
+    "height": 750,
+    "bytes": 146797,
+    "jpegQuality": 88,
+    "approvedForSite": true
+  },
+  {
+    "filename": "cuyp.jpg",
+    "title": "Cuyp — Cows in a River (c. 1650), Budapest",
+    "width": 1200,
+    "height": 750,
+    "bytes": 122935,
+    "jpegQuality": 88,
+    "approvedForSite": true
+  },
+  {
+    "filename": "vangogh.jpg",
+    "title": "Van Gogh — Langlois Bridge with Women Washing (1888)",
+    "width": 1200,
+    "height": 750,
+    "bytes": 152221,
+    "jpegQuality": 88,
+    "approvedForSite": true
+  },
+  {
+    "filename": "hiroshige.jpg",
+    "title": "Hiroshige — Sudden Shower over Shin-Ōhashi Bridge and Atake (1857)",
+    "width": 1200,
+    "height": 750,
+    "bytes": 130748,
+    "jpegQuality": 88,
+    "approvedForSite": true
+  },
+  {
+    "filename": "monet.jpg",
+    "title": "Monet — Bridge over a Pond of Water Lilies (1899)",
+    "width": 1200,
+    "height": 750,
+    "bytes": 116861,
+    "jpegQuality": 88,
+    "approvedForSite": true
+  },
+  {
+    "filename": "repin.jpg",
+    "title": "Repin — What Freedom! (1903)",
+    "width": 1200,
+    "height": 750,
+    "bytes": 97599,
+    "jpegQuality": 88,
+    "approvedForSite": true
+  }
+]
