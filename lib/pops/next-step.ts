@@ -83,7 +83,11 @@ export function nextStepForTask(task: NextStepTask, available: ReadonlyArray<Ava
     if (step) return step;
   }
 
-  const first = available[0];
+  // A new Work task needs a plan before implementation; never make the
+  // alphabetical order of pipeline names a workflow decision.
+  const first = (task.workspace === "work" && !last
+    ? available.find((pipeline) => pipeline.slug === "work-plan-change")
+    : undefined) ?? available[0];
   return first
     ? {
       kind: "pipeline",
