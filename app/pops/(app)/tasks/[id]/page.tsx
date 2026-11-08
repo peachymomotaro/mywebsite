@@ -19,6 +19,7 @@ import { buildDecisionCopy } from "@/lib/pops/decision-copy";
 import { ago, formatDate } from "@/lib/pops/format";
 import { getPipelineStats, listPipelines, rankPipelinesForTask } from "@/lib/pops/library";
 import { getTaskDetail, listTasks } from "@/lib/pops/tasks";
+import { nextStepForTask } from "@/lib/pops/next-step";
 
 type Option = { label: string; explanation?: string };
 type Evidence = { title: string; url?: string };
@@ -64,6 +65,7 @@ export default async function TaskPage({
   const ranked = rankPipelinesForTask(task, pipelines, stats);
   const suggested = ranked.recommended.slice(0, 4);
   const others = [...ranked.recommended.slice(4), ...ranked.other];
+  const nextStep = nextStepForTask(task, ranked.recommended.concat(ranked.other));
   const runsById = new Map(task.runs.map((run) => [run.id, run]));
   const pipelineNames = new Map(pipelines.map((p) => [p.slug, p.name]));
   const SUMMARY_CHARS = 140;
@@ -167,7 +169,24 @@ export default async function TaskPage({
         </form>
       ) : (
         <>
-          {task.suggestedNextAction ? (
+          {isOpen && nextStep ? (
+            <section className="pops-guided-next" aria-labelledby="pops-guided-title">
+              <p className="pops-small pops-muted pops-guided-eyebrow">Recommended next step</p>
+              <h2 id="pops-guided-title">{nextStep.title}</h2>
+              <p className="pops-description">{nextStep.description}</p>
+              <div className="pops-actions">
+                {nextStep.kind === "decision" ? (
+                  <a className="pops-button" href="#decisions">{nextStep.label}</a>
+                ) : (
+                  <Link
+                    className="pops-button"
+                    href={`/pops/tasks/${task.id}/prompt?pipeline=${nextStep.pipelineSlug}`}
+                  >{nextStep.label}</Link>
+                )}
+                {nextStep.canRecordResult ? <a href="#import-report" className="pops-guided-secondary">Already implemented? Record the result</a> : null}
+              </div>
+            </section>
+          ) : task.suggestedNextAction ? (
             <p className="pops-nextaction"><strong>Next:</strong> {task.suggestedNextAction}</p>
           ) : null}
           {task.description ? <p className="pops-description">{task.description}</p> : null}
@@ -240,8 +259,8 @@ export default async function TaskPage({
                   </ul>
                 </details>
               ) : null}
-              <details className="pops-more">
-                <summary>Paste a report from ChatGPT</summary>
+              <details className="pops-more" id="import-report">
+                <summary>Record an agent result (Codex or ChatGPT)</summary>
                 <ImportReport taskId={task.id} />
               </details>
             </section>

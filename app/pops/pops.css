@@ -137,6 +137,31 @@
 .pops-nextaction { font-size: 1.08rem; margin: 0 0 14px; }
 .pops-nextaction strong { font-weight: 600; }
 
+/* One prominent next action, with all other pipelines still accessible below. */
+.pops-guided-next {
+  border: var(--pops-rule);
+  border-radius: 10px;
+  padding: 16px 20px 20px;
+  margin: 22px 0 30px;
+}
+.pops-guided-next .pops-guided-eyebrow { margin: 0 0 3px; }
+.pops-guided-next h2 { margin: 0 0 8px; font-size: 1.2rem; }
+.pops-guided-next .pops-actions { gap: 10px 16px; }
+.pops a.pops-button {
+  display: inline-block;
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  padding: 5px 14px;
+  border: 1px solid var(--text);
+  border-radius: 6px;
+  background: var(--text);
+  color: var(--bg);
+  text-decoration: none;
+}
+.pops a.pops-button:hover { background: var(--accent); border-color: var(--accent); color: var(--bg); text-decoration: none; }
+.pops-guided-secondary { font-size: 0.88rem; color: var(--muted); }
+
 /* Decisions */
 .pops-decision { background: var(--bg-elevated); border-radius: 10px; padding: 18px 20px; margin: 32px 0 0; }
 .pops-decision .pops-question { font-size: 1.15rem; line-height: 1.35; margin-bottom: 6px; }
