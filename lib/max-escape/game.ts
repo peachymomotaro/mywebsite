@@ -16,7 +16,7 @@ export type Game = {
   lives: number; score: number; gems: number; key: boolean; checkpoint: boolean;
   invincible: number; shield: number; coffee: number; dashTime: number; dashCooldown: number;
   combo: number; comboTime: number; time: number; elapsed: number; camera: number;
-  maxX: number; maxY: number; maxGrace: number; trail: { x: number; y: number }[]; trailTimer: number;
+  maxX: number; maxVisualX: number; maxY: number; maxGrace: number; trail: { x: number; y: number }[]; trailTimer: number;
   message: string; messageTime: number;
 };
 
@@ -28,7 +28,7 @@ export function createGame(level = 0): Game {
     lives: 3, score: 0, gems: 0, key: false, checkpoint: false,
     invincible: 0, shield: 0, coffee: 0, dashTime: 0, dashCooldown: 0,
     combo: 0, comboTime: 0, time: 75, elapsed: 0, camera: 0,
-    maxX: world.spawn.x - 155, maxY: world.spawn.y, maxGrace: 2.5, trail: [], trailTimer: 0,
+    maxX: world.spawn.x - 155, maxVisualX: world.spawn.x - 155, maxY: world.spawn.y, maxGrace: 2.5, trail: [], trailTimer: 0,
     message: "Find the golden key. Reach the temple gate.", messageTime: 4,
   };
 }
@@ -205,8 +205,18 @@ export function stepGame(game: Game, dt: number, input: Input = { left: false, r
   }
   if (game.maxGrace === 0) game.maxX += (172 + game.level * 10) * dt;
   const nearest = game.trail.reduce<{ x: number; y: number } | undefined>((best, point) => !best || Math.abs(point.x - game.maxX) < Math.abs(best.x - game.maxX) ? point : best, undefined);
-  if (nearest) game.maxY = nearest.y;
+  if (nearest) {
+    // The trail contains discrete jumps and can revisit the same x position.
+    // Follow its height at a bounded speed rather than teleporting between samples.
+    const dy = nearest.y - game.maxY;
+    const verticalSpeed = dy < 0 ? 320 : 540;
+    game.maxY += Math.sign(dy) * Math.min(Math.abs(dy), verticalSpeed * dt);
+  }
   if (game.x - game.maxX < 23 && game.maxGrace === 0 && game.dashTime === 0) hurt(game, events);
+  // Damage must reset the catch-up boundary immediately, but Max's sprite
+  // should travel to the new position rather than snapping backwards.
+  const dx = game.maxX - game.maxVisualX;
+  game.maxVisualX += Math.sign(dx) * Math.min(Math.abs(dx), 620 * dt);
 
   const exit = game.world.exit;
   if (game.x + PLAYER_WIDTH >= exit.x && Math.abs(game.y + PLAYER_HEIGHT - exit.y) < 60) {
