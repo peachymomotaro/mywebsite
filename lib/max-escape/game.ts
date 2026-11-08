@@ -5,6 +5,9 @@ export const HEIGHT = 432;
 export const PLAYER_WIDTH = 22;
 export const PLAYER_HEIGHT = 36;
 export const SPEED = 205;
+// Max starts just below normal running speed, but becomes faster than a jog by stage three.
+export const MAX_CHASE_SPEED = 188;
+export const MAX_CHASE_SPEED_PER_STAGE = 12;
 export const STEP = 1 / 120;
 export type Status = "ready" | "playing" | "paused" | "caught" | "stageclear" | "won";
 export type Input = { left: boolean; right: boolean };
@@ -203,7 +206,7 @@ export function stepGame(game: Game, dt: number, input: Input = { left: false, r
     if (game.trail.length > 220) game.trail.shift();
     game.trailTimer = 0;
   }
-  if (game.maxGrace === 0) game.maxX += (172 + game.level * 10) * dt;
+  if (game.maxGrace === 0) game.maxX += (MAX_CHASE_SPEED + game.level * MAX_CHASE_SPEED_PER_STAGE) * dt;
   const nearest = game.trail.reduce<{ x: number; y: number } | undefined>((best, point) => !best || Math.abs(point.x - game.maxX) < Math.abs(best.x - game.maxX) ? point : best, undefined);
   if (nearest) {
     // The trail contains discrete jumps and can revisit the same x position.
