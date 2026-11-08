@@ -54,7 +54,7 @@ function protectPOps(request: NextRequest) {
 
   const loginUrl = new URL("/pops/login", request.url);
   if (pathname !== "/pops") {
-    loginUrl.searchParams.set("next", pathname);
+    loginUrl.searchParams.set("next", pathname + (pathname === "/pops/oauth/authorize" ? request.nextUrl.search : ""));
   }
 
   return NextResponse.redirect(loginUrl);

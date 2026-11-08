@@ -7,8 +7,8 @@ import { loadPromptContext, loadPromptPipeline } from "@/lib/pops/context";
 import { createProposal, getCurrentPlaybook, getPipelineStats, listPipelines, rankPipelinesForTask } from "@/lib/pops/library";
 import { buildPipelinePrompt, newIdempotencyKey } from "@/lib/pops/prompt";
 import { createDecision, recordAgentRun, recordRunFeedback } from "@/lib/pops/runs";
-import { createTask, listTasks, PopsConflictError, PopsNotFoundError } from "@/lib/pops/tasks";
-import { formatZodError, type AgentRunInput, type CreateDecisionInput, type CreateTaskInput, type ProposalInput } from "@/lib/pops/validation";
+import { createTask, listTasks, PopsConflictError, PopsNotFoundError, updateTask } from "@/lib/pops/tasks";
+import { agentTaskPatchSchema, formatZodError, type AgentTaskPatchInput, type AgentRunInput, type CreateDecisionInput, type CreateTaskInput, type ProposalInput } from "@/lib/pops/validation";
 import { getPopsDb } from "@/lib/pops/db";
 
 export class PopsForbiddenError extends Error {
@@ -67,7 +67,7 @@ export const agentOps = {
     const [pipelines, stats, playbook] = await Promise.all([listPipelines(), getPipelineStats(), getCurrentPlaybook()]);
     const ranked = rankPipelinesForTask(loaded.task, pipelines, stats);
     return {
-      task: loaded.context.task,
+      task: { ...loaded.context.task, updatedAt: loaded.task.updatedAt.toISOString() },
       previousRuns: loaded.context.priorRuns,
       decisions: loaded.task.decisions.map((d) => ({
         id: d.id,
@@ -115,6 +115,16 @@ export const agentOps = {
     requireScope(principal, "tasks:write");
     const { task, duplicate } = await createTask(input, "agent");
     return { task: { id: task.id, title: task.title, workspace: task.workspace, status: task.status }, duplicate, url: `${siteBaseUrl()}/pops/tasks/${task.id}` };
+  },
+
+  async updateTask(principal: AgentPrincipal, taskId: string, input: AgentTaskPatchInput) {
+    requireScope(principal, "tasks:write");
+    const { expectedUpdatedAt, ...patch } = agentTaskPatchSchema.parse(input);
+    const task = await updateTask(taskId, patch, new Date(), "agent", new Date(expectedUpdatedAt));
+    return {
+      task: { id: task.id, title: task.title, description: task.description, projectTags: task.projectTags, workspace: task.workspace, status: task.status, updatedAt: task.updatedAt.toISOString() },
+      url: `${siteBaseUrl()}/pops/tasks/${task.id}`,
+    };
   },
 
   async recordRun(principal: AgentPrincipal, taskId: string, report: AgentRunInput, channel: "api" | "mcp") {

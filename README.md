@@ -6,7 +6,7 @@
 
 - Public site: `pages/`
 - Reading River app: `app/reading-river/`
-- POps (private task management for ChatGPT agents): `app/pops/`, `lib/pops/`, `app/api/pops/` — see [POPS.md](POPS.md)
+- POps (private task management for ChatGPT and Claude): `app/pops/`, `lib/pops/`, `app/api/pops/` — see [POPS.md](POPS.md)
 
 Reading River is intentionally isolated under `/reading-river/*`, including auth, sessions, Prisma access, and proxy routing.
 

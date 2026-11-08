@@ -3,6 +3,18 @@ import { siteBaseUrl } from "@/lib/pops/agent-ops";
 const id = { type: "string" };
 const str = { type: "string" };
 const strArr = { type: "array", items: str };
+const taskPatch = {
+  type: "object",
+  additionalProperties: false,
+  required: ["expectedUpdatedAt"],
+  anyOf: [{ required: ["title"] }, { required: ["description"] }, { required: ["projectTags"] }],
+  properties: {
+    title: { type: "string", minLength: 1, maxLength: 200 },
+    description: { type: "string", maxLength: 8000 },
+    projectTags: { type: "array", maxItems: 12, items: { type: "string", maxLength: 40 }, description: "Replace all tags; use [] to clear them." },
+    expectedUpdatedAt: { type: "string", format: "date-time", description: "Copy task.updatedAt from getTask. If it changed, read the task again before editing." },
+  },
+};
 const source = {
   type: "object",
   required: ["title"],
@@ -79,7 +91,7 @@ export function buildOpenApiDocument() {
     openapi: "3.1.0",
     info: {
       title: "POps agent API",
-      version: "1.0.0",
+      version: "1.1.0",
       description:
         "Private API for agents working on Peter Curry's POps tasks. Requires a POps agent credential as a bearer token. Agents cannot change task status, edit the playbook or edit pipelines directly.",
     },
@@ -127,6 +139,13 @@ export function buildOpenApiDocument() {
       },
       "/tasks/{taskId}": {
         get: { operationId: "getTask", summary: "Task context: details, previous runs, decisions, notes, pipelines", parameters: taskIdParam, responses: ok },
+        patch: {
+          operationId: "updateTask",
+          summary: "Edit task title, description, or tags when Peter asks; read the current task first",
+          parameters: taskIdParam,
+          requestBody: { required: true, content: { "application/json": { schema: taskPatch } } },
+          responses: { ...ok, "409": { description: "Task changed since it was read; fetch it again before editing" } },
+        },
       },
       "/tasks/{taskId}/prompt": {
         get: {

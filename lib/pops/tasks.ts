@@ -113,11 +113,14 @@ export type TaskPatch = {
   recommendedPipelines?: string[];
 };
 
-export async function updateTask(id: string, patch: TaskPatch, now = new Date()) {
+export async function updateTask(id: string, patch: TaskPatch, now = new Date(), actor: "human" | "agent" = "human", expectedUpdatedAt?: Date) {
   const db = getPopsDb();
   return db.$transaction(async (tx) => {
     const task = await tx.popsTask.findUnique({ where: { id } });
     if (!task) throw new PopsNotFoundError("Task");
+    if (expectedUpdatedAt && task.updatedAt.getTime() !== expectedUpdatedAt.getTime()) {
+      throw new PopsConflictError("Task changed. Read it again before applying your edit.");
+    }
 
     const next: TaskPatch = {};
     if (patch.title !== undefined && patch.title.trim() && patch.title.trim() !== task.title) next.title = patch.title.trim().slice(0, 200);
@@ -125,7 +128,7 @@ export async function updateTask(id: string, patch: TaskPatch, now = new Date())
     if (patch.workspace && patch.workspace !== task.workspace) next.workspace = patch.workspace;
     if (patch.projectTags) {
       const tags = tagListSchema.parse(patch.projectTags);
-      if (tags.join(",") !== task.projectTags.join(",")) next.projectTags = tags;
+      if (JSON.stringify(tags) !== JSON.stringify(task.projectTags)) next.projectTags = tags;
     }
     if (patch.suggestedNextAction !== undefined && patch.suggestedNextAction.trim() !== task.suggestedNextAction) {
       next.suggestedNextAction = patch.suggestedNextAction.trim().slice(0, 500);
@@ -135,16 +138,21 @@ export async function updateTask(id: string, patch: TaskPatch, now = new Date())
     }
 
     const changed = Object.keys(next);
-    const updated = await tx.popsTask.update({
-      where: { id },
-      data: { ...next, lastHumanEngagementAt: now, resurfaceAfter: null },
-    });
+    if (actor === "agent" && !changed.length) return task;
+    const data = {
+      ...next,
+      updatedAt: new Date(Math.max(now.getTime(), task.updatedAt.getTime() + 1)),
+      ...(actor === "human" ? { lastHumanEngagementAt: now, resurfaceAfter: null } : {}),
+    };
+    const applied = await tx.popsTask.updateMany({ where: { id, ...(expectedUpdatedAt ? { updatedAt: expectedUpdatedAt } : {}) }, data });
+    if (applied.count !== 1) throw new PopsConflictError("Task changed. Read it again before applying your edit.");
+    const updated = await tx.popsTask.findUniqueOrThrow({ where: { id } });
 
     if (changed.length) {
       await appendHistory(tx, {
         taskId: id,
         kind: "edited",
-        actor: "human",
+        actor,
         summary: `Edited ${changed.join(", ")}`,
         detail: { before: Object.fromEntries(changed.map((key) => [key, task[key as keyof typeof task] as Prisma.InputJsonValue])) },
         createdAt: now,

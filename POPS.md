@@ -1,15 +1,15 @@
-# POps V1
+# POps
 
-POps is a private task manager at `/pops` designed around one principle: **minimise the human work remaining**, not maximise AI output. POps itself is a conventional web app. ChatGPT does the reasoning and research through reusable *pipelines*, and writes structured results back.
+POps is a private task manager at `/pops` designed around one principle: **minimise the human work remaining**, not maximise AI output. POps itself is a conventional web app. ChatGPT and Claude do the reasoning and research through reusable *pipelines*, and write structured results back.
 
 It replaces the retired Canon Explorer (`/qb`).
 
 ## Workflow
 
-1. Create a task in POps, or ask ChatGPT to create one (API/MCP).
+1. Create a task in POps, or ask ChatGPT or Claude to create one (API/MCP). Either app can also edit task titles, descriptions, and tags when asked.
 2. On the task page, pick a pipeline. POps generates a complete prompt: task context, previous runs, decisions, notes, pipeline instructions (versioned), the shared playbook, foundational permission boundaries, and write-back instructions with an idempotency key.
-3. Paste it into any ChatGPT conversation. ChatGPT does the work.
-4. ChatGPT writes back, either directly (Custom GPT action / MCP) or by ending its reply with a `pops-report` block that you paste into the task page.
+3. Paste it into a ChatGPT or Claude conversation. The chat app does the work.
+4. The chat app writes back, either directly (MCP, or a Custom GPT action in ChatGPT) or by ending its reply with a `pops-report` block that you paste into the task page.
 5. POps shows the run in the task history, opens any decisions, and updates the suggested next action.
 6. You answer decisions, give feedback on runs, and launch the next pipeline. The next prompt carries everything forward.
 
@@ -53,13 +53,35 @@ The migration also installs `BEFORE UPDATE OR DELETE` triggers that make `PopsHi
 
 Pipelines and the playbook are seeded lazily on first use when their tables are empty. No tasks are ever seeded in production.
 
-## Connecting ChatGPT
+## Connecting ChatGPT and Claude
 
-Findings from November 2026: ChatGPT supports remote MCP servers with write actions through developer-mode custom connectors (Plus/Pro and above). Those connectors reliably support OAuth or no authentication; bearer/API-key support is inconsistent. Custom GPT *actions* (OpenAPI) do support API-key bearer authentication. POps therefore offers three paths, all sharing one validation layer:
+Both chat apps connect to the same Streamable HTTP MCP endpoint:
 
-1. **Copy and paste — works everywhere, no setup.** Generate a prompt, paste ChatGPT's `pops-report` block back into the task page. Import is idempotent.
-2. **Custom GPT action — recommended for direct write-back today.** In the GPT editor, add an action, import `https://petercurry.org/api/pops/v1/openapi.json`, choose *API key → Bearer*, and paste a credential from `/pops/connect`. ChatGPT asks for confirmation before write actions.
-3. **MCP — `https://petercurry.org/api/pops/mcp`.** A small stateless Streamable-HTTP MCP server (JSON responses, no SSE) exposing `pops_list_tasks`, `pops_get_task`, `pops_get_pipeline_prompt`, `pops_list_pipelines`, `pops_get_playbook`, `pops_create_task`, `pops_record_agent_run`, `pops_create_decision`, `pops_relay_feedback`, `pops_propose`. Works today with MCP clients that send a bearer token (Claude Code, Codex, scripts). **For ChatGPT developer mode it needs OAuth, which V1 does not implement** (see limitations).
+`https://petercurry.org/api/pops/mcp`
+
+1. **ChatGPT:** in Plugins, add a custom MCP server, enter the URL, choose OAuth and automatic client registration (DCR), and create/install the plugin. If your workspace uses the older developer-mode UI, add it as a custom connector there. No API key or pre-created client secret is needed.
+2. **Claude:** in Customize → Connectors, add a custom connector with the same URL. Choose sign-in and **Register automatically** for the OAuth client rather than Claude's published identity (CIMD).
+3. Sign in with the existing POps owner password and review the connection's callback address and requested permissions. Select **Allow connection**. Enable POps in the conversation.
+4. Try “Create a task in my Writing workspace to research my next essay”, or ask it to rename an existing task, update its description or tags, or record results. The returned task link opens the dashboard.
+
+OAuth connections appear at `/pops/connect` after the token exchange. Revoke a connection there to disable both its access and refresh tokens. Access tokens last one hour; refresh tokens rotate on every use and the connection expires after 30 days, when you reconnect. Replaying a used refresh token revokes the connection. These lifetimes also apply when a chat app stays open.
+
+The MCP tools are `pops_list_tasks`, `pops_get_task`, `pops_get_pipeline_prompt`, `pops_list_pipelines`, `pops_get_playbook`, `pops_create_task`, `pops_update_task`, `pops_record_agent_run`, `pops_create_decision`, `pops_relay_feedback`, and `pops_propose`. Agents can edit titles, descriptions, and tags when asked. The edit tool requires `expectedUpdatedAt` from a fresh `pops_get_task` response and rejects stale edits with a conflict. Omitted fields stay unchanged; tags replace the entire tag list. Each edit is recorded in history as an agent action and leaves human-engagement and resurfacing timestamps unchanged. Task completion and archiving remain owner actions.
+
+Other connection options still work:
+
+- **Bearer credentials** from `/pops/connect` for Claude Code, Codex, scripts, and Custom GPT actions. Import `/api/pops/v1/openapi.json` into a Custom GPT action and choose API key → Bearer.
+- **Copy and paste:** generate a prompt and import the chat app's `pops-report` block on the task page. Import is idempotent.
+
+### OAuth deployment
+
+Apply `20261107010000_pops_mcp_oauth` with `npx prisma migrate deploy` before running the new app version. It adds four OAuth tables and does not alter existing task data. Keep `POPS_BASE_URL` set to the public HTTPS origin clients will connect to (default `https://petercurry.org`). Discovery uses this configured origin, never a caller-controlled Host header. No new external service or signing secret is needed.
+
+Discovery is public at `/.well-known/oauth-authorization-server`, `/.well-known/oauth-protected-resource`, and `/.well-known/oauth-protected-resource/api/pops/mcp`. Client registration, token exchange, and revocation live under `/api/pops/oauth/`. Registration creates a public client identity only; it grants no task access. The owner-authenticated consent action issues a short-lived, single-use code bound to the exact registered HTTPS callback, client, resource, scopes, and S256 PKCE challenge. Only token hashes are persisted. OAuth access tokens are accepted at the MCP endpoint; the REST API continues to use bearer credentials.
+
+The implementation uses public clients with automatic registration (DCR). It does not advertise CIMD or client-secret authentication. Chat apps may ask you to confirm writes according to their own settings; the connector does not bypass those controls. Workspace administrators may restrict installing custom connectors.
+
+Current setup references: [OpenAI custom MCP servers](https://developers.openai.com/api/docs/guides/custom-mcp-server), [OpenAI OAuth requirements](https://developers.openai.com/plugins/build/auth), [Claude custom connectors](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp), and [MCP authorization](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization).
 
 ### REST API
 
@@ -69,6 +91,7 @@ All routes require `Authorization: Bearer pops_…` and return JSON with `Cache-
 | --- | --- | --- |
 | GET | `/api/pops/v1/tasks?workspace=&status=&tag=` | `tasks:read` |
 | POST | `/api/pops/v1/tasks` | `tasks:write` — `idempotencyKey` optional |
+| PATCH | `/api/pops/v1/tasks/{id}` | `tasks:write` — title, description, tags; requires `expectedUpdatedAt` |
 | GET | `/api/pops/v1/tasks/{id}` | `tasks:read` — full context for the next agent |
 | GET | `/api/pops/v1/tasks/{id}/prompt?pipeline=` | `tasks:read` |
 | POST | `/api/pops/v1/tasks/{id}/runs` | `runs:write` — idempotent; 409 if a key is reused with different content |
@@ -83,12 +106,12 @@ All routes require `Authorization: Bearer pops_…` and return JSON with `Cache-
 - **Owner sessions.** Login at `/pops/login` creates a random 256-bit session token; only its SHA-256 is stored in `PopsSession`. Cookie `pops_session`: `HttpOnly`, `SameSite=Lax`, `Secure` in production, 30 days. Logout revokes server-side. The raw-password `qb_auth` cookie is gone and grants nothing.
 - **Login throttling.** 10 attempts per IP per 15 minutes, reusing the site's `RateLimitBucket`.
 - **Defence in depth.** `proxy.ts` only checks that a POps cookie exists; the `(app)` layout and *every* server action call `requireOwner()`, which validates against the database. Reading River and POps cookies are independent.
-- **Agent credentials.** Created at `/pops/connect`, shown once, stored as SHA-256, scoped, revocable, with `lastUsedAt`. A browser session cookie does not authorise the API.
+- **Agent credentials.** Created at `/pops/connect` or through explicit OAuth consent, scoped, revocable, with `lastUsedAt`. Bearer credentials are shown once; OAuth access and refresh tokens are stored only as SHA-256 hashes. A browser session cookie does not authorise the API. OAuth routes use database-backed per-IP rate limits; consent uses Next server actions with origin checks.
 - **Agent writes are validated** with Zod (`lib/pops/validation.ts`): size limits, enumerations, `http(s)`/`obsidian` URLs only, Anki id format, 256 KB body cap.
 - **Idempotency.** Runs are keyed by `idempotencyKey` (unique) plus a content hash; history entries carry unique `dedupeKey`s inserted with `ON CONFLICT DO NOTHING`. Concurrent replays are tested.
 - **Completion is human-only.** The run schema has no status field; unknown fields are stripped. Agent activity never updates `lastHumanEngagementAt`.
 - **Instruction integrity.** Foundational permission boundaries live in code (`FOUNDATIONAL_BOUNDARIES`), are shown read-only on the playbook page, and are placed *after* the playbook in every prompt. Agents can only create proposals; the playbook and pipelines change only when the owner saves a new version, and accepted proposals are linked from the version that applied them.
-- **No public exposure.** `/pops` and `/api/pops` are `noindex` and disallowed in robots. Only the OpenAPI schema is public.
+- **No public task data.** `/pops` and `/api/pops` are `noindex` and disallowed in robots. The OpenAPI schema and OAuth discovery/registration endpoints are public; none expose tasks or grant access without owner approval.
 - **Links** from agents render with `rel="noopener noreferrer nofollow"`; `javascript:` and other schemes are rejected at validation and again at render.
 
 ## Anki and the Quiz Trainer
@@ -126,7 +149,7 @@ DATABASE_URL=postgresql://pops:pops@127.0.0.1:54329/pops_demo POPS_PASSWORD=loca
 
 ## Trade-offs (smallest reversible choices)
 
-- **No OAuth server.** Building one is the largest piece of work in the ChatGPT-MCP path and can be added later without changing data or tools. Copy/paste and Custom GPT actions cover the workflow now.
+- **Single-owner OAuth with DCR.** Reuses the existing owner login and scoped agent permissions. Supports ChatGPT and Claude without introducing an identity-provider account; adding multiple owners would need owner-bound grants.
 - **Shared database, single owner, no user FK.** Matches "only the site owner"; adding an owner id later is a simple migration.
 - **Pipeline name/summary/workspace are not versioned**, only instructions and expected evidence (what agents execute).
 - **Lazy seeding** of templates rather than a data migration, so editing or archiving templates is never undone.
@@ -134,7 +157,7 @@ DATABASE_URL=postgresql://pops:pops@127.0.0.1:54329/pops_demo POPS_PASSWORD=loca
 
 ## Known limitations
 
-- ChatGPT developer-mode MCP connectors need OAuth; until it is added, use the Custom GPT action or copy/paste.
+- OAuth supports automatic client registration (DCR), not published client identity documents (CIMD). Choose Register automatically in Claude. Connections must be reauthorized after 30 days.
 - One owner session store with no "log out everywhere" button (revoke by deleting `PopsSession` rows).
 - No full-text search across tasks; the Everything view filters by status and tag.
 - Feedback informs ranking and is fed into prompts, but there is no automatic pipeline rewriting (by design).

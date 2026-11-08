@@ -11,6 +11,7 @@ const ENDPOINTS = [
   ["GET", "/api/pops/v1/tasks", "List tasks (?workspace, ?status, ?tag)"],
   ["POST", "/api/pops/v1/tasks", "Create a task (idempotencyKey optional)"],
   ["GET", "/api/pops/v1/tasks/{id}", "Task context: runs, decisions, notes, pipelines"],
+  ["PATCH", "/api/pops/v1/tasks/{id}", "Edit title, description, or tags (read task.updatedAt first)"],
   ["GET", "/api/pops/v1/tasks/{id}/prompt?pipeline=slug", "Full pipeline prompt"],
   ["POST", "/api/pops/v1/tasks/{id}/runs", "Record an agent run (idempotent)"],
   ["POST", "/api/pops/v1/tasks/{id}/decisions", "Ask for a decision"],
@@ -28,12 +29,15 @@ export default async function ConnectPage() {
   return (
     <>
       <h1>Connect</h1>
-      <p className="pops-lede">How ChatGPT reads tasks and writes results back. Agents can never complete tasks or edit the playbook.</p>
+      <p className="pops-lede">Connect ChatGPT and Claude to create tasks and write results back from chat. You control task completion and playbook changes.</p>
 
       <h2>Ways to connect</h2>
       <ol className="pops-list" style={{ borderTop: "var(--pops-rule)" }}>
         <li>
-          <strong>Copy and paste.</strong> <span className="pops-muted">Copy a pipeline prompt into ChatGPT, then paste its report back on the task. No setup.</span>
+          <strong>ChatGPT and Claude via MCP.</strong>{" "}
+          <span className="pops-muted">Add a custom MCP connector using <code>{base}/api/pops/mcp</code>, choose OAuth with automatic client registration, then sign in to POps and allow the connection. No API key is needed.</span>
+          <p className="pops-muted">In ChatGPT, add a custom MCP server from Plugins. In Claude, use Customize &rarr; Connectors &rarr; Add custom connector and choose &ldquo;Register automatically&rdquo;. Enable POps in your conversation.</p>
+          <p className="pops-muted">Try: &ldquo;Create a task in my Writing workspace to research my next essay.&rdquo; You can also ask either app to edit a task&rsquo;s title, description, or tags, or add results. Each connection appears below and can be revoked separately.</p>
         </li>
         <li>
           <strong>Custom GPT action.</strong>{" "}
@@ -42,14 +46,15 @@ export default async function ConnectPage() {
           </span>
         </li>
         <li>
-          <strong>MCP.</strong>{" "}
+          <strong>Copy and paste.</strong>{" "}
           <span className="pops-muted">
-            <code>{base}/api/pops/mcp</code> with a bearer credential. ChatGPT&rsquo;s own connectors need OAuth, which isn&rsquo;t built yet.
+            Copy a pipeline prompt into either chat app, then paste its report back on the task. No setup.
           </span>
         </li>
       </ol>
 
       <h2>Agent credentials</h2>
+      <p className="pops-muted">OAuth connections appear here after you connect. Create a bearer credential below for scripts, Claude Code, Codex, or Custom GPT actions.</p>
       <NewCredential scopes={AGENT_SCOPES} />
       {credentials.length ? (
         <table className="pops-table" style={{ marginTop: 16 }}>
