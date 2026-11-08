@@ -234,7 +234,7 @@ export function drawGame(ctx: CanvasRenderingContext2D, game: Game, reducedMotio
   const frame = running && Math.abs(game.vx) > 15 ? (Math.floor(game.elapsed * 13) % 2 ? 2 : -2) : 0;
   const maxFrame = running ? (Math.floor(game.elapsed * 11) % 2 ? 2 : -2) : 0;
   const maxX = game.status === "ready" ? 170 : game.maxX;
-  drawCharacter(ctx, "max", maxX - camera, game.status === "ready" ? 360 : game.maxY, maxFrame, 1, time);
+  drawCharacter(ctx, "max", (game.status === "ready" ? maxX : game.maxVisualX) - camera, game.status === "ready" ? 360 : game.maxY, maxFrame, 1, time);
   if (game.dashTime > 0) {
     for (let i = 1; i < 4; i++) {
       ctx.globalAlpha = .32 / i;
