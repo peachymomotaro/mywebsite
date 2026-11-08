@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createGame, dash, jump, nextStage, PLAYER_HEIGHT, SPEED, STEP, stepGame, type Game, type Input } from "../../lib/max-escape/game";
+import { createGame, dash, jump, MAX_CHASE_SPEED, MAX_CHASE_SPEED_PER_STAGE, nextStage, PLAYER_HEIGHT, SPEED, STEP, stepGame, type Game, type Input } from "../../lib/max-escape/game";
 import { LEVELS } from "../../lib/max-escape/levels";
 
 const right = { left: false, right: true };
@@ -169,6 +169,25 @@ describe("Max Danger platform chase", () => {
         stepGame(game, STEP, input);
       }
       expect(game.status, `stage ${level + 1}: x=${Math.round(game.x)}, key=${game.key}, lives=${game.lives}`).toBe(level === 2 ? "won" : "stageclear");
+    }
+  });
+
+  it("makes Max faster at each stage without removing the starting grace period", () => {
+    const expectedSpeeds = [188, 200, 212];
+    for (let level = 0; level < LEVELS.length; level++) {
+      const game = playing(level);
+      game.x = 1000; // Keep Max far enough behind to isolate chase speed.
+      game.maxX = 100;
+      game.maxVisualX = 100;
+      const startX = game.maxX;
+
+      stepGame(game, STEP);
+      expect(game.maxX).toBe(startX); // Initial grace still applies.
+
+      game.maxGrace = 0;
+      stepGame(game, STEP);
+      expect(MAX_CHASE_SPEED + level * MAX_CHASE_SPEED_PER_STAGE).toBe(expectedSpeeds[level]);
+      expect(game.maxX - startX).toBeCloseTo(expectedSpeeds[level] * STEP, 6);
     }
   });
 
