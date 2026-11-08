@@ -172,6 +172,50 @@ describe("Max Danger platform chase", () => {
     }
   });
 
+  it("moves Max smoothly when trail points suddenly change height", () => {
+    const game = playing();
+    game.x = 900;
+    game.maxX = 300;
+    game.maxVisualX = 300;
+    game.maxY = 360;
+    game.maxGrace = 0;
+    game.trail = [{ x: 300, y: 110 }];
+
+    const previousY = game.maxY;
+    stepGame(game, STEP);
+    expect(game.maxY).toBeLessThan(previousY);
+    expect(previousY - game.maxY).toBeLessThanOrEqual(320 * STEP + 1e-6);
+
+    // Reversing the target should not make his sprite teleport either.
+    game.trail = [{ x: game.maxX, y: 360 }];
+    const beforeReverse = game.maxY;
+    stepGame(game, STEP);
+    expect(game.maxY - beforeReverse).toBeGreaterThan(0);
+    expect(game.maxY - beforeReverse).toBeLessThanOrEqual(540 * STEP + 1e-6);
+  });
+
+  it("eases Max backwards visually after a shield knockback", () => {
+    const game = playing();
+    game.maxGrace = 0;
+    game.shield = 10;
+    game.x = 190;
+    game.maxX = 185;
+    game.maxVisualX = 185;
+
+    stepGame(game, STEP);
+
+    expect(game.shield).toBe(0);
+    expect(game.maxX).toBe(game.x - 150);
+    expect(game.maxVisualX).toBeGreaterThan(game.maxX);
+    expect(185 - game.maxVisualX).toBeLessThanOrEqual(620 * STEP + 1e-6);
+
+    for (let i = 0; i < 60; i++) {
+      const before = game.maxVisualX;
+      stepGame(game, STEP);
+      expect(Math.abs(game.maxVisualX - before)).toBeLessThanOrEqual(620 * STEP + 1e-6);
+    }
+  });
+
   it("restarting restores independent enemies and collectibles", () => {
     const game = playing();
     game.world.enemies[0].alive = false;
