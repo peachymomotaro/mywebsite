@@ -6,7 +6,7 @@ import { measureReadingRiverTiming } from "@/lib/reading-river/timing";
 
 export default async function AddPage({ searchParams }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
-} = {}) {
+}) {
   return measureReadingRiverTiming("page.reading-river-add.render", async () => {
     const [knownTagNames, params] = await Promise.all([getKnownTagNames(), searchParams]);
 
