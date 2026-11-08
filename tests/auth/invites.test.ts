@@ -77,7 +77,7 @@ function createPrismaMock() {
     ...inviteRecord,
     ...data,
   }));
-  const inviteFindUnique = vi.fn(async () => inviteRecord);
+  const inviteFindUnique = vi.fn(async (_args: { where: { tokenHash: string } }) => inviteRecord);
   const inviteUpdate = vi.fn(async ({ data }: { data: Partial<typeof inviteRecord> }) => {
     inviteRecord = {
       ...inviteRecord,

@@ -1,3 +1,4 @@
+/** @param {{ episodes?: Array<{ title: string, url?: string, date?: string | null, creditLine?: string | null }> }} props */
 export default function EpisodeList({ episodes = [] }) {
   const renderTitle = (title) =>
     title === "Made in Chelsea" ? <em>{title}</em> : title;

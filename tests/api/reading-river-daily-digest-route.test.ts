@@ -50,7 +50,7 @@ function createSettings(overrides: Record<string, unknown> = {}) {
     userId: "user-1",
     digestCadence: "daily",
     includeBookRouletteInDigest: false,
-    lastDigestSentAt: null,
+    lastDigestSentAt: null as Date | null,
     user: {
       id: "user-1",
       email: "reader@example.com",
