@@ -52,10 +52,10 @@ export default async function TaskPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; edit?: string; activity?: string }>;
+  searchParams: Promise<{ error?: string; edit?: string; activity?: string; record?: string }>;
 }) {
   const { id } = await params;
-  const { error, edit, activity } = await searchParams;
+  const { error, edit, activity, record } = await searchParams;
   const task = await getTaskDetail(id);
   if (!task) notFound();
 
@@ -183,7 +183,7 @@ export default async function TaskPage({
                     href={`/pops/tasks/${task.id}/prompt?pipeline=${nextStep.pipelineSlug}`}
                   >{nextStep.label}</Link>
                 )}
-                {nextStep.canRecordResult ? <a href="#import-report" className="pops-guided-secondary">Already implemented? Record the result</a> : null}
+                {nextStep.canRecordResult ? <a href={`/pops/tasks/${task.id}?record=1#import-report`} className="pops-guided-secondary">Already implemented? Record the result</a> : null}
               </div>
             </section>
           ) : task.suggestedNextAction ? (
@@ -259,7 +259,7 @@ export default async function TaskPage({
                   </ul>
                 </details>
               ) : null}
-              <details className="pops-more" id="import-report">
+              <details className="pops-more" id="import-report" open={record === "1"}>
                 <summary>Record an agent result (Codex or ChatGPT)</summary>
                 <ImportReport taskId={task.id} />
               </details>
