@@ -1,105 +1,104 @@
-.page {
-  --ink: #253f34;
-  --paper: #f5f0e6;
-  --orange: #b9472e;
-  min-height: 100vh;
-  padding: 24px 28px 32px;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-mono), "Courier New", monospace;
-  line-height: 1.5;
-}
-.shell { max-width: 1000px; margin: 0 auto; }
-.nav { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid #c9cec0; font-size: 11px; letter-spacing: .04em; }
-.page a { color: var(--ink); text-decoration: none; }
-.page a:hover { text-decoration: underline; }
-.nav > span { font-size: 10px; }
-.nav > span span { color: var(--orange); padding: 0 8px; }
-.header { padding: 32px 0 28px; }
-.eyebrow { font-size: 10px; letter-spacing: .18em; margin: 0 0 10px; }
-.header h1 { font-family: var(--font-mono), "Courier New", monospace; font-size: clamp(28px, 4.8vw, 57px); line-height: 1.1; font-weight: 800; letter-spacing: -.06em; margin: 0 0 12px; }
-.header h1 > span { color: var(--orange); }
-.period { color: var(--ink); }
-.header > p:last-child { font-size: 12px; margin: 0; color: #5b6657; }
-.machine { border: 3px solid var(--ink); box-shadow: 7px 7px 0 #d2d4c2; background: var(--ink); }
-.hud { display: flex; justify-content: space-between; padding: 16px 24px 13px; gap: 16px; color: #fcf3da; }
-.hud > div { display: flex; flex-direction: column; gap: 3px; }
-.hudLabel { font-size: 9px; letter-spacing: .14em; color: #c0cfbd; }
-.hearts { color: #f6a28a; font-size: 23px; line-height: 1; letter-spacing: 4px; }
-.hearts > span { color: #a4b2a2; }
-.hudValue { font-size: 16px; line-height: 1.5; font-weight: bold; }
-.hudMuted { font-size: 11px; font-weight: normal; color: #c0cfbd; }
-.gold { color: #ffda7b; }
-.distance { text-align: right; }
-.stage { position: relative; aspect-ratio: 16 / 9; background: #c6dfd3; }
-.stage canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; touch-action: manipulation; }
-.stage canvas:focus-visible { outline: 3px solid #ffe59a; outline-offset: -4px; }
-.overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; background: #253f3418; }
-.overlayPanel { width: min(380px, 82%); padding: 24px 26px; text-align: center; background: #fbf5e5f5; border: 2px solid var(--ink); box-shadow: 5px 5px 0 #253f3433; }
-.overlayKicker { color: var(--orange); font-size: 10px; font-weight: bold; letter-spacing: .16em; }
-.overlayPanel h2 { font-family: inherit; font-size: 24px; font-weight: 800; letter-spacing: -.05em; line-height: 1.2; margin: 12px 0; }
-.overlayPanel p { font-size: 11px; line-height: 1.8; margin: 0 0 18px; }
-.page button { font-family: inherit; cursor: pointer; border-radius: 0; }
-.page button:disabled { opacity: .45; cursor: default; }
-.page button:focus-visible, .page a:focus-visible { outline: 3px solid #b9472e; outline-offset: 4px; }
-.primary { border: 2px solid var(--ink); background: var(--ink); color: #fff4d8; min-height: 48px; padding: 10px 20px; font-size: 12px; font-weight: bold; box-shadow: 3px 3px 0 #b8c0a5; }
-.primary:hover { background: #375a49; }
-.primary span { padding-left: 24px; }
-.startHint { display: block; font-size: 8px; margin-top: 14px; color: #5b6657; }
-.progress { height: 5px; background: #97a583; }
-.progress > span { display: block; height: 100%; background: #ffda7b; }
-.console { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; gap: 16px; background: #e8e9d8; }
-.controlHint { display: flex; align-items: center; gap: 8px; font-size: 10px; }
-.controlHint kbd { padding: 3px 6px; border: 1px solid #8a9b84; border-bottom-width: 3px; background: #f6f4e7; font-size: 10px; }
-.or { color: #7b8872; margin: 0 4px; }
-.utility { display: flex; align-items: center; gap: 14px; }
-.utility button { border: 0; background: transparent; color: var(--ink); min-height: 34px; padding: 4px; font-size: 9px; font-weight: bold; }
-.utility button:hover:not(:disabled) { text-decoration: underline; }
-.below { display: grid; grid-template-columns: 1fr auto auto; gap: 28px; align-items: center; margin: 26px 0 32px; }
-.below > p { max-width: 580px; font-size: 11px; line-height: 1.9; color: #5b6657; margin: 0; }
-.below strong { color: var(--ink); }
-.below > p strong { display: block; font-size: 12px; margin-bottom: 4px; }
-.jumpControl button { min-width: 100px; min-height: 60px; padding: 12px 20px; background: var(--orange); color: #fff8ec; border: 2px solid var(--ink); box-shadow: 3px 3px 0 #cfccb8; font-size: 13px; font-weight: bold; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
-.jumpControl button:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #cfccb8; }
-.jumpControl button span { margin-left: 8px; }
-.best { border-left: 1px solid #c3c9b8; padding-left: 24px; display: flex; flex-direction: column; text-align: right; white-space: nowrap; }
-.best > span { font-size: 8px; letter-spacing: .08em; }
-.best strong { font-size: 27px; letter-spacing: .03em; }
-.footer { display: flex; justify-content: space-between; gap: 20px; border-top: 1px solid #c9cec0; padding-top: 18px; font-size: 9px; color: #5b6657; letter-spacing: .02em; }
-.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.page { --black: #050309; --cream: #fff9c8; --yellow: #ffe42e; --red: #ff454d; --purple: #a75dea; background: var(--black); color: var(--cream); min-height: 100vh; padding: 16px 24px 36px; line-height: 1.5; overflow-x: clip; }
+.shell { max-width: 1100px; margin: 0 auto; }
+.nav { display: flex; justify-content: space-between; align-items: center; padding: 0 0 20px; font-size: 13px; color: #b3a9c6; }
+.page a { color: #b3a9c6; text-decoration: none; }
+.page a:hover { color: var(--cream); text-decoration: underline; }
+.arcade { background: var(--black); }
+.hud { display: flex; justify-content: space-between; gap: 16px; padding: 8px 20px 22px; font-family: var(--font-pixel), monospace; line-height: 1.5; }
+.hud > div { display: flex; flex-direction: column; gap: 8px; }
+.hud span { font-size: clamp(10px, 1.5vw, 17px); color: var(--cream); }
+.hud strong { font-size: clamp(14px, 2.1vw, 24px); color: #ffffff; font-weight: 400; }
+.hud small { font-size: 10px; color: var(--yellow); }
+.hud .warning { color: var(--red); }
+.screen { position: relative; aspect-ratio: 16 / 9; isolation: isolate; overflow: hidden; background: var(--black); }
+.screen canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; touch-action: none; }
+.screen canvas:focus-visible { outline: 2px solid #a75dea; outline-offset: -3px; }
+.titleScreen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; text-align: center; padding-top: 16px; pointer-events: none; }
+.logo { position: relative; font-family: var(--font-pixel), monospace; font-weight: 400; text-transform: uppercase; font-size: clamp(30px, 5.6vw, 64px); line-height: 1.12; letter-spacing: -.065em; color: var(--yellow); margin: 0; padding: 12px 28px 16px; transform: skew(-10deg); isolation: isolate; text-shadow: -2px 3px 0 #d5350b, -4px 6px 0 #b8280a; }
+.logo::before { content: ""; position: absolute; z-index: -1; inset: 2px -16px 0; border: 6px solid var(--red); background: #050309e8; clip-path: polygon(5% 0,100% 0,95% 100%,0 100%); }
+.logo::after { content: ""; position: absolute; z-index: -2; top: 46%; left: -80%; width: 260%; height: 5px; background: var(--purple); box-shadow: 0 12px 0 #8c42cf, 0 24px 0 #6c2b9f; }
+.titleScreen > p { margin: 20px 0 12px; padding: 4px 12px; background: #050309bd; color: #fff8df; font-size: clamp(13px, 1.6vw, 17px); line-height: 1.4; }
+.page button { cursor: pointer; font-family: inherit; border-radius: 0; }
+.page button:disabled { opacity: .38; cursor: default; }
+.page button:focus-visible, .page a:focus-visible, .page summary:focus-visible { outline: 3px solid var(--yellow); outline-offset: 5px; }
+.startButton { pointer-events: auto; font-family: var(--font-pixel), monospace !important; font-size: clamp(10px, 1.4vw, 14px); border: 0; border-bottom: 4px solid #af8b0b; background: var(--yellow); color: #140c1b; min-height: 44px; padding: 13px 22px; text-transform: uppercase; box-shadow: 4px 4px 0 #050309; transition: background .15s, transform .15s; }
+.startButton:hover { background: #fff6a1; transform: translateY(-2px); }
+.startButton:active { transform: translateY(2px); }
+.enterHint { font-size: 12px; margin-top: 9px; color: #e4d4f4; background: #050309c4; padding: 1px 5px; }
+.overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; background: #05030980; }
+.resultPanel { width: min(430px, 88%); text-align: center; padding: 32px; background: #0e0719f5; border: 3px solid #a75dea; box-shadow: 6px 6px 0 #050309; }
+.resultPanel h1 { font-family: var(--font-pixel), monospace; color: var(--yellow); font-size: clamp(18px, 2.8vw, 29px); font-weight: 400; line-height: 1.5; margin: 0 0 16px; }
+.resultPanel p { color: #e4d4f4; font-size: 16px; margin: 0 0 20px; }
+.resultScore { display: block; font-size: 24px; margin-bottom: 20px; color: var(--cream); }
+.stageInfo { position: absolute; top: 12px; left: 14px; right: 14px; display: flex; justify-content: space-between; gap: 10px; font-family: var(--font-pixel), monospace; font-size: 8px; line-height: 1.5; color: #fff8df; text-shadow: 1px 2px #000; pointer-events: none; }
+.stageInfo span { background: #050309b0; padding: 4px 6px; }
+.stageInfo .hasKey { color: var(--yellow); }
+.powerStatus { position: absolute; left: 18px; top: 45px; display: flex; gap: 8px; font-size: 12px; color: #cec0de; pointer-events: none; }
+.powerStatus span { background: #050309b0; padding: 1px 6px; }
+.powerStatus .dashReady { color: #b9ee61; }
+.gameMessage { position: absolute; left: 12px; right: 12px; bottom: 7px; margin: 0; padding: 5px 10px; background: #050309d6; color: #fff9c8; font-size: 14px; text-align: center; pointer-events: none; }
+.controls { display: flex; justify-content: space-between; gap: 20px; padding: 20px 8px 12px; }
+.directionControls, .actionControls { display: flex; gap: 12px; }
+.controls button { min-height: 64px; min-width: 78px; touch-action: none; user-select: none; -webkit-user-select: none; border: 2px solid #655078; border-bottom: 5px solid #372a45; background: #251833; color: #e8d5fc; font-size: 20px; font-weight: 700; padding: 8px 18px; transition: background .15s; }
+.controls button svg { width: 24px; height: 24px; display: block; fill: none; stroke: currentColor; stroke-width: 4; stroke-linejoin: miter; }
+.controls button:active:not(:disabled) { background: #594074; border-bottom-width: 2px; transform: translateY(3px); }
+.controls .jumpButton { background: var(--yellow); color: #21112d; border-color: #ffe42e; border-bottom-color: #9e7810; min-width: 126px; }
+.controls .jumpButton:active:not(:disabled) { background: #fff6a1; }
+.controls .dashButton { background: #235eac; border-color: #6ea8e8; border-bottom-color: #173a68; min-width: 106px; }
+.controls button span { display: block; font-size: 10px; font-weight: 400; margin-top: 2px; }
+.utility { display: flex; align-items: center; gap: 18px; padding: 6px 8px 16px; }
+.utility p { font-size: 13px; color: #b3a9c6; margin: 0 auto 0 0; }
+.utility button { border: 0; background: transparent; color: #d4c7e5; font-size: 13px; min-height: 44px; padding: 4px; white-space: nowrap; }
+.utility button:hover:not(:disabled) { color: var(--yellow); }
+.help { border-top: 1px solid #3b2b4a; margin-top: 12px; padding: 20px 8px; }
+.help summary { cursor: pointer; font-size: 15px; color: #d9c4e9; }
+.help > div { display: grid; grid-template-columns: repeat(3,1fr); gap: 32px; padding-top: 8px; }
+.help p { color: #b3a9c6; font-size: 14px; line-height: 1.8; }
+.help strong { color: var(--cream); }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 @media (max-width: 650px) {
-  .page { padding: 18px 16px 26px; }
-  .nav > span { font-size: 8px; }
-  .nav > span span { padding: 0 3px; }
-  .nav a { font-size: 10px; }
-  .header { padding: 28px 0 24px; }
-  .header h1 { font-size: clamp(28px, 6vw, 39px); }
-  .header > p:last-child { font-size: 10px; }
-  .hud { padding: 12px; gap: 8px; }
-  .hudLabel { font-size: 8px; }
-  .hudValue { font-size: 13px; }
-  .hudMuted { font-size: 9px; }
-  .hearts { font-size: 20px; }
-  .stage { aspect-ratio: 4 / 3; overflow: hidden; }
-  .stage canvas { width: 133.333%; max-width: none; position: absolute; left: -10%; }
-  .overlay { padding: 10px; }
-  .overlayPanel { padding: 16px; width: min(340px, 94%); }
-  .overlayPanel h2 { font-size: 21px; margin: 8px 0; }
-  .overlayPanel p { font-size: 10px; margin-bottom: 12px; }
-  .startHint { display: none; }
-  .console { padding: 8px 10px; gap: 8px; }
-  .controlHint { font-size: 9px; gap: 5px; }
-  .controlHint .or, .controlHint kbd:last-child { display: none; }
-  .utility { gap: 8px; }
-  .utility button { font-size: 8px; min-height: 44px; }
-  .restartLabel { display: none; }
-  .below { grid-template-columns: 1fr auto; gap: 20px; margin-top: 24px; }
-  .below > p { grid-column: 1 / -1; font-size: 10px; }
-  .jumpControl button { min-width: 148px; min-height: 64px; }
-  .best { border: 0; padding-left: 0; }
-  .footer { font-size: 8px; }
-  .footer > span { max-width: 150px; }
+  .page { padding: 12px 10px 24px; }
+  .nav { font-size: 11px; padding: 0 4px 20px; }
+  .hud { padding: 4px 6px 18px; gap: 12px; }
+  .hud span { font-size: 8px; }
+  .hud strong { font-size: 12px; }
+  .hud > div { gap: 6px; }
+  .hiScore { display: none !important; }
+  .screen { aspect-ratio: 4 / 3; }
+  .screen canvas { width: 133.333%; max-width: none; position: absolute; left: -8%; }
+  .titleScreen { padding-top: 12px; }
+  .logo { font-size: clamp(26px, 7vw, 42px); padding: 8px 20px 10px; }
+  .logo::before { border-width: 4px; inset: 0 -6px; }
+  .logo::after { height: 3px; box-shadow: 0 8px 0 #8c42cf, 0 16px 0 #6c2b9f; }
+  .titleScreen > p { font-size: 12px; margin: 14px 0 10px; }
+  .startButton { font-size: 10px; min-height: 40px; padding: 11px 16px; }
+  .enterHint { display: none; }
+  .stageInfo { top: 6px; left: 3px; right: 3px; font-size: 6px; gap: 3px; }
+  .stageInfo span { padding: 3px; }
+  .powerStatus { top: 30px; left: 7px; gap: 4px; font-size: 10px; }
+  .gameMessage { left: 3px; right: 3px; bottom: 3px; font-size: 10px; padding: 4px; }
+  .controls { padding: 18px 2px 6px; gap: 10px; }
+  .directionControls, .actionControls { gap: 8px; }
+  .controls button { min-width: 54px; min-height: 64px; padding: 8px 12px; font-size: 17px; }
+  .controls .jumpButton { min-width: 82px; }
+  .controls .dashButton { min-width: 70px; }
+  .controls button span { font-size: 8px; }
+  .utility { flex-wrap: wrap; gap: 16px; padding: 4px 6px 10px; }
+  .utility p { flex-basis: 100%; font-size: 11px; margin: 4px 0 0; }
+  .utility button { font-size: 12px; }
+  .help { margin-top: 4px; }
+  .help > div { grid-template-columns: 1fr; gap: 0; }
+  .resultPanel { padding: 22px 18px; width: min(340px, 96%); }
+  .resultPanel h1 { font-size: 17px; margin-bottom: 12px; }
+  .resultPanel p { font-size: 13px; margin-bottom: 14px; }
+  .resultScore { font-size: 20px; margin-bottom: 14px; }
+}
+@media (max-width: 350px) {
+  .controls button { min-width: 46px; padding: 8px; }
+  .controls .jumpButton { min-width: 74px; }
+  .controls .dashButton { min-width: 62px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .jumpControl button:active:not(:disabled) { transform: none; }
+  .page *, .page *::before, .page *::after { transition: none !important; }
+  .startButton:hover, .startButton:active, .controls button:active:not(:disabled) { transform: none; }
 }

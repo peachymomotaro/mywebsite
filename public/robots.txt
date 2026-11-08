@@ -3,3 +3,5 @@ Disallow: /pops
 Disallow: /api/pops
 Disallow: /qb
 Disallow: /api/qb
+Disallow: /max-danger
+Disallow: /escape-from-max

@@ -7,7 +7,6 @@ const routes = [
   "/about",
   "/blog",
   "/projects",
-  "/escape-from-max",
   "/podcasts",
   "/contact",
   "/privacy",

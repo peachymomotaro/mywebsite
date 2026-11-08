@@ -36,19 +36,6 @@ export default function Projects() {
         <h1>Projects</h1>
       </header>
 
-      <section className="capstone-project" id="escape-from-max">
-        <div className="project-kicker">Tiny arcade</div>
-        <h2>Escape from Max</h2>
-        <p>
-          A small 8-bit chase game. Help a young blond girl jump rocks, collect
-          stars, and get home before floppy-haired Max catches up. Play with a
-          keyboard or touch controls.
-        </p>
-        <Link className="button capstone-game-link" href="/escape-from-max">
-          Play Escape from Max
-        </Link>
-      </section>
-
       <section className="capstone-project" id="exploring-bayesian-optimisers">
         <span id="capstone-bo" className="legacy-anchor" aria-hidden="true" />
         <div className="project-kicker">Machine learning capstone</div>
