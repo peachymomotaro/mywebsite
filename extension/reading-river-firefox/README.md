@@ -2,7 +2,7 @@
 
 ## Unlisted Signing For Testers
 
-1. Upload `dist/reading-river-firefox-0.1.1-amo-upload.zip` to the Firefox Add-on Developer Hub.
+1. Upload `dist/reading-river-firefox-0.1.2-amo-upload.zip` to the Firefox Add-on Developer Hub.
 2. Choose the unlisted or self-distributed signing flow.
 3. Download the signed `.xpi` Mozilla returns.
 4. Share that `.xpi` directly with testers so they can install it in Firefox.
@@ -30,11 +30,10 @@ Mozilla docs:
 1. Visit an article on `https://petercurry.org`.
 2. Open the extension popup.
 3. Confirm the current page URL and title are prefilled.
-4. Enter a priority score and click **Save article**.
+4. Click **Save article**.
 5. A successful save shows a confirmation message in the popup.
 
 ## Current Caveats
 
 - Firefox only for now.
-- v1 saves the page URL, title, and priority score.
-- v1 does not estimate reading time during save.
+- Saves the page URL, title, and estimated reading time.

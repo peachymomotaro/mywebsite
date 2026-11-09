@@ -26,15 +26,16 @@ type GladeSheetProps = {
 const MAX_MINUTES = 600;
 
 /**
- * A piece lifted out of the water: one sheet of the same paper as its label.
- * Tap the title or the reading time to change it. On the river there is only
- * Start reading, which carries it into the eddies; in the eddies you carry on
- * or finish it. Remove lets it float away for good, after asking.
+ * A piece lifted out of the water: the same little cloud of text as its label,
+ * grown a little, with one clear way on (Start reading on the river, Continue
+ * in the eddies) and quieter choices beneath it. Edit makes the title and
+ * reading time tappable to change; Remove lets it float away, after asking.
  */
 export const GladeSheet = forwardRef<HTMLDivElement, GladeSheetProps>(function GladeSheet(
   { item, place, onStart, onFinish, onRemove, onEdited }, ref,
 ) {
   const [editing, setEditing] = useState<"title" | "minutes" | "sourceUrl" | null>(null);
+  const [editMode, setEditMode] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [message, setMessage] = useState("");
   const startLabel = place === "eddies" ? "Continue" : "Start reading";
@@ -70,58 +71,67 @@ export const GladeSheet = forwardRef<HTMLDivElement, GladeSheetProps>(function G
         {editing === "title" ? (
           <TitleField value={item.title} onDone={(title) => (title ? save({ title }) : setEditing(null))}
             onCancel={() => setEditing(null)} />
-        ) : (
+        ) : editMode ? (
           <button type="button" className="glade-sheet-editable" onClick={() => setEditing("title")}
             aria-label={`${item.title}. Change the title`}>
             {item.title}
           </button>
-        )}
+        ) : item.title}
       </h3>
       <p className="glade-card-meta glade-sheet-meta">
         {item.siteName ? <span>{item.siteName}</span> : null}
-        {item.siteName ? <span aria-hidden="true">·</span> : null}
+        {item.siteName && (editMode || item.estimatedMinutes) ? <span aria-hidden="true">·</span> : null}
         {editing === "minutes" ? (
           <MinutesField value={item.estimatedMinutes}
             onDone={(minutes) => (minutes ? save({ estimatedMinutes: minutes }) : setEditing(null))}
             onCancel={() => setEditing(null)} />
-        ) : (
+        ) : editMode ? (
           <button type="button" className="glade-sheet-editable" onClick={() => setEditing("minutes")}
             aria-label={item.estimatedMinutes ? `${item.estimatedMinutes} minutes. Change the reading time` : "Add a reading time"}>
             {item.estimatedMinutes ? `${item.estimatedMinutes} min` : "How long?"}
           </button>
-        )}
+        ) : item.estimatedMinutes ? <span>{item.estimatedMinutes} min</span> : null}
       </p>
 
       {confirming ? (
         <div className="glade-sheet-confirm" role="alertdialog" aria-label="Remove this piece?">
           <p>Are you sure? It will float away, and you won&rsquo;t see it again.</p>
-          <div className="glade-sheet-actions">
+          <div className="glade-sheet-quiet-row">
             <ConfirmButton onClick={() => onRemove(item)}>Let it float away</ConfirmButton>
             <button type="button" className="glade-sheet-quiet" onClick={() => setConfirming(false)}>Keep it</button>
           </div>
         </div>
       ) : (
-        <div className="glade-sheet-actions">
+        <>
           {item.sourceUrl ? (
-            <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" className="glade-sheet-button glade-sheet-primary"
+            <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" className="glade-sheet-primary"
               onClick={() => onStart(item)} onAuxClick={(event) => { if (event.button === 1) onStart(item); }}>
               {startLabel}
             </a>
           ) : (
-            <button type="button" className="glade-sheet-button glade-sheet-primary"
+            <button type="button" className="glade-sheet-primary glade-sheet-primary-small"
               onClick={() => setEditing("sourceUrl")}>
               Add article link to {place === "eddies" ? "continue" : "start reading"}
             </button>
           )}
-          {canFinish ? (
-            <button type="button" className="glade-sheet-button" onClick={() => onFinish(item)}>
-              Finished
+          <div className="glade-sheet-quiet-row">
+            {/* While editing, the only way on is Done editing: no finishing mid-edit. */}
+            {canFinish && !editMode ? (
+              <button type="button" className="glade-sheet-quiet" onClick={() => onFinish(item)}>
+                Finished
+              </button>
+            ) : null}
+            <button type="button" className="glade-sheet-quiet" aria-pressed={editMode}
+              onClick={() => { setEditMode((value) => !value); setEditing(null); }}>
+              {editMode ? "Done editing" : "Edit"}
             </button>
-          ) : null}
-          <button type="button" className="glade-sheet-quiet glade-sheet-remove" onClick={() => setConfirming(true)}>
-            Remove
-          </button>
-        </div>
+            {!editMode ? (
+              <button type="button" className="glade-sheet-quiet glade-sheet-remove" onClick={() => setConfirming(true)}>
+                Remove
+              </button>
+            ) : null}
+          </div>
+        </>
       )}
       {editing === "sourceUrl" ? (
         <LinkField onSave={(sourceUrl) => void save({ sourceUrl })} onCancel={() => setEditing(null)} />
@@ -135,7 +145,7 @@ export const GladeSheet = forwardRef<HTMLDivElement, GladeSheetProps>(function G
 function ConfirmButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
   const ref = useRef<HTMLButtonElement>(null);
   useEffect(() => ref.current?.focus(), []);
-  return <button ref={ref} type="button" className="glade-sheet-button glade-sheet-danger" onClick={onClick}>{children}</button>;
+  return <button ref={ref} type="button" className="glade-sheet-quiet glade-sheet-danger" onClick={onClick}>{children}</button>;
 }
 
 /** Enter keeps the change, Escape (or emptying it) leaves the title as it was. */
@@ -208,8 +218,8 @@ function LinkField({ onSave, onCancel }: { onSave: (url: string) => void; onCanc
       <input id="glade-sheet-source-link" className="glade-sheet-field" type="url" required autoFocus
         placeholder="https://…" value={url} onChange={(event) => setUrl(event.target.value)}
         onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); onCancel(); } }} />
-      <div className="glade-sheet-actions">
-        <button className="glade-sheet-button" type="submit">Save link</button>
+      <div className="glade-sheet-quiet-row">
+        <button className="glade-sheet-quiet glade-sheet-quiet-strong" type="submit">Save link</button>
         <button className="glade-sheet-quiet" type="button" onClick={onCancel}>Cancel</button>
       </div>
       {error ? <p className="glade-sheet-message" role="alert">{error}</p> : null}

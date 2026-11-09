@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
- * The sound of the glade. Strauss's Blue Danube waltz plays softly, then
+ * The sound of the glade. Smetana's Vltava plays softly, then
  * there's a long quiet spell before it comes round again. Under it, quietly,
  * running water (a little clearer by the river, faint up on the bank). Birds
  * calling now and then, and rain as you come near the shower, are made in the
@@ -27,11 +27,11 @@ export type GladeSurroundings = {
 const PREFERENCE_KEY = "reading-river:sound";
 
 /**
- * An der schönen blauen Donau, Op. 314 (Johann Strauss II), performed by the
- * United States Marine Band (public domain as a work of the US government),
- * compressed and loudness-matched for the web. Credited on How It Works.
+ * Vltava (The Moldau), from Má vlast by Bedřich Smetana, performed by the
+ * Musopen Symphony Orchestra. The recording is released under CC0 and has
+ * been compressed and loudness-matched for the web. Credited on How It Works.
  */
-const MUSIC = "/reading-river/music/blue-danube.m4a";
+const MUSIC = "/reading-river/music/vltava.m4a?v=2";
 /** The music's volume (0 to 1) at its loudest. */
 const MUSIC_LEVEL = 0.35;
 /** Between one playing and the next: a while of just the river. */
@@ -85,7 +85,7 @@ type MusicPlayer = {
 };
 
 /**
- * The waltz, on a plain audio element whose volume eases toward where it
+ * The music, on a plain audio element whose volume eases toward where it
  * should be. When it has faded right out it pauses, and picks up again where
  * it left off.
  */
@@ -95,7 +95,7 @@ function startMusic(): MusicPlayer {
   player.volume = 0;
   let target = 0;
   /** True while the piece is under way, rather than in the quiet between. */
-  let underWay = false;
+  let underWay = true;
   let waiting: number | null = null;
   let stopped = false;
 
@@ -110,7 +110,9 @@ function startMusic(): MusicPlayer {
     const [low, high] = QUIET_SPELL_MS;
     waiting = window.setTimeout(begin, low + Math.random() * (high - low));
   });
-  waiting = window.setTimeout(begin, 4000);
+  // Unlock the media element inside the first tap/key event. Delaying play
+  // until a timer loses that permission in browsers with strict autoplay rules.
+  void player.play().catch(() => undefined);
 
   const ease = window.setInterval(() => {
     if (stopped) return;

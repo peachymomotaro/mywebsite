@@ -2,7 +2,7 @@
 import { randomUUID } from "node:crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const context = vi.hoisted(() => ({ userId: "", revalidatePath: vi.fn() }));
 let prisma: PrismaClient;
@@ -23,6 +23,8 @@ import { noteDriftOpened } from "@/lib/reading-river/drift-store";
 import { changeEddyArticle } from "@/app/reading-river/actions/eddies";
 import { deleteReadingItem, markAsRead, setReadingStatus, updateReadingItem } from "@/app/reading-river/actions/reading-items";
 import { ingestUrl } from "@/app/reading-river/actions/ingest-url";
+import { GET as openEmailArticle, POST as keepEmailArticle } from "@/app/api/reading-river/digest-click/route";
+import { getDigestArticleUrl } from "@/lib/reading-river/digest-links";
 
 // Opt-in only. Refuse remote/shared databases, even if DATABASE_URL is present.
 const testUrl = process.env.EDDIES_TEST_DATABASE_URL;
@@ -55,6 +57,8 @@ describe.skipIf(!testUrl)("eddies on isolated PostgreSQL", () => {
     prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: testUrl!, max: 25 }) });
   });
   beforeEach(async () => {
+    vi.stubEnv("CRON_SECRET", "eddies-test-digest-secret");
+    vi.stubEnv("READING_RIVER_BASE_URL", "https://river.example");
     context.revalidatePath.mockClear();
     const user = await prisma.user.create({ data: { email: `eddies-${randomUUID()}@example.test`, passwordHash: "test" } });
     context.userId = user.id;
@@ -63,6 +67,7 @@ describe.skipIf(!testUrl)("eddies on isolated PostgreSQL", () => {
     otherUserId = other.id;
     userIds.push(other.id);
   });
+  afterEach(() => vi.unstubAllEnvs());
   afterAll(async () => {
     if (prisma) {
       await prisma.user.deleteMany({ where: { id: { in: userIds } } });
@@ -101,6 +106,48 @@ describe.skipIf(!testUrl)("eddies on isolated PostgreSQL", () => {
     expect(result.drifted?.id).toBe(items[0].id);
     expect(await prisma.readingItem.findUniqueOrThrow({ where: { id: opened.id } })).toMatchObject({ status: "reading" });
     expect((await getEddyArticles(context.userId))[0].id).toBe(opened.id);
+  });
+
+  it("opening an email article without a session persists it in Eddies and respects capacity", async () => {
+    const [oldest] = await fill(5);
+    await prisma.readingItem.update({ where: { id: oldest.id }, data: { eddyAddedAt: new Date("2020-01-01") } });
+    const opened = await article();
+    const url = getDigestArticleUrl(context.userId, opened.id);
+    expect((await openEmailArticle(new Request(url))).status).toBe(200);
+    expect((await getEddyArticles(context.userId)).map((item) => item.id)).not.toContain(opened.id);
+
+    const response = await keepEmailArticle(new Request(url, { method: "POST" }));
+    expect(response.status).toBe(303);
+    expect(response.headers.get("location")).toBe(opened.sourceUrl);
+    expect(response.headers.has("set-cookie")).toBe(false);
+    const saved = await prisma.readingItem.findUniqueOrThrow({ where: { id: opened.id } });
+    expect(saved).toMatchObject({ status: "reading", lastOpenedAt: expect.any(Date), eddyAddedAt: expect.any(Date) });
+    const ids = (await getEddyArticles(context.userId)).map((item) => item.id);
+    expect(ids).toHaveLength(5);
+    expect(ids[0]).toBe(opened.id);
+    expect(ids).not.toContain(oldest.id);
+
+    await keepEmailArticle(new Request(url, { method: "POST", headers: { cookie: "reading-river-session=another-account" } }));
+    const repeated = await prisma.readingItem.findUniqueOrThrow({ where: { id: opened.id } });
+    expect(repeated.eddySlot).toBe(saved.eddySlot);
+    expect(repeated.eddyAddedAt).toEqual(saved.eddyAddedAt);
+    expect(await getEddyArticles(otherUserId)).toHaveLength(0);
+  });
+
+  it("email clicks cannot restore finished articles or act for another owner or inactive user", async () => {
+    const finished = await article();
+    await markAsRead({ id: finished.id });
+    const url = getDigestArticleUrl(context.userId, finished.id);
+    expect((await keepEmailArticle(new Request(url, { method: "POST" }))).status).toBe(303);
+    expect(await getEddyArticles(context.userId)).toHaveLength(0);
+    expect(await prisma.readingItem.findUniqueOrThrow({ where: { id: finished.id } })).toMatchObject({ status: "done", eddySlot: null });
+
+    const wrongOwner = getDigestArticleUrl(otherUserId, finished.id);
+    expect((await keepEmailArticle(new Request(wrongOwner, { method: "POST" }))).status).toBe(404);
+    const unread = await article();
+    await prisma.user.update({ where: { id: context.userId }, data: { status: "deactivated" } });
+    expect((await keepEmailArticle(new Request(getDigestArticleUrl(context.userId, unread.id), { method: "POST" }))).status).toBe(404);
+    expect(await getEddyArticles(context.userId)).toHaveLength(0);
   });
 
   it("makes concurrent repeated adds idempotent even when full", async () => {

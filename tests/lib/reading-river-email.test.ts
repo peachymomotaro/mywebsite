@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { readDigestArticleToken } from "@/lib/reading-river/digest-links";
 import {
   buildReadingRiverDailyDigestEmail,
   buildReadingRiverPasswordResetEmail,
@@ -10,11 +11,30 @@ describe("buildReadingRiverDailyDigestEmail", () => {
   const originalBaseUrl = process.env.READING_RIVER_BASE_URL;
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     if (originalBaseUrl === undefined) {
       delete process.env.READING_RIVER_BASE_URL;
     } else {
       process.env.READING_RIVER_BASE_URL = originalBaseUrl;
     }
+  });
+
+  it("uses the same recipient-scoped article link in HTML and plain text", () => {
+    vi.stubEnv("CRON_SECRET", "test-secret-for-digest-links");
+    process.env.READING_RIVER_BASE_URL = "https://example.com";
+    const message = buildReadingRiverDailyDigestEmail({
+      userId: "reader-1",
+      displayName: "River Reader",
+      items: [{ id: "article-1", title: "Read this", sourceUrl: "https://publisher.example/article" }],
+    });
+    const doc = document.createElement("div");
+    doc.innerHTML = message.html;
+    const article = [...doc.querySelectorAll("a")].find((link) => link.textContent === "Read this")!;
+    const url = new URL(article.href);
+    expect(url.pathname).toBe("/api/reading-river/digest-click");
+    expect(readDigestArticleToken(url.searchParams.get("token"))).toEqual({ userId: "reader-1", itemId: "article-1" });
+    expect(message.text).toContain(article.href);
+    expect(message.html).not.toContain("https://publisher.example/article");
   });
 
   it("renders digest content with Reading River links and fallbacks", () => {
@@ -31,6 +51,12 @@ describe("buildReadingRiverDailyDigestEmail", () => {
     expect(message.html).toContain("/reading-river/items/item-1/edit");
     expect(message.text).toContain("/reading-river/items/item-1/edit");
     expect(message.text).toContain("/reading-river");
+    const preview = document.createElement("div");
+    preview.innerHTML = message.html;
+    const links = [...preview.querySelectorAll("a")];
+    const riverButton = links.find((link) => link.textContent === "Step into the river");
+    expect(riverButton?.getAttribute("href")).toBe("https://example.com/reading-river");
+    expect(links.some((link) => link.textContent === "Reading River")).toBe(false);
   });
 
   it("falls back to the Reading River URL when the source URL is blank", () => {
@@ -45,10 +71,10 @@ describe("buildReadingRiverDailyDigestEmail", () => {
     expect(message.text).toContain("/reading-river/items/item-2/edit");
   });
 
-  it("renders an optional book roulette pick in the daily digest", () => {
+  it("omits book suggestions even if a caller supplies a legacy book pick", () => {
     process.env.READING_RIVER_BASE_URL = "https://example.com";
 
-    const message = buildReadingRiverDailyDigestEmail({
+    const legacyInput = {
       displayName: "River Reader",
       items: [{ id: "item-1", title: "One good article", sourceUrl: null, tags: [] }],
       bookRoulettePick: {
@@ -57,16 +83,19 @@ describe("buildReadingRiverDailyDigestEmail", () => {
         author: "Terry Pratchett",
         notes: "A gentle nudge from the shelf.",
       },
-    });
+    };
+    const message = buildReadingRiverDailyDigestEmail(legacyInput);
 
-    expect(message.html).toContain("Book Roulette");
-    expect(message.html).toContain("Small Gods");
-    expect(message.html).toContain("Terry Pratchett");
-    expect(message.html).toContain("A gentle nudge from the shelf.");
-    expect(message.text).toContain("Book Roulette");
-    expect(message.text).toContain("Small Gods");
-    expect(message.text).toContain("Terry Pratchett");
-    expect(message.text).toContain("A gentle nudge from the shelf.");
+    expect(message.html).not.toContain("Book Roulette");
+    expect(message.html).not.toContain("Small Gods");
+    expect(message.html).not.toContain("Terry Pratchett");
+    expect(message.html).not.toContain("A gentle nudge from the shelf.");
+    expect(message.text).not.toContain("Book Roulette");
+    expect(message.text).not.toContain("Small Gods");
+    expect(message.text).not.toContain("Terry Pratchett");
+    expect(message.text).not.toContain("A gentle nudge from the shelf.");
+    expect(message.html.indexOf("One good article")).toBeLessThan(message.html.indexOf("Step into the river"));
+    expect(message.text.indexOf("One good article")).toBeLessThan(message.text.indexOf("Step into the river"));
   });
 
   it("lays a link to the day's article over the painted still", () => {
@@ -82,7 +111,7 @@ describe("buildReadingRiverDailyDigestEmail", () => {
     expect(message.html).toMatch(/<v:fill type="frame" src="https:\/\/example\.com\/email\/reading-river\/[a-z]+\.jpg"/);
     expect(message.html).toMatch(/<a href="https:\/\/example\.com\/a"[^>]*>.*One good article.*Orion · 8 min.*<\/a>/);
     expect(message.text).toContain("One good article");
-    expect(message.text).toContain("Walk down to the river: https://example.com/reading-river");
+    expect(message.text).toContain("Step into the river: https://example.com/reading-river");
   });
 
   it("cuts a long title at a word so the picture still shows", () => {

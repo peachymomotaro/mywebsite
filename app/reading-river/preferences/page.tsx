@@ -2,6 +2,15 @@ import { updatePreferencesAction } from "./actions";
 import { requireCurrentUser } from "@/lib/reading-river/current-user";
 import { getOrCreateAppSettings } from "@/lib/reading-river/settings";
 
+const cadenceOptions = [
+  { value: "off", label: "Off" },
+  { value: "daily", label: "Daily" },
+  { value: "every_other_day", label: "Every other day" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "seasonal", label: "Seasonal (every three months)" },
+] as const;
+
 type PreferencesPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
@@ -15,6 +24,7 @@ function getSearchParamValue(
   return typeof value === "string" ? value : null;
 }
 
+/** Laid out like How It Works: each setting is a section with its name in the margin. */
 export default async function PreferencesPage({ searchParams }: PreferencesPageProps) {
   const currentUser = await requireCurrentUser();
   const settings = await getOrCreateAppSettings(currentUser.id);
@@ -22,72 +32,58 @@ export default async function PreferencesPage({ searchParams }: PreferencesPageP
   const saved = getSearchParamValue(resolvedSearchParams, "saved") === "1";
 
   return (
-    <main className="river-page">
-      <section className="editorial-page-masthead">
-        <div className="editorial-page-masthead-copy">
-          <h1 className="editorial-page-title">Preferences</h1>
-          <p className="editorial-page-intro">
-            Choose how often Reading River should send your reminder email.
-          </p>
-        </div>
-      </section>
-
-      <section className="editorial-panel river-preferences-panel">
-        <form action={updatePreferencesAction} className="editorial-form river-preferences-form">
-          <label className="river-preferences-choice">
-            <span className="river-preferences-choice-copy">Email cadence</span>
-            <select
-              className="intake-input"
-              defaultValue={settings.digestCadence}
-              name="digestCadence"
-            >
-              <option value="off">Off</option>
-              <option value="daily">Daily</option>
-              <option value="every_other_day">Every other day</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="seasonal">Seasonal (every three months)</option>
-            </select>
-          </label>
-          <p className="river-preferences-description">
-            Reading River emails you with your picks for that day around 08:00 London time.
-          </p>
-          <label className="river-preferences-choice">
-            <span className="river-preferences-choice-copy">Priority rotation</span>
-            <input
-              className="intake-input"
-              defaultValue={settings.priorityRandomPoolSize}
-              max={20}
-              min={1}
-              name="priorityRandomPoolSize"
-              type="number"
-            />
-          </label>
-          <p className="river-preferences-description">
-            Choose how many of your highest priority reads the daily recommendation will rotate between.
-            It's recommended to set this to at least three - focused on your priority picks, but it won't just show you the same thing day after day.
-          </p>
-          <label className="river-preferences-checkbox-row">
-            <input
-              className="river-preferences-checkbox"
-              defaultChecked={settings.includeBookRouletteInDigest}
-              name="includeBookRouletteInDigest"
-              type="checkbox"
-            />
-            <span>Include Book Roulette in reminder emails</span>
-          </label>
-          <div className="intake-submit-row river-preferences-submit-row">
-            <button type="submit" className="intake-submit-button">
-              Save preferences
-            </button>
-          </div>
-          {saved ? (
-            <p className="river-preferences-feedback" role="status">
-              Preferences saved.
+    <main className="editorial-page river-how-page">
+      <div className="editorial-page-surface">
+        <header className="editorial-page-masthead">
+          <div className="editorial-page-masthead-copy">
+            <h1 className="editorial-page-title">Preferences</h1>
+            <p className="editorial-page-intro">
+              Choose how often Reading River should send your reminder email.
             </p>
-          ) : null}
-        </form>
-      </section>
+          </div>
+        </header>
+
+        <div className="editorial-page-content river-how-page-content">
+          <section className="river-how-section" aria-labelledby="river-preferences-email">
+            <h2 id="river-preferences-email">Reminder email</h2>
+            <div className="river-how-copy">
+              <form action={updatePreferencesAction} className="river-preferences-form">
+                {/* A plain list of choices in the site's type, rather than the system's dropdown. */}
+                <fieldset className="river-preferences-choice">
+                  <legend className="river-preferences-choice-copy">Email cadence</legend>
+                  <div className="river-preferences-options">
+                    {cadenceOptions.map((option) => (
+                      <label key={option.value} className="river-preferences-option">
+                        <input
+                          type="radio"
+                          name="digestCadence"
+                          value={option.value}
+                          defaultChecked={settings.digestCadence === option.value}
+                          className="river-preferences-radio"
+                        />
+                        <span>{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+                <p className="river-preferences-description">
+                  Reading River emails you with your picks for that day around 08:00 London time.
+                </p>
+                <div className="river-preferences-submit-row">
+                  <button type="submit" className="intake-submit-button">
+                    Save preferences
+                  </button>
+                  {saved ? (
+                    <p className="river-preferences-feedback" role="status">
+                      Preferences saved.
+                    </p>
+                  ) : null}
+                </div>
+              </form>
+            </div>
+          </section>
+        </div>
+      </div>
     </main>
   );
 }

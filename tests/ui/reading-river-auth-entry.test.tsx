@@ -41,6 +41,7 @@ describe("Reading River auth entry pages", () => {
     expect(screen.getByLabelText("Password")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
     expect(screen.getByText("Forgot password?")).toBeInTheDocument();
+    expect(container.querySelector(".auth-eyebrow")).toBeNull();
     expect(container.querySelector('[data-slot="auth-shell"]')).toBeInTheDocument();
   });
 

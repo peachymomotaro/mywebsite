@@ -38,24 +38,16 @@ describe("Reading River theme stylesheet", () => {
     expect(stylesheet).toContain(".auth-page {\n  min-height: 100vh;\n  padding: 4rem 1.5rem;\n  background: transparent;");
   });
 
-  it("keeps the preferences panel compact but left aligned", () => {
+  it("lays preferences out like How It Works, with plain controls and no boxed panel", () => {
     const stylesheet = readFileSync(
       path.resolve(process.cwd(), "app/reading-river/reading-river.css"),
       "utf8",
     );
 
-    expect(stylesheet).toContain(".river-preferences-panel {");
-    expect(stylesheet).toContain("justify-self: start;");
-    expect(stylesheet).toContain("width: min(100%, 45rem);");
-    expect(stylesheet).toContain(".river-preferences-choice {");
-    expect(stylesheet).toContain("justify-content: flex-start;");
-    expect(stylesheet).toContain("text-align: left;");
-    expect(stylesheet).toContain("width: min(100%, 39rem);");
-    expect(stylesheet).toContain(".river-preferences-description {");
-    expect(stylesheet).toContain("white-space: normal;");
-    expect(stylesheet).toContain("width: min(100%, 39rem);");
-    expect(stylesheet).toContain(".intake-submit-row.river-preferences-submit-row {");
-    expect(stylesheet).toContain("justify-content: flex-start;");
+    expect(stylesheet).not.toContain(".river-preferences-panel {");
+    expect(stylesheet).toContain(".river-preferences-form {");
+    expect(stylesheet).toContain(".river-preferences-choice { display: grid;");
+    expect(stylesheet).toContain(".river-page-margin-note {");
   });
 
   it("pins spotlight card actions and clamps long spotlight titles", () => {

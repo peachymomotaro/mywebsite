@@ -29,7 +29,7 @@ export function AuthShell({
         >
           <div className="auth-shell-body">
             <div className="auth-shell-copy">
-              <p className="auth-eyebrow">{eyebrow}</p>
+              {eyebrow ? <p className="auth-eyebrow">{eyebrow}</p> : null}
               <h1 className="auth-title">{title}</h1>
               {description}
             </div>

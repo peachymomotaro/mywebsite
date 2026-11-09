@@ -29,7 +29,6 @@ describe("Projects page", () => {
   it("uses editorial project notes instead of uppercase eyebrow labels", () => {
     const { container } = render(<Projects />);
 
-    expect(screen.getByText("Contents")).toHaveClass("project-contents-label");
     expect(screen.getByText("Machine learning capstone")).toHaveClass(
       "project-kicker"
     );
@@ -37,33 +36,18 @@ describe("Projects page", () => {
     expect(container.querySelector(".partner-label")).toBeNull();
   });
 
-  it("links to the remaining projects and omits Scenario Builder", () => {
+  it("shows the remaining projects without a contents box and omits Scenario Builder", () => {
     render(<Projects />);
 
-    const projectsHeading = screen.getByRole("heading", { name: "Projects" });
-    const contentsNav = screen.getByRole("navigation", {
-      name: "Project contents",
-    });
     const bayesianProject = document.getElementById(
       "exploring-bayesian-optimisers"
     );
 
     expect(
-      projectsHeading.compareDocumentPosition(contentsNav) &
-        Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy();
-    expect(
-      contentsNav.compareDocumentPosition(bayesianProject as HTMLElement) &
-        Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy();
-    expect(
-      screen.getByRole("link", { name: "Exploring Bayesian Optimisers" })
-    ).toHaveAttribute("href", "#exploring-bayesian-optimisers");
-    expect(screen.getByRole("link", { name: "Reading River" })).toHaveAttribute(
-      "href",
-      "#reading-river"
-    );
+      screen.queryByRole("navigation", { name: "Project contents" })
+    ).toBeNull();
     expect(bayesianProject).not.toBeNull();
+    expect(document.getElementById("reading-river")).not.toBeNull();
     expect(document.getElementById("capstone-bo")).not.toBeNull();
     expect(document.getElementById("scenario-builder")).toBeNull();
     expect(screen.queryByRole("heading", { name: "Scenario Builder" })).toBeNull();

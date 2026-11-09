@@ -61,7 +61,9 @@ export function QuickAdd() {
     <div ref={wrapRef} className="glade-add" data-open={open ? "" : undefined}>
       <button ref={buttonRef} type="button" className="glade-add-toggle" aria-expanded={open}
         aria-controls={`${id}-panel`} title="Add to stream" onClick={() => setOpen((current) => !current)}>
-        <span aria-hidden="true">+</span>
+        <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true">
+          <path d="M10 4v12M4 10h12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
         <span className="river-sr-only">Add to stream</span>
       </button>
       <div id={`${id}-panel`} className="glade-add-panel" hidden={!open}>

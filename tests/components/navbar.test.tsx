@@ -24,20 +24,29 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/blog",
+}));
+
 vi.mock("@/components/ThemeToggle", () => ({
   default: () => <button type="button">Theme</button>,
 }));
 
 describe("NavBar", () => {
-  it("links to Reading River from the main site navigation", () => {
+  it("links to the main sections and marks the current page", () => {
     render(<NavBar />);
 
-    const readingRiverLink = screen.getByRole("link", { name: "Reading River" });
-
-    expect(readingRiverLink).toHaveAttribute(
-      "href",
-      "/reading-river"
-    );
+    expect(screen.getByRole("link", { name: "Peter Curry" })).toHaveAttribute("href", "/");
+    for (const [name, href] of [
+      ["Blog", "/blog"],
+      ["Projects", "/projects"],
+      ["Podcasts", "/podcasts"],
+      ["Contact", "/contact"],
+    ]) {
+      expect(screen.getByRole("link", { name })).toHaveAttribute("href", href);
+    }
+    expect(screen.getByRole("link", { name: "Blog" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Projects" })).not.toHaveAttribute("aria-current");
     expect(globalStyles).toMatch(
       /\.nav-links a\s*\{[^}]*white-space:\s*nowrap;/s
     );

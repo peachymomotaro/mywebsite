@@ -214,6 +214,7 @@ describe("reading river daily digest route", () => {
     const response = await GET(authorizedRequest());
 
     expect(routeMocks.sendReadingRiverDailyDigestEmail).toHaveBeenCalledTimes(1);
+    expect(routeMocks.sendReadingRiverDailyDigestEmail).toHaveBeenCalledWith(expect.objectContaining({ userId: "user-1" }));
     expect(context.updateMany).toHaveBeenCalledWith({
       where: expect.objectContaining({ userId: "user-1" }),
       data: { lastDigestSentAt: expect.any(Date) },
@@ -226,7 +227,7 @@ describe("reading river daily digest route", () => {
     });
   });
 
-  it("includes the book roulette pick only when the reader opts in", async () => {
+  it("skips book-only reminders even when the legacy book preference is enabled", async () => {
     vi.setSystemTime(new Date("2026-06-01T07:15:00Z"));
 
     const context = createAppSettingsPrismaMock([
@@ -246,27 +247,28 @@ describe("reading river daily digest route", () => {
 
     const response = await GET(authorizedRequest());
 
-    expect(routeMocks.getDailyDigestBookRoulettePick).toHaveBeenCalledWith({
-      userId: "user-1",
-      now: expect.any(Date),
-    });
-    expect(routeMocks.sendReadingRiverDailyDigestEmail).toHaveBeenCalledWith(
-      expect.objectContaining({
-        items: [],
-        bookRoulettePick: {
-          id: "book-1",
-          title: "Small Gods",
-          author: "Terry Pratchett",
-          notes: "A gentle nudge from the shelf.",
-        },
-      }),
-    );
+    expect(routeMocks.getDailyDigestBookRoulettePick).not.toHaveBeenCalled();
+    expect(routeMocks.sendReadingRiverDailyDigestEmail).not.toHaveBeenCalled();
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
-      sent: 1,
-      skipped: 0,
+      sent: 0,
+      skipped: 1,
       failed: 0,
     });
+  });
+
+  it("sends just the article when the legacy book preference is enabled", async () => {
+    vi.setSystemTime(new Date("2026-06-01T07:15:00Z"));
+    const context = createAppSettingsPrismaMock([createSettings({ includeBookRouletteInDigest: true })]);
+    routeMocks.setPrismaMock(context.prismaMock);
+    const items = [{ id: "article-1", title: "Today's article", sourceUrl: "https://example.com/article" }];
+    routeMocks.getDailyDigestItems.mockResolvedValue(items);
+    const response = await GET(authorizedRequest());
+    expect(routeMocks.getDailyDigestBookRoulettePick).not.toHaveBeenCalled();
+    expect(routeMocks.sendReadingRiverDailyDigestEmail).toHaveBeenCalledWith({
+      userId: "user-1", email: "reader@example.com", displayName: "River Reader", items,
+    });
+    expect(await response.json()).toMatchObject({ sent: 1, skipped: 0, failed: 0 });
   });
 
   it("skips a stale overlapping invocation after another run claims the user", async () => {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { gladeFontVariables } from "@/components/reading-river/glade-fonts";
 import { ShellNav } from "@/components/reading-river/shell-nav";
 import { getCurrentUser } from "@/lib/reading-river/current-user";
 import { readingRiverPath } from "@/lib/reading-river/routes";
@@ -16,8 +17,12 @@ export const metadata: Metadata = {
   description: "Pick your next read from the stream.",
   applicationName: "Reading River",
   icons: {
-    icon: "/reading-river-icon.png",
-    apple: "/reading-river-icon.png",
+    icon: [
+      { url: "/reading-river-icon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/reading-river-icon-48.png", sizes: "48x48", type: "image/png" },
+      { url: "/reading-river-icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: { url: "/reading-river-apple-icon.png", sizes: "180x180", type: "image/png" },
   },
 };
 
@@ -31,7 +36,7 @@ export function EditorialShell({
   isAdmin?: boolean;
 }) {
   return (
-    <div className="editorial-shell editorial-shell-frame">
+    <div className={`editorial-shell editorial-shell-frame ${gladeFontVariables}`}>
       <header className="river-shell-header">
         <Link href={readingRiverPath()} className="river-shell-brand">
           <Image
@@ -40,7 +45,7 @@ export function EditorialShell({
             className="river-shell-brand-mark"
             height={40}
             priority
-            src="/reading-river-icon.png"
+            src="/reading-river-boat-logo.png"
             width={40}
           />
           <span className="river-shell-brand-copy">Reading River</span>

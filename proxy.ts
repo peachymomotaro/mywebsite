@@ -13,6 +13,7 @@ function isPublicReadingRiverPath(pathname: string) {
   const extensionApiPath = readingRiverPath("/api/extension");
 
   return (
+    pathname.startsWith(readingRiverPath("/music/")) ||
     pathname === extensionApiPath ||
     pathname.startsWith(`${extensionApiPath}/`) ||
     pathname === readingRiverPath("/beta") ||

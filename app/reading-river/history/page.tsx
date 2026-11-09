@@ -4,11 +4,28 @@ import { measureReadingRiverTiming } from "@/lib/reading-river/timing";
 
 export const dynamic = "force-dynamic";
 
-const readDateFormatter = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "long",
-  timeZone: "UTC",
-});
+const monthFormatter = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
+const dayFormatter = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", timeZone: "UTC" });
 
+type HistoryEntry = {
+  id: string;
+  readAt: Date;
+  readingItem: { id: string; title: string; sourceUrl: string | null; siteName: string | null };
+};
+
+/** Reads arrive newest first, so months come out newest first too. */
+function groupByMonth(entries: HistoryEntry[]) {
+  const months: { label: string; key: string; entries: HistoryEntry[] }[] = [];
+  for (const entry of entries) {
+    const key = `${entry.readAt.getUTCFullYear()}-${entry.readAt.getUTCMonth()}`;
+    const current = months.at(-1);
+    if (current?.key === key) current.entries.push(entry);
+    else months.push({ key, label: monthFormatter.format(entry.readAt), entries: [entry] });
+  }
+  return months;
+}
+
+/** Laid out like How It Works: each month in the margin, what you finished beside it. */
 export default async function HistoryPage() {
   return measureReadingRiverTiming("page.reading-river-history.render", async () => {
     const prisma = getPrismaClient();
@@ -31,40 +48,56 @@ export default async function HistoryPage() {
         },
       },
     });
+    const months = groupByMonth(readEvents);
+    const count = readEvents.length;
 
     return (
-      <main className="river-history-page">
-        <section className="river-history-head">
-          <h1 className="river-history-title">Read history</h1>
-          <p className="river-history-intro">
-            The pieces you finished live here, ordered by the day you marked them as read.
-          </p>
-        </section>
+      <main className="editorial-page river-how-page">
+        <div className="editorial-page-surface">
+          <header className="editorial-page-masthead">
+            <div className="editorial-page-masthead-copy">
+              <h1 className="editorial-page-title">Read history</h1>
+              <p className="editorial-page-intro">
+                {count > 0
+                  ? `You have finished ${count === 1 ? "one piece" : `${count} pieces`}. Each one also has a golden tree by the river.`
+                  : "The pieces you finish will gather here, each with a golden tree by the river."}
+              </p>
+            </div>
+          </header>
 
-        {readEvents.length > 0 ? (
-          <ul className="river-history-list">
-            {readEvents.map((readEvent) => (
-              <li key={readEvent.id} className="river-history-item">
-                <div className="river-history-item-head">
-                  {readEvent.readingItem.sourceUrl ? (
-                    <a href={readEvent.readingItem.sourceUrl} target="_blank" rel="noopener noreferrer" className="river-history-link">
-                      {readEvent.readingItem.title}
-                    </a>
-                  ) : (
-                    <h2 className="river-history-item-title">{readEvent.readingItem.title}</h2>
-                  )}
+          <div className="editorial-page-content river-how-page-content">
+            {months.length > 0 ? months.map((month) => (
+              <section key={month.key} className="river-how-section" aria-labelledby={`river-history-${month.key}`}>
+                <h2 id={`river-history-${month.key}`}>{month.label}</h2>
+                <ul className="river-history-list">
+                  {month.entries.map((readEvent) => (
+                    <li key={readEvent.id} className="river-history-item">
+                      <h3 className="river-history-item-title">
+                        {readEvent.readingItem.sourceUrl ? (
+                          <a href={readEvent.readingItem.sourceUrl} target="_blank" rel="noopener noreferrer"
+                            className="river-history-link">
+                            {readEvent.readingItem.title}
+                          </a>
+                        ) : readEvent.readingItem.title}
+                      </h3>
+                      <p className="river-history-meta">
+                        {readEvent.readingItem.siteName ? `${readEvent.readingItem.siteName}, ` : ""}
+                        finished <time dateTime={readEvent.readAt.toISOString()}>{dayFormatter.format(readEvent.readAt)}</time>
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )) : (
+              <section className="river-how-section" aria-labelledby="river-history-empty">
+                <h2 id="river-history-empty">Nothing yet</h2>
+                <div className="river-how-copy">
+                  <p>When you finish a piece in the eddies, it appears here.</p>
                 </div>
-                <p className="river-history-meta">
-                  {readEvent.readingItem.siteName ? <span>{readEvent.readingItem.siteName}</span> : null}
-                  {readEvent.readingItem.siteName ? <span aria-hidden="true"> • </span> : null}
-                  <span>{readDateFormatter.format(readEvent.readAt)}</span>
-                </p>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="river-spotlight-empty">Nothing marked as read yet.</p>
-        )}
+              </section>
+            )}
+          </div>
+        </div>
       </main>
     );
   });

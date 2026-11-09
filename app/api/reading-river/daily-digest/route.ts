@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import {
-  getDailyDigestBookRoulettePick,
   getDailyDigestItems,
   isDigestCadenceDue,
   isLondonDailyDigestHour,
@@ -118,14 +117,7 @@ export async function GET(request: Request) {
         userId: setting.userId,
         now,
       });
-      const bookRoulettePick = setting.includeBookRouletteInDigest
-        ? await getDailyDigestBookRoulettePick({
-            userId: setting.userId,
-            now,
-          })
-        : null;
-
-      if (items.length === 0 && !bookRoulettePick) {
+      if (items.length === 0) {
         skipped += 1;
         continue;
       }
@@ -152,10 +144,10 @@ export async function GET(request: Request) {
       claimed = true;
 
       await sendReadingRiverDailyDigestEmail({
+        userId: setting.userId,
         email: setting.user.email,
         displayName: setting.user.displayName ?? setting.user.email,
         items,
-        bookRoulettePick,
       });
 
       sent += 1;

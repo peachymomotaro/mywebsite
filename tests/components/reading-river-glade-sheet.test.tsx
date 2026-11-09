@@ -63,4 +63,36 @@ describe("GladeSheet reading flow", () => {
       sourceUrl: "https://example.com/recovered",
     }));
   });
+
+  it("keeps the title and time as plain text until Edit is pressed", () => {
+    setup("river");
+    expect(screen.queryByRole("button", { name: /Change the title/ })).not.toBeInTheDocument();
+    expect(screen.getByText("20 min")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+    fireEvent.click(screen.getByRole("button", { name: "A paper to read. Change the title" }));
+    expect(screen.getByRole("textbox", { name: "Title" })).toHaveValue("A paper to read");
+
+    fireEvent.click(screen.getByRole("button", { name: "Done editing" }));
+    expect(screen.queryByRole("textbox", { name: "Title" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Change the title/ })).not.toBeInTheDocument();
+  });
+
+  it("asks before letting a piece float away", () => {
+    const handlers = setup("river");
+    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+    expect(handlers.onRemove).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Let it float away" }));
+    expect(handlers.onRemove).toHaveBeenCalledWith(linkedItem);
+  });
+
+  it("offers only Done editing while editing in the eddies, never Finished", () => {
+    const handlers = setup("eddies");
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+    expect(screen.queryByRole("button", { name: "Finished" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Remove" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Done editing" }));
+    expect(screen.getByRole("button", { name: "Finished" })).toBeInTheDocument();
+    expect(handlers.onFinish).not.toHaveBeenCalled();
+  });
 });

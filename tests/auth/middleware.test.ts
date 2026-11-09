@@ -38,6 +38,15 @@ describe("reading river middleware", () => {
     expect(getCurrentUserFromSessionToken).not.toHaveBeenCalled();
   });
 
+  it("serves the public soundtrack without redirecting media requests to HTML", async () => {
+    for (const file of ["vltava.m4a", "river.wav"]) {
+      const response = await proxy(new NextRequest(`https://example.com/reading-river/music/${file}`));
+      expect(getRedirectLocation(response)).toBeNull();
+    }
+    const protectedPage = await proxy(new NextRequest("https://example.com/reading-river/preferences"));
+    expect(getRedirectLocation(protectedPage)).toBe("https://example.com/reading-river/login");
+  });
+
   it("allows anonymous users to open password reset links", async () => {
     const response = await proxy(
       new NextRequest("https://example.com/reading-river/reset-password/reset-token"),

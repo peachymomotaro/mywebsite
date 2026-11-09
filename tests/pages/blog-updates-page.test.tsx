@@ -92,12 +92,13 @@ describe("Blog updates page", () => {
 
     const quotations = within(entry).getAllByRole("blockquote");
 
-    expect(quotations).toHaveLength(2);
+    // One quotation from Nagel's review, its two passages joined by an ellipsis.
+    expect(quotations).toHaveLength(1);
     expect(quotations[0]).toHaveTextContent(
       "Nozick defends the procedure in a section entitled"
     );
-    expect(quotations[1]).toHaveTextContent(
-      "Sometimes it is proper to force people to do something"
+    expect(quotations[0]).toHaveTextContent(
+      "Nozick's intuition is that each person is entitled to his talents and abilities"
     );
     expect(entry).not.toHaveTextContent("&#x20;");
     expect(entry).not.toHaveTextContent("> Nozick");
