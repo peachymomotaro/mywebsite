@@ -90,7 +90,7 @@ export function reportTemplate(taskId: string, pipeline: PromptPipeline, idempot
       idempotencyKey,
       pipeline: pipeline.slug,
       pipelineVersion: pipeline.version,
-      agentName: "ChatGPT",
+      agentName: "Agent",
       outcome: "completed | partial | blocked | failed",
       attempted: "What you set out to do, in one or two sentences.",
       accomplished: "What you actually achieved. Lead with the result.",
@@ -107,18 +107,11 @@ export function reportTemplate(taskId: string, pipeline: PromptPipeline, idempot
   };
 }
 
-/** Builds a complete, self-contained ChatGPT prompt for one pipeline on one task. */
-export function buildPipelinePrompt(options: PromptOptions) {
-  const { context, pipeline, playbook, idempotencyKey, apiBaseUrl, includePipelineReview } = options;
+/** Task context shared by standalone status and workflow prompts. */
+function taskSections(context: PromptContext, forExecution: boolean) {
   const { task } = context;
   const workspace = WORKSPACES[task.workspace];
-
   const sections: string[] = [];
-
-  sections.push(
-    `# POps task: ${task.title}`,
-    `You are doing one piece of work on a task from POps, Peter Curry's personal task system. Do the work described under "Pipeline", within the permission boundaries, then write your findings back as described at the end. Everything you need about the task is below; do not ask Peter to re-explain it.`,
-  );
 
   const taskLines = [
     `Task id: \`${task.id}\``,
@@ -149,7 +142,7 @@ export function buildPipelinePrompt(options: PromptOptions) {
   if (decided.length || open.length) {
     const lines = [
       ...decided.map((d) => `Decided — ${d.question}: ${[d.chosenOption, d.response].filter(Boolean).join(". ")}`),
-      ...open.map((d) => `Still open — ${d.question} (do not assume an answer)`),
+      ...open.map((d) => `Still open — ${d.question} (${forExecution ? "do not assume an answer" : "unresolved"})`),
     ];
     sections.push(`## Decisions\n${bullet(lines)}`);
   }
@@ -161,6 +154,33 @@ export function buildPipelinePrompt(options: PromptOptions) {
       )}`,
     );
   }
+
+  return sections;
+}
+
+/** A factual, portable task status without instructions to execute a workflow. */
+export function buildTaskBrief(context: PromptContext, apiBaseUrl: string) {
+  return [
+    `# POps task status: ${context.task.title}`,
+    `This records the task's current context; no workflow is attached. Task record: ${apiBaseUrl}/pops/tasks/${context.task.id}`,
+    ...taskSections(context, false),
+  ].join("\n\n") + "\n";
+}
+
+/** Builds a complete, self-contained agent prompt for one pipeline on one task. */
+export function buildPipelinePrompt(options: PromptOptions) {
+  const { context, pipeline, playbook, idempotencyKey, apiBaseUrl, includePipelineReview } = options;
+  const { task } = context;
+  const workspace = WORKSPACES[task.workspace];
+
+  const sections: string[] = [];
+
+  sections.push(
+    `# POps task: ${task.title}`,
+    `You are doing one piece of work on a task from POps, Peter Curry's personal task system. Do the work described under "Pipeline", within the permission boundaries, then write your findings back as described at the end. Everything you need about the task is below; do not ask Peter to re-explain it.`,
+  );
+
+  sections.push(...taskSections(context, true));
 
   sections.push(
     `## Pipeline: ${pipeline.name} (\`${pipeline.slug}\` v${pipeline.version})\n${pipeline.instructions.trim()}\n\n**Expected evidence:** ${pipeline.expectedEvidence.trim()}`,

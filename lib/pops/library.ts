@@ -12,9 +12,22 @@ export async function ensurePopsDefaults() {
   const db = getPopsDb();
   const [pipelineCount, playbookCount] = await Promise.all([db.popsPipeline.count(), db.popsPlaybookVersion.count()]);
 
-  if (pipelineCount === 0) {
-    for (const template of DEFAULT_PIPELINES) {
-      await db.popsPipeline.upsert({
+  // Explicit additive defaults reach existing installations without overwriting
+  // versions the owner has edited or templates they have archived.
+  const additions = ["work-implement-change", "work-review-implementation"];
+  const templates = pipelineCount === 0
+    ? DEFAULT_PIPELINES
+    : DEFAULT_PIPELINES.filter((pipeline) => additions.includes(pipeline.slug));
+  const existing = pipelineCount === 0
+    ? new Set<string>()
+    : new Set((await db.popsPipeline.findMany({
+      where: { slug: { in: additions } },
+      select: { slug: true },
+    })).map((pipeline) => pipeline.slug));
+
+  for (const template of templates) {
+    if (existing.has(template.slug)) continue;
+    await db.popsPipeline.upsert({
         where: { slug: template.slug },
         update: {},
         create: {
@@ -33,8 +46,7 @@ export async function ensurePopsDefaults() {
             },
           },
         },
-      });
-    }
+    });
   }
 
   if (playbookCount === 0) {

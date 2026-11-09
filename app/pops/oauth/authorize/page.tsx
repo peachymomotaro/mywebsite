@@ -32,7 +32,7 @@ export default async function AuthorizePage({ searchParams }: { searchParams: Pr
     <main className="pops-login">
       <h1>Connect to POps</h1>
       <p><strong>{request.client.name}</strong> is requesting access to your tasks.</p>
-      <p className="pops-muted">Approve only if you just started this connection in ChatGPT or Claude. The client supplies its own name.</p>
+      <p className="pops-muted">Approve only if you just started this connection in your agent. The client supplies its own name.</p>
       <p>Return address: <code style={{ overflowWrap: "anywhere" }}>{request.redirectUri}</code></p>
       <ul>{request.scopes.map((scope) => <li key={scope}>{PERMISSIONS[scope]}</li>)}</ul>
       <p className="pops-muted">You control task completion and approve playbook changes. You can revoke this connection at any time from Connect.</p>

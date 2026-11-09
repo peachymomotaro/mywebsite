@@ -9,7 +9,7 @@ export function NewCredential({ scopes }: { scopes: readonly string[] }) {
   return (
     <form action={action} aria-label="New agent credential">
       <div className="pops-inline">
-        <input name="name" placeholder="Name, e.g. ChatGPT connector" required maxLength={80} aria-label="Credential name" />
+        <input name="name" placeholder="Name, e.g. Agent connector" required maxLength={80} aria-label="Credential name" />
         <button type="submit" disabled={pending}>Create credential</button>
       </div>
       <details className="pops-more">

@@ -149,9 +149,9 @@ export function buildOpenApiDocument() {
       },
       "/tasks/{taskId}/prompt": {
         get: {
-          operationId: "getPipelinePrompt",
-          summary: "Full prompt for running a pipeline on a task",
-          parameters: [...taskIdParam, { name: "pipeline", in: "query", required: true, schema: str }],
+          operationId: "getTaskPrompt",
+          summary: "Status-only task brief or complete handoff with a reusable workflow",
+          parameters: [...taskIdParam, { name: "pipeline", in: "query", required: false, schema: str }],
           responses: ok,
         },
       },

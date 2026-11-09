@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [{ source: "/escape-from-max", destination: "/max-danger", permanent: true }];
+  },
   async headers() {
     return [{
       source: "/pops/oauth/:path*",
@@ -9,6 +12,9 @@ const nextConfig: NextConfig = {
         { key: "X-Frame-Options", value: "DENY" },
         { key: "Referrer-Policy", value: "no-referrer" },
       ],
+    }, {
+      source: "/max-danger",
+      headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
     }];
   },
   turbopack: {

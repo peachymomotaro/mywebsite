@@ -53,7 +53,7 @@ describe("AddPage", () => {
   });
 
   it("shows the updated add-page copy and only one selected form at a time", async () => {
-    const page = await AddPage();
+    const page = await AddPage({});
 
     render(page);
 
@@ -222,7 +222,7 @@ describe("AddPage", () => {
   });
 
   it("suggests remembered tags in both add-item flows", async () => {
-    const page = await AddPage();
+    const page = await AddPage({});
 
     render(page);
 
