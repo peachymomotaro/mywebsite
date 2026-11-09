@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
+import { createHash } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -12,6 +13,7 @@ let prisma: PrismaClient;
 
 const cookieJar = vi.hoisted(() => ({ value: undefined as string | undefined }));
 vi.mock("@/lib/pops/db", () => ({ getPopsDb: () => prisma }));
+vi.mock("@/lib/reading-river/rate-limit", () => ({ consumeRateLimit: async () => ({ allowed: true }) }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/headers", () => ({
   cookies: async () => ({
@@ -30,7 +32,13 @@ vi.mock("next/navigation", () => ({
   },
 }));
 
-import { createAgentCredential, revokeAgentCredential } from "@/lib/pops/agent-auth";
+import { authenticateAgent, createAgentCredential, revokeAgentCredential } from "@/lib/pops/agent-auth";
+import { authorizeOAuthClient, exchangeOAuthToken, oauthResource, registerOAuthClient, validateAuthorizationRequest } from "@/lib/pops/oauth";
+import { consentAction } from "@/app/pops/oauth/authorize/actions";
+import * as oauthTokenRoute from "@/app/api/pops/oauth/token/route";
+import * as oauthRegisterRoute from "@/app/api/pops/oauth/register/route";
+import * as oauthRevokeRoute from "@/app/api/pops/oauth/revoke/route";
+import * as oauthMetadataRoute from "@/app/.well-known/oauth-protected-resource/api/pops/mcp/route";
 import { createPopsSession, revokePopsSession, validatePopsSession } from "@/lib/pops/auth";
 import { loadPromptContext, loadPromptPipeline } from "@/lib/pops/context";
 import {
@@ -66,6 +74,10 @@ import * as mcpRoute from "@/app/api/pops/mcp/route";
 
 const DAY = 24 * 60 * 60 * 1000;
 const POPS_TABLES = [
+  "PopsOAuthClient",
+  "PopsOAuthCode",
+  "PopsOAuthGrant",
+  "PopsOAuthToken",
   "PopsSession",
   "PopsAgentCredential",
   "PopsTaskLink",
@@ -465,6 +477,194 @@ describe.skipIf(!testUrl)("POps on isolated PostgreSQL", () => {
       await expect(
         savePlaybookVersion({ content: "stale edit", changeNote: "", baseVersion: before.version }),
       ).rejects.toThrow(/changed while you were editing/);
+    });
+  });
+
+  describe("OAuth chat connections", () => {
+    const authenticateMcp = (token: string, now = new Date()) => authenticateAgent(token, now, oauthResource());
+    const verifier = "v".repeat(64);
+    const callbackUri = "https://claude.ai/api/mcp/auth_callback";
+    async function authorization(scope?: string) {
+      const client = await registerOAuthClient({ client_name: "Claude", redirect_uris: [callbackUri] });
+      const request = new URLSearchParams({ client_id: client.client_id, redirect_uri: callbackUri, response_type: "code", resource: oauthResource(), state: "opaque+/state", code_challenge_method: "S256", code_challenge: createHash("sha256").update(verifier).digest("base64url") });
+      if (scope) request.set("scope", scope);
+      const callback = new URL(await authorizeOAuthClient(request, true));
+      const exchange = new URLSearchParams({ client_id: client.client_id, redirect_uri: callbackUri, resource: oauthResource(), code: callback.searchParams.get("code")!, code_verifier: verifier, grant_type: "authorization_code" });
+      return { client, request, callback, exchange };
+    }
+    function formRequest(path: string, body: URLSearchParams) {
+      return new Request(`https://petercurry.org${path}`, { method: "POST", body });
+    }
+    const rpc = (auth: string | null, name: string, args: unknown = {}) => mcpRoute.POST(api("/api/pops/mcp", { auth, body: { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: args } } }));
+
+    it("discovers the protected resource from both GET and POST challenges", async () => {
+      for (const response of [await mcpRoute.GET(api("/api/pops/mcp", { auth: null })), await rpc(null, "pops_list_tasks")]) {
+        expect(response.status).toBe(401);
+        expect(response.headers.get("www-authenticate")).toContain('resource_metadata="https://petercurry.org/.well-known/oauth-protected-resource/api/pops/mcp"');
+      }
+      expect(await oauthMetadataRoute.GET().json()).toMatchObject({ resource: oauthResource() });
+    });
+
+    it("registers a public client and rejects unsafe callback metadata", async () => {
+      const registered = await oauthRegisterRoute.POST(api("/api/pops/oauth/register", { auth: null, body: { client_name: "ChatGPT", redirect_uris: ["https://chatgpt.com/connector_platform_oauth_redirect"] } }));
+      expect(registered.status).toBe(201);
+      expect(await registered.json()).toMatchObject({ token_endpoint_auth_method: "none" });
+      const invalid = await oauthRegisterRoute.POST(api("/api/pops/oauth/register", { auth: null, body: { redirect_uris: ["http://evil.example/"] } }));
+      expect(invalid.status).toBe(400);
+    });
+
+    it("requires the owner session to approve or deny a connection", async () => {
+      const { request } = await authorization();
+      await expect(consentAction(request.toString(), form({ consent: "approve" }))).rejects.toThrow("NEXT_REDIRECT /pops/login?next=");
+      expect(await prisma.popsOAuthCode.count()).toBe(1);
+      cookieJar.value = await createPopsSession();
+      await expect(consentAction(request.toString(), form({ consent: "approve" }))).rejects.toThrow("NEXT_REDIRECT https://claude.ai/api/mcp/auth_callback?");
+      expect(await prisma.popsOAuthCode.count()).toBe(2);
+    });
+
+    it("rejects unregistered callbacks and preserves state and issuer on denial", async () => {
+      const { request, callback } = await authorization();
+      expect(callback.searchParams.get("state")).toBe("opaque+/state");
+      expect(callback.searchParams.get("iss")).toBe("https://petercurry.org");
+      const denied = new URL(await authorizeOAuthClient(request, false));
+      expect(denied.searchParams.get("error")).toBe("access_denied");
+      expect(denied.searchParams.has("code")).toBe(false);
+      expect(denied.searchParams.get("iss")).toBe("https://petercurry.org");
+      request.set("redirect_uri", "https://evil.example/callback");
+      await expect(validateAuthorizationRequest(request)).rejects.toMatchObject({ code: "invalid_request" });
+    });
+
+    it("exchanges a code and creates a task idempotently through MCP", async () => {
+      const { exchange } = await authorization();
+      const response = await oauthTokenRoute.POST(formRequest("/api/pops/oauth/token", exchange));
+      expect(response.status).toBe(200);
+      expect(response.headers.get("cache-control")).toBe("no-store");
+      const tokens = await response.json();
+      expect(await authenticateAgent(tokens.access_token)).toBeNull();
+      expect((await tasksRoute.GET(api("/api/pops/v1/tasks", { auth: tokens.access_token }), undefined)).status).toBe(401);
+      const args = { title: "Created from Claude chat", workspace: "writing", idempotencyKey: "oauth-task-0001" };
+      const first = await (await rpc(tokens.access_token, "pops_create_task", args)).json();
+      expect(first.result.isError).toBe(false);
+      expect(first.result.structuredContent).toMatchObject({ duplicate: false, task: { title: args.title } });
+      expect((await (await rpc(tokens.access_token, "pops_create_task", args)).json()).result.structuredContent.duplicate).toBe(true);
+      expect(await prisma.popsTask.count()).toBe(1);
+      const taskId = first.result.structuredContent.task.id;
+      const run = await (await rpc(tokens.access_token, "pops_record_agent_run", { taskId, report: report("oauth-run-0001", { pipeline: "writing-sources-counterarguments" }) })).json();
+      expect(run.result.isError).toBe(false);
+      expect((await prisma.popsTask.findUniqueOrThrow({ where: { id: taskId } })).status).toBe("active");
+      const stored = await prisma.popsOAuthToken.findFirstOrThrow();
+      expect(stored.accessHash).not.toBe(tokens.access_token);
+      expect(stored.refreshHash).not.toBe(tokens.refresh_token);
+      await expect(exchangeOAuthToken(exchange)).rejects.toMatchObject({ code: "invalid_grant" });
+    });
+
+    it("rejects code theft, wrong client, wrong callback and foreign resource without consuming the valid code", async () => {
+      const { exchange } = await authorization();
+      for (const [key, value] of [["code_verifier", "x".repeat(64)], ["client_id", "forged"], ["redirect_uri", "https://evil.example/callback"], ["resource", "https://evil.example"]]) {
+        const bad = new URLSearchParams(exchange);
+        bad.set(key, value);
+        await expect(exchangeOAuthToken(bad)).rejects.toBeInstanceOf(Error);
+      }
+      expect(await exchangeOAuthToken(exchange)).toHaveProperty("access_token");
+    });
+
+    it("consumes an authorization code exactly once under concurrent exchange", async () => {
+      const { exchange } = await authorization();
+      const results = await Promise.allSettled([exchangeOAuthToken(exchange), exchangeOAuthToken(exchange)]);
+      expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+      expect(await prisma.popsOAuthGrant.count()).toBe(1);
+    });
+
+    it("enforces granted scopes on MCP writes", async () => {
+      const { exchange } = await authorization("tasks:read");
+      const tokens = await exchangeOAuthToken(exchange);
+      expect((await (await rpc(tokens.access_token, "pops_list_tasks")).json()).result.isError).toBe(false);
+      const denied = await (await rpc(tokens.access_token, "pops_create_task", { title: "Forbidden", workspace: "work" })).json();
+      expect(denied.result.isError).toBe(true);
+      expect(await prisma.popsTask.count()).toBe(0);
+    });
+
+    it("edits only requested task details, keeps agent attribution, and prevents stale overwrites", async () => {
+      const { exchange } = await authorization();
+      const tokens = await exchangeOAuthToken(exchange);
+      const old = new Date(Date.now() - 20 * DAY);
+      const { task } = await createTask({ title: "Original", description: "Keep this context", workspace: "work", projectTags: ["old"] }, "human", old);
+      await prisma.popsTask.update({ where: { id: task.id }, data: { resurfaceAfter: old } });
+      const read = await (await rpc(tokens.access_token, "pops_get_task", { taskId: task.id })).json();
+      const patch = { title: "Updated from chat", projectTags: ["Research", "research"], expectedUpdatedAt: read.result.structuredContent.task.updatedAt };
+      const changed = await (await rpc(tokens.access_token, "pops_update_task", { taskId: task.id, patch })).json();
+      expect(changed.result?.isError).toBe(false);
+      expect(changed.result.structuredContent.task).toMatchObject({ title: patch.title, description: "Keep this context", projectTags: ["research"], status: "active" });
+      const stored = await prisma.popsTask.findUniqueOrThrow({ where: { id: task.id } });
+      expect(stored.lastHumanEngagementAt).toEqual(old);
+      expect(stored.resurfaceAfter).toEqual(old);
+      expect(await prisma.popsHistoryEntry.count({ where: { taskId: task.id, actor: "agent", kind: "edited" } })).toBe(1);
+      const stale = await (await rpc(tokens.access_token, "pops_update_task", { taskId: task.id, patch: { ...patch, title: "Stale overwrite" } })).json();
+      expect(stale.result.isError).toBe(true);
+      expect(JSON.parse(stale.result.content[0].text).error).toBe("conflict");
+      const forbidden = await (await rpc(tokens.access_token, "pops_update_task", { taskId: task.id, patch: { expectedUpdatedAt: stored.updatedAt.toISOString(), title: "Sneaky", status: "completed" } })).json();
+      expect(forbidden.result.isError).toBe(true);
+      expect((await prisma.popsTask.findUniqueOrThrow({ where: { id: task.id } })).title).toBe(patch.title);
+    });
+
+    it("expires access tokens, rotates refresh tokens and revokes the connection on refresh replay", async () => {
+      const { exchange } = await authorization();
+      const tokens = await exchangeOAuthToken(exchange);
+      expect(await authenticateMcp(tokens.access_token, new Date(Date.now() + 3601_000))).toBeNull();
+      const refresh = new URLSearchParams({ grant_type: "refresh_token", client_id: exchange.get("client_id")!, resource: oauthResource(), refresh_token: tokens.refresh_token });
+      const refreshed = await exchangeOAuthToken(refresh);
+      expect(refreshed.refresh_token).not.toBe(tokens.refresh_token);
+      expect(await authenticateMcp(refreshed.access_token)).not.toBeNull();
+      await expect(exchangeOAuthToken(refresh)).rejects.toMatchObject({ code: "invalid_grant" });
+      expect(await authenticateMcp(refreshed.access_token)).toBeNull();
+    });
+
+    it("clears explicit fields, leaves other details intact and enforces edit scopes through REST", async () => {
+      const { task } = await createTask({ title: "Keep title", workspace: "work", description: "Clear me", projectTags: ["clear"] }, "human");
+      const readOnly = (await createAgentCredential("reader", ["tasks:read"])).token;
+      const body = { description: "", projectTags: [], expectedUpdatedAt: task.updatedAt.toISOString() };
+      expect((await taskRoute.PATCH(api(`/api/pops/v1/tasks/${task.id}`, { method: "PATCH", body, auth: readOnly }), params({ taskId: task.id }))).status).toBe(403);
+      const changed = await taskRoute.PATCH(api(`/api/pops/v1/tasks/${task.id}`, { method: "PATCH", body }), params({ taskId: task.id }));
+      expect(changed.status).toBe(200);
+      const result = await changed.json();
+      expect(result.task).toMatchObject({ title: "Keep title", description: "", projectTags: [] });
+      const noOp = { ...body, expectedUpdatedAt: result.task.updatedAt };
+      expect((await taskRoute.PATCH(api(`/api/pops/v1/tasks/${task.id}`, { method: "PATCH", body: noOp }), params({ taskId: task.id }))).status).toBe(200);
+      expect(await prisma.popsHistoryEntry.count({ where: { taskId: task.id, kind: "edited" } })).toBe(1);
+    });
+
+    it("applies at most one of two concurrent edits to the same task version", async () => {
+      const { task } = await createTask({ title: "Concurrent", workspace: "work" }, "human");
+      const edit = (title: string) => taskRoute.PATCH(api(`/api/pops/v1/tasks/${task.id}`, { method: "PATCH", body: { title, expectedUpdatedAt: task.updatedAt.toISOString() } }), params({ taskId: task.id }));
+      const responses = await Promise.all([edit("ChatGPT edit"), edit("Claude edit")]);
+      expect(responses.map((r) => r.status).sort()).toEqual([200, 409]);
+      expect(await prisma.popsHistoryEntry.count({ where: { taskId: task.id, kind: "edited" } })).toBe(1);
+    });
+
+    it("rejects expired codes and expired refresh grants", async () => {
+      const { exchange } = await authorization();
+      await expect(exchangeOAuthToken(exchange, new Date(Date.now() + 6 * 60_000))).rejects.toMatchObject({ code: "invalid_grant" });
+      const tokens = await exchangeOAuthToken(exchange);
+      await expect(exchangeOAuthToken(new URLSearchParams({ grant_type: "refresh_token", client_id: exchange.get("client_id")!, resource: oauthResource(), refresh_token: tokens.refresh_token }), new Date(Date.now() + 31 * DAY))).rejects.toMatchObject({ code: "invalid_grant" });
+    });
+
+    it("revokes access and refresh together using the existing dashboard revocation", async () => {
+      const { exchange } = await authorization();
+      const tokens = await exchangeOAuthToken(exchange);
+      const principal = (await authenticateMcp(tokens.access_token))!;
+      await revokeAgentCredential(principal.id);
+      expect((await rpc(tokens.access_token, "pops_list_tasks")).status).toBe(401);
+      await expect(exchangeOAuthToken(new URLSearchParams({ grant_type: "refresh_token", client_id: exchange.get("client_id")!, resource: oauthResource(), refresh_token: tokens.refresh_token }))).rejects.toMatchObject({ code: "invalid_grant" });
+    });
+
+    it("supports client revocation without exposing unknown tokens", async () => {
+      const { exchange } = await authorization();
+      const tokens = await exchangeOAuthToken(exchange);
+      const revoke = (value: string) => oauthRevokeRoute.POST(formRequest("/api/pops/oauth/revoke", new URLSearchParams({ client_id: exchange.get("client_id")!, token: value })));
+      expect((await revoke("unknown")).status).toBe(200);
+      expect(await authenticateMcp(tokens.access_token)).not.toBeNull();
+      expect((await revoke(tokens.refresh_token)).status).toBe(200);
+      expect(await authenticateMcp(tokens.access_token)).toBeNull();
     });
   });
 

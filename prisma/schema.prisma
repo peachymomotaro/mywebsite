@@ -385,6 +385,54 @@ model PopsAgentCredential {
   createdAt   DateTime  @default(now())
   lastUsedAt  DateTime?
   revokedAt   DateTime?
+  oauthGrant  PopsOAuthGrant?
+}
+
+model PopsOAuthClient {
+  id           String   @id @default(cuid())
+  name         String
+  redirectUris String[]
+  createdAt    DateTime @default(now())
+  codes        PopsOAuthCode[]
+  grants       PopsOAuthGrant[]
+}
+
+model PopsOAuthCode {
+  id            String   @id @default(cuid())
+  codeHash      String   @unique
+  clientId      String
+  client        PopsOAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  redirectUri   String
+  resource      String
+  scopes        String[]
+  codeChallenge String
+  expiresAt     DateTime
+  consumedAt    DateTime?
+
+  @@index([expiresAt])
+}
+
+model PopsOAuthGrant {
+  id           String   @id @default(cuid())
+  clientId     String
+  client       PopsOAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  credentialId String   @unique
+  credential   PopsAgentCredential @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+  resource     String
+  expiresAt    DateTime
+  tokens       PopsOAuthToken[]
+}
+
+model PopsOAuthToken {
+  id             String   @id @default(cuid())
+  grantId        String
+  grant          PopsOAuthGrant @relation(fields: [grantId], references: [id], onDelete: Cascade)
+  accessHash     String   @unique
+  refreshHash    String   @unique
+  expiresAt      DateTime
+  rotatedAt      DateTime?
+
+  @@index([grantId])
 }
 
 model PopsTask {

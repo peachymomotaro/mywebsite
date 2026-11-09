@@ -13,6 +13,7 @@ function isPublicReadingRiverPath(pathname: string) {
   const extensionApiPath = readingRiverPath("/api/extension");
 
   return (
+    pathname.startsWith(readingRiverPath("/music/")) ||
     pathname === extensionApiPath ||
     pathname.startsWith(`${extensionApiPath}/`) ||
     pathname === readingRiverPath("/beta") ||
@@ -54,7 +55,7 @@ function protectPOps(request: NextRequest) {
 
   const loginUrl = new URL("/pops/login", request.url);
   if (pathname !== "/pops") {
-    loginUrl.searchParams.set("next", pathname);
+    loginUrl.searchParams.set("next", pathname + (pathname === "/pops/oauth/authorize" ? request.nextUrl.search : ""));
   }
 
   return NextResponse.redirect(loginUrl);

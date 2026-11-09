@@ -2,15 +2,16 @@ import { NextResponse } from "next/server";
 import { authenticateAgent, readBearerToken } from "@/lib/pops/agent-auth";
 import { readJsonBody } from "@/lib/pops/http";
 import { handleMcpMessage } from "@/lib/pops/mcp";
+import { oauthMetadataUrl, oauthResource } from "@/lib/pops/oauth";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  const principal = await authenticateAgent(readBearerToken(request.headers.get("authorization")));
+  const principal = await authenticateAgent(readBearerToken(request.headers.get("authorization")), new Date(), oauthResource());
   if (!principal) {
     return NextResponse.json(
       { jsonrpc: "2.0", id: null, error: { code: -32001, message: "Unauthorized" } },
-      { status: 401, headers: { "WWW-Authenticate": 'Bearer realm="pops"' } },
+      { status: 401, headers: { "Cache-Control": "no-store", "WWW-Authenticate": `Bearer realm="pops", resource_metadata="${oauthMetadataUrl()}"` } },
     );
   }
   let body: unknown;
@@ -26,6 +27,9 @@ export async function POST(request: Request) {
 }
 
 /** Stateless server: no server-initiated stream. */
-export function GET() {
+export async function GET(request: Request) {
+  if (!(await authenticateAgent(readBearerToken(request.headers.get("authorization")), new Date(), oauthResource()))) {
+    return new Response(null, { status: 401, headers: { "Cache-Control": "no-store", "WWW-Authenticate": `Bearer realm="pops", resource_metadata="${oauthMetadataUrl()}"` } });
+  }
   return new Response("Method Not Allowed", { status: 405, headers: { Allow: "POST" } });
 }

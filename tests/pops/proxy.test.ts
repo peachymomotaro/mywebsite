@@ -8,6 +8,12 @@ import { config, proxy } from "@/proxy";
 const location = (response: Response) => response.headers.get("location");
 
 describe("POps proxy gate", () => {
+  it("preserves the OAuth request through owner login", async () => {
+    const response = await proxy(new NextRequest("https://example.com/pops/oauth/authorize?client_id=test&state=abc"));
+    expect(new URL(location(response)!).searchParams.get("next")).toBe("/pops/oauth/authorize?client_id=test&state=abc");
+    const task = await proxy(new NextRequest("https://example.com/pops/tasks/abc?view=history"));
+    expect(new URL(location(task)!).searchParams.get("next")).toBe("/pops/tasks/abc");
+  });
   it("redirects anonymous POps page requests to the POps login", async () => {
     expect(location(await proxy(new NextRequest("https://example.com/pops")))).toBe("https://example.com/pops/login");
     expect(location(await proxy(new NextRequest("https://example.com/pops/tasks/abc")))).toBe(

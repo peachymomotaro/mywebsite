@@ -51,7 +51,7 @@ export function ShellNav({ isAdmin = false }: ShellNavProps) {
         aria-controls="river-shell-nav"
         onClick={() => setOpen((current) => !current)}
       >
-        <Image alt="" aria-hidden="true" height={32} src="/reading-river-icon.png" width={32} />
+        <Image alt="" aria-hidden="true" height={32} src="/reading-river-boat-logo.png" width={32} />
         <span className="river-sr-only">Reading River menu</span>
       </button>
       <nav id="river-shell-nav" className="river-shell-nav" aria-label="Primary">

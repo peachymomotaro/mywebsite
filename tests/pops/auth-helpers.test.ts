@@ -35,6 +35,9 @@ describe("POps owner password", () => {
 
 describe("redirect and header parsing", () => {
   it("only redirects back inside POps after login", () => {
+    const authorize = "/pops/oauth/authorize?client_id=test&state=hello%2Bthere&redirect_uri=https%3A%2F%2Fclaude.ai%2Fcallback";
+    expect(safeNextPath(authorize)).toBe(authorize);
+    expect(safeNextPath("/pops/oauth/authorize?x=y#fragment")).toBe("/pops");
     expect(safeNextPath("/pops/tasks/abc")).toBe("/pops/tasks/abc");
     expect(safeNextPath("https://evil.example")).toBe("/pops");
     expect(safeNextPath("//evil.example")).toBe("/pops");

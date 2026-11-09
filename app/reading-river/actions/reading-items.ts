@@ -201,7 +201,7 @@ export async function markAsRead(input: unknown) {
   const ownedItem = await requireOwnedReadingItem(prisma, currentUser.id, parsed.id);
 
   const item = await prisma.$transaction(async (tx) => {
-    await tx.readEvent.upsert({
+    const readEvent = await tx.readEvent.upsert({
       where: {
         userId_readingItemId: {
           userId: currentUser.id,
@@ -215,7 +215,7 @@ export async function markAsRead(input: unknown) {
       },
     });
 
-    return tx.readingItem.update({
+    const finished = await tx.readingItem.update({
       where: {
         userId_id: {
           userId: currentUser.id,
@@ -224,6 +224,7 @@ export async function markAsRead(input: unknown) {
       },
       data: { status: "done", ...clearedEddyMembership },
     });
+    return { ...finished, readAt: readEvent.readAt.toISOString() };
   });
 
   revalidatePath(STREAM_PATH);

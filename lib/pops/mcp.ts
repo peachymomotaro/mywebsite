@@ -13,7 +13,7 @@ const SUPPORTED_VERSIONS = ["2025-06-18", "2025-03-26", "2024-11-05"];
 type JsonRpcRequest = { jsonrpc: "2.0"; id?: string | number | null; method: string; params?: Record<string, unknown> };
 
 const paths = buildOpenApiDocument().paths as Record<string, Record<string, { requestBody?: { content: { "application/json": { schema: object } } } }>>;
-const bodySchema = (path: string) => paths[path].post.requestBody!.content["application/json"].schema;
+const bodySchema = (path: string, method = "post") => paths[path][method].requestBody!.content["application/json"].schema;
 
 const taskId = { taskId: { type: "string", description: "POps task id" } };
 
@@ -53,6 +53,12 @@ export const MCP_TOOLS = [
     description: "Create a POps task when Peter asks for one. Supply an idempotencyKey so retries do not duplicate it.",
     inputSchema: bodySchema("/tasks"),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+  },
+  {
+    name: "pops_update_task",
+    description: "Edit only the title, description, or tags Peter asks you to change. Read pops_get_task first and copy task.updatedAt into patch.expectedUpdatedAt. Omitted fields stay unchanged; projectTags replaces all tags. If the task changed, read it again before editing. Cannot change task status.",
+    inputSchema: { type: "object", required: ["taskId", "patch"], properties: { ...taskId, patch: bodySchema("/tasks/{taskId}", "patch") } },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
   },
   {
     name: "pops_record_agent_run",
@@ -99,6 +105,8 @@ async function callTool(principal: AgentPrincipal, name: string, args: Record<st
       return agentOps.getPlaybook(principal);
     case "pops_create_task":
       return agentOps.createTask(principal, args as never);
+    case "pops_update_task":
+      return agentOps.updateTask(principal, s("taskId"), args.patch as never);
     case "pops_record_agent_run":
       return agentOps.recordRun(principal, s("taskId"), args.report as never, "mcp");
     case "pops_create_decision":
@@ -132,7 +140,7 @@ export async function handleMcpMessage(principal: AgentPrincipal, message: JsonR
       return rpcResult(message.id, {
         protocolVersion: SUPPORTED_VERSIONS.includes(requested) ? requested : SUPPORTED_VERSIONS[0],
         capabilities: { tools: { listChanged: false } },
-        serverInfo: { name: "pops", version: "1.0.0" },
+        serverInfo: { name: "pops", version: "1.1.0" },
         instructions:
           "POps is Peter Curry's personal task system. Read a task with pops_get_task before working on it. Record results once with pops_record_agent_run. Never change task status; the permission boundaries in each prompt are absolute.",
       });

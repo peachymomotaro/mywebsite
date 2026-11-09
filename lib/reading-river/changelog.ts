@@ -16,6 +16,34 @@ export type ReadingRiverChangelogEntry = {
 
 export const readingRiverChangelogEntries: ReadingRiverChangelogEntry[] = [
   {
+    slug: "vltava-on-the-river",
+    date: "9 November 2026",
+    title: "Vltava on the river",
+    items: [
+      "The river now plays Bedřich Smetana’s Vltava (The Moldau), from Má vlast, performed by the Musopen Symphony Orchestra.",
+    ],
+  },
+  {
+    slug: "a-tree-for-every-article",
+    date: "8 November 2026",
+    title: "A tree for every article",
+    items: [
+      "Finishing an article now plants a tree in your world. Trees spread out with generous gaps, and your already-finished articles have trees too.",
+      "Article trees have golden leaves and a little paper tag. Walk up to one to rediscover the article you finished. As you read more, the forest grows into new ground instead of becoming crowded.",
+    ],
+  },
+  {
+    slug: "a-river-you-can-walk-through",
+    date: "6 November 2026",
+    title: "A river you can walk through",
+    items: [
+      "Reading River is now a moving oil painting. Walk along the bank, cross the footbridge, or turn the view to explore the landscape and its wildlife.",
+      "Articles drift past in large folded-paper boats. Walk close to a boat to see its title, then choose something to read. Opening a piece carries it into the eddies, which hold up to five reads.",
+      "Finishing an article plants a golden tree. Its title now appears over the tree when you walk up to it, so you can revisit what you have read.",
+      "The guide now describes the river as it works today. Priority rotation has been removed from Preferences, and the soundtrack’s quiet opening is easier to hear.",
+    ],
+  },
+  {
     slug: "Google Chrome Extension",
     date: "21st May 2026",
     title: "Excited to Announce the Google Chrome Extension!",

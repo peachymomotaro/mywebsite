@@ -7,7 +7,8 @@ import { noteDriftSeenAction, wakeSnoozedAction } from "@/app/reading-river/acti
 import { deleteReadingItem, markAsRead } from "@/app/reading-river/actions/reading-items";
 import type { GladeControls } from "@/components/reading-river/glade-engine";
 import { GladeScene } from "@/components/reading-river/glade-scene";
-import { gladeFontVariables } from "@/components/reading-river/glade-fonts";
+import { TreeMemory } from "@/components/reading-river/tree-memory";
+import type { ForestArticle } from "@/lib/reading-river/forest";
 import { GladeSheet, type SheetEdit, type SheetItem } from "@/components/reading-river/glade-sheet";
 import { GLADE_LEAVE_MS, GLADE_SAIL_MS } from "@/components/reading-river/glade-timing";
 import { QuickAdd } from "@/components/reading-river/quick-add";
@@ -53,13 +54,17 @@ type RiverDriftProps = {
   views: DriftViews;
   /** The eddy pool: what you are reading, newest first, five at most. */
   eddies: EddyArticle[];
+  forest: ForestArticle[];
 };
 
-export function RiverDrift({ initialMinutes, views: serverViews, eddies: serverEddies }: RiverDriftProps) {
+export function RiverDrift({ initialMinutes, views: serverViews, eddies: serverEddies, forest: serverForest }: RiverDriftProps) {
   const router = useRouter();
   const [selectedMinutes, setSelectedMinutes] = useState(initialMinutes);
   const [views, setViews] = useState(serverViews);
   const [pool, setPool] = useState(serverEddies);
+  const [forest, setForest] = useState(serverForest);
+  const [nearbyArticle, setNearbyArticle] = useState<ForestArticle | null>(null);
+  const finishingRef = useRef(new Set<string>());
   /** Pieces leaving the eddies: pushed out by a newcomer, or removed for good. */
   const [driftingOut, setDriftingOut] = useState<(EddyArticle & { removed?: boolean })[]>([]);
   /** Finished pieces, sailing out of the eddies and away to sea. */
@@ -79,8 +84,9 @@ export function RiverDrift({ initialMinutes, views: serverViews, eddies: serverE
   const floatsRef = useRef<HTMLUListElement>(null);
   const poolRef = useRef<HTMLUListElement>(null);
   const layoutRef = useRef<HTMLElement>(null);
+  const treeMemoryRef = useRef<HTMLElement>(null);
   const sound = useGladeSound();
-  const controlsRef = useRef<Pick<GladeControls, "turn" | "face" | "walkToNext"> | null>(null);
+  const controlsRef = useRef<Omit<GladeControls, "dispose"> | null>(null);
 
   const busy = false;
   const key = getTimeBudgetKey(selectedMinutes);
@@ -133,6 +139,7 @@ export function RiverDrift({ initialMinutes, views: serverViews, eddies: serverE
 
   useEffect(() => setViews(serverViews), [serverViews]);
   useEffect(() => setPool(serverEddies), [serverEddies]);
+  useEffect(() => setForest(serverForest), [serverForest]);
 
   // A piece pushed out of the eddies is shown floating away for a while.
   useEffect(() => {
@@ -183,11 +190,24 @@ export function RiverDrift({ initialMinutes, views: serverViews, eddies: serverE
     void deleteReadingItem({ id: item.id }).catch(() => router.refresh());
   }
 
+  /** Uprooted: the tree goes, and the finished piece is deleted for good. */
+  function uproot(article: ForestArticle) {
+    setNearbyArticle(null);
+    setForest((current) => current.filter((entry) => entry.id !== article.id));
+    setAnnouncement(`The tree for ${article.title} has been uprooted.`);
+    void deleteReadingItem({ id: article.id }).catch(() => {
+      setAnnouncement(`Couldn't uproot the tree for ${article.title}. Try again.`);
+      router.refresh();
+    });
+  }
+
   /**
    * Finished: the raft becomes a little ship, ready for the sea, and sails out
    * of the eddies and away down the river.
    */
   function finish(item: SheetItem) {
+    if (finishingRef.current.has(item.id)) return;
+    finishingRef.current.add(item.id);
     setLiftedId(null);
     const fromPool = pool.find((entry) => entry.id === item.id);
     if (fromPool) {
@@ -199,7 +219,17 @@ export function RiverDrift({ initialMinutes, views: serverViews, eddies: serverE
       setViews(withoutItem(item.id));
     }
     setAnnouncement(`Finished ${item.title}. It sets sail for the sea.`);
-    void markAsRead({ id: item.id }).catch(() => router.refresh());
+    void markAsRead({ id: item.id }).then((saved) => {
+      setForest((current) => current.some((entry) => entry.id === item.id) ? current : [...current, {
+        id: saved.id, title: saved.title, sourceUrl: saved.sourceUrl, siteName: saved.siteName, readAt: saved.readAt,
+      }]);
+      setAnnouncement(`Finished ${item.title}. A tree has been planted for it in your forest.`);
+    }).catch(() => {
+      setSailing((current) => current.filter((entry) => entry.id !== item.id));
+      if (fromPool) setPool((current) => current.some((entry) => entry.id === item.id) ? current : [...current, fromPool]);
+      setAnnouncement(`Couldn't save ${item.title} as finished. Try again.`);
+      router.refresh();
+    }).finally(() => finishingRef.current.delete(item.id));
   }
   useEffect(() => setSelectedMinutes(initialMinutes), [initialMinutes]);
 
@@ -297,11 +327,11 @@ export function RiverDrift({ initialMinutes, views: serverViews, eddies: serverE
   const flatIds = new Set(view.afloat.slice(0, FLAT_COUNT).map((item) => item.id));
 
   return (
-    <section ref={layoutRef} className={`glade-home-layout ${gladeFontVariables}`} aria-labelledby="river-drift-heading"
+    <section ref={layoutRef} className="glade-home-layout" aria-labelledby="river-drift-heading"
       data-scene={scene}>
       <div className="glade-stage">
-        <GladeScene animate={animate} floatsRef={floatsRef} poolRef={poolRef}
-          onReady={onSceneReady} onVisible={onVisible} onSurroundings={sound.hear} controlsRef={controlsRef} />
+        <GladeScene animate={animate} forest={forest} floatsRef={floatsRef} poolRef={poolRef} treeMemoryRef={treeMemoryRef}
+          onReady={onSceneReady} onVisible={onVisible} onArticleTree={setNearbyArticle} onSurroundings={sound.hear} controlsRef={controlsRef} />
 
         <ul ref={poolRef} className="glade-afloat glade-pool" aria-label="In the eddies">
           {[
@@ -383,6 +413,8 @@ export function RiverDrift({ initialMinutes, views: serverViews, eddies: serverE
           />
         )}
       </div>
+
+      <TreeMemory ref={treeMemoryRef} article={nearbyArticle} onUproot={uproot} />
 
       <div className="glade-top">
         <h1 className="glade-title">Pick your next read</h1>

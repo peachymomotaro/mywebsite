@@ -72,7 +72,13 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* One typeface for all of Reading River: Spectral, as on the river itself.
+   The shell is where Spectral's variable exists, so the font tokens are
+   resolved here rather than on :root. */
 .editorial-shell {
+  --font-serif: var(--font-spectral), Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-sans: var(--font-spectral), Georgia, Cambria, "Times New Roman", Times, serif;
+  font-family: var(--font-serif);
   position: relative;
   isolation: isolate;
   background:
@@ -995,39 +1001,74 @@ summary.auth-text-button::-webkit-details-marker {
 }
 
 .river-how-page-content {
-  gap: clamp(1.5rem, 2.8vw, 2.2rem);
+  gap: 0;
 }
 
-.river-changelog-list {
-  display: grid;
-  gap: clamp(1.2rem, 2.5vw, 1.8rem);
+/* A reading guide: one measure, section rules, and headings in the margin. */
+.river-how-page { max-width: 62rem; margin-inline: auto; }
+.river-how-page .editorial-page-surface { gap: 0; }
+.river-how-page .editorial-page-masthead { padding-bottom: 1.5rem; }
+.river-how-page .editorial-page-title { font-size: clamp(2.4rem, 4vw, 3.4rem); line-height: 1.05; }
+.river-how-page .editorial-page-intro { margin: 0.75rem 0 0; max-width: 56ch; line-height: 1.6; }
+.river-how-page .river-how-section {
+  grid-template-columns: 10rem minmax(0, 1fr);
+  gap: 1.5rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--rule-color);
+  align-items: start;
+}
+.river-how-page .river-how-section h2 { margin: 0; font-size: 1.2rem; line-height: 1.35; }
+.river-how-copy { display: grid; gap: 0.85rem; max-width: 65ch; }
+.river-how-steps { margin: 0; padding-left: 1.25rem; display: grid; gap: 0.7rem; }
+.river-how-copy a { text-decoration: underline; text-underline-offset: 0.18em; }
+.river-how-copy a:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 3px; }
+.river-how-page .river-how-source-list { margin: 0; }
+.river-how-page .river-how-source-item { padding-top: 0.8rem; }
+.river-how-page .river-how-source-item:first-child { padding-top: 0; border-top: 0; }
+@media (max-width: 40rem) {
+  .river-how-page .river-how-section { grid-template-columns: minmax(0, 1fr); gap: 0.75rem; padding-block: 1.25rem; }
 }
 
-.river-changelog-entry {
-  display: grid;
-  gap: 1rem;
-}
-
-.river-changelog-entry-header {
-  display: grid;
-  gap: 0.45rem;
-}
-
-.river-changelog-entry-title {
+/* Shared by How It Works, Changelog, Preferences and Read history: a quiet
+   note in the margin column (a date, say) where the others have a heading. */
+.river-page-margin-note {
   margin: 0;
-  font-size: clamp(1.5rem, 2.5vw, 2rem);
-  letter-spacing: -0.03em;
-  line-height: 1.05;
-}
-
-.river-changelog-items {
-  margin: 0;
-  padding-left: 1.25rem;
-  display: grid;
-  gap: 0.7rem;
-  font-family: var(--font-sans);
+  padding-top: 0.2rem;
+  font-size: 0.95rem;
+  line-height: 1.4;
   color: hsl(var(--muted-foreground));
 }
+.river-changelog-items { color: hsl(var(--muted-foreground)); }
+
+/* Read history: a plain list of what you finished under each month. */
+.river-history-list { display: grid; gap: 1rem; max-width: 65ch; margin: 0; padding: 0; list-style: none; }
+.river-history-item { display: grid; gap: 0.1rem; }
+.river-history-item-title { margin: 0; font-size: 1.05rem; font-weight: 500; line-height: 1.4; }
+.river-history-link { color: hsl(var(--foreground)); text-decoration: underline; text-decoration-color: hsl(var(--border)); text-underline-offset: 0.2em; }
+.river-history-link:hover { text-decoration-color: currentColor; }
+.river-history-link:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 3px; }
+.river-history-meta { margin: 0; font-size: 0.92rem; color: hsl(var(--muted-foreground)); }
+
+/* Admin: the same lists, with a quiet text action at the end of a row. */
+.river-admin-row { grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 0.25rem 1rem; }
+.river-admin-input { width: min(100%, 28rem); }
+.river-admin-invite-ready { display: grid; gap: 0.75rem; padding-top: 1rem; }
+.river-admin-invite-ready p { margin: 0; }
+.river-admin-action {
+  min-height: 2.75rem;
+  padding: 0 0.25rem;
+  border: 0;
+  background: none;
+  color: hsl(var(--muted-foreground));
+  font: inherit;
+  font-size: 0.95rem;
+  text-decoration: underline;
+  text-decoration-color: hsl(var(--border));
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+.river-admin-action:hover { color: hsl(8 55% 36%); text-decoration-color: currentColor; }
+.river-admin-action:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
 
 .river-how-section {
   display: grid;
@@ -1063,125 +1104,63 @@ summary.auth-text-button::-webkit-details-marker {
   text-underline-offset: 0.18em;
 }
 
+/* The Paintings: where each one is, hidden until asked for. */
+.river-how-spoiler { display: grid; gap: 0.35rem; justify-items: start; }
+.river-how-spoiler summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.1rem 0.7rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 999px;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.85rem;
+  list-style: none;
+  cursor: pointer;
+}
+.river-how-spoiler summary::-webkit-details-marker { display: none; }
+.river-how-spoiler summary:hover { color: hsl(var(--foreground)); border-color: hsl(var(--river-teal) / 0.5); }
+.river-how-spoiler summary:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+.river-how-spoiler[open] summary { color: hsl(var(--foreground)); }
+
 .river-how-source-link:hover {
   color: hsl(var(--accent-foreground));
 }
 
-.river-preferences-panel {
-  width: min(100%, 45rem);
-  justify-self: start;
-}
-
-.river-preferences-form {
-  margin-top: 0;
-}
-
-.river-preferences-choice {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 0.9rem;
-  width: min(100%, 39rem);
-  margin: 0;
-  padding: 1rem 1.15rem;
-  border: 1px solid hsl(var(--border));
-  border-radius: 1.35rem;
-  background: hsl(var(--river-paper-bright) / 0.7);
-  text-align: left;
-  box-shadow: 0 12px 28px hsl(var(--river-deep) / 0.05);
-}
-
-.river-preferences-choice-copy {
-  font-family: var(--font-sans);
-  font-size: 1rem;
-  line-height: 1.65;
-  color: hsl(var(--foreground));
-  white-space: nowrap;
-  text-align: left;
-}
-
-.river-preferences-description {
-  margin: 0;
-  width: min(100%, 39rem);
-  font-family: var(--font-sans);
-  font-size: 1rem;
-  line-height: 1.65;
-  color: hsl(var(--foreground));
-  white-space: normal;
-  text-align: left;
-}
-
-.river-preferences-checkbox-row {
+/* Preferences sit in the How It Works layout: plain controls, no boxes. */
+.river-preferences-form { display: grid; gap: 1rem; margin: 0; }
+.river-preferences-choice { display: grid; gap: 0.4rem; margin: 0; padding: 0; border: 0; min-width: 0; }
+.river-preferences-choice-copy { padding: 0; font-size: 1rem; line-height: 1.5; color: hsl(var(--foreground)); }
+.river-preferences-options { display: grid; gap: 0.1rem; }
+.river-preferences-option {
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  width: min(100%, 39rem);
-  margin: 0;
+  gap: 0.7rem;
+  width: fit-content;
+  min-height: 2.75rem;
   color: hsl(var(--foreground));
-  font-family: var(--font-sans);
-  font-size: 0.98rem;
-  line-height: 1.5;
+  font-size: 1.05rem;
   cursor: pointer;
 }
-
-.river-preferences-checkbox {
+.river-preferences-radio {
   appearance: none;
   flex: 0 0 auto;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.15rem;
+  height: 1.15rem;
   margin: 0;
-  border: 1px solid hsl(var(--river-secondary-rest-border));
+  border: 1.5px solid hsl(var(--river-teal) / 0.55);
   border-radius: 999px;
-  background:
-    radial-gradient(circle at 35% 30%, hsl(var(--river-paper-bright)), hsl(var(--river-paper)));
-  box-shadow:
-    inset 0 0 0 0 hsl(var(--river-paper-bright)),
-    0 8px 22px hsl(var(--river-deep) / 0.08);
+  background: hsl(var(--river-paper-bright));
   cursor: pointer;
-  transition:
-    background-color 160ms ease,
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    transform 160ms ease;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
 }
-
-.river-preferences-checkbox:hover {
-  transform: translateY(-1px);
-  border-color: hsl(var(--river-teal));
-}
-
-.river-preferences-checkbox:focus-visible {
-  outline: 2px solid hsl(var(--river-teal));
-  outline-offset: 3px;
-}
-
-.river-preferences-checkbox:checked {
-  border-color: hsl(var(--river-teal));
-  background: hsl(var(--river-teal));
-  box-shadow:
-    inset 0 0 0 0.28rem hsl(var(--river-paper-bright)),
-    0 12px 26px hsl(var(--river-teal) / 0.18);
-}
-
-.intake-submit-row.river-preferences-submit-row {
-  justify-content: flex-start;
-  padding-top: 0;
-}
-
-.river-preferences-feedback {
-  margin: 0 auto;
-  width: fit-content;
-  max-width: 100%;
-  padding: 0.55rem 0.9rem;
-  border: 1px solid hsl(var(--river-teal) / 0.28);
-  border-radius: 999px;
-  background: hsl(var(--river-teal) / 0.12);
-  font-family: var(--font-sans);
-  font-size: 0.9rem;
-  line-height: 1.4;
-  color: hsl(var(--accent-foreground));
-  text-align: center;
-}
+.river-preferences-option:hover .river-preferences-radio { border-color: hsl(var(--river-teal)); }
+.river-preferences-radio:checked { border-color: hsl(var(--river-teal)); box-shadow: inset 0 0 0 0.2rem hsl(var(--river-paper-bright)); background: hsl(var(--river-teal)); }
+.river-preferences-radio:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 3px; }
+.river-preferences-option:has(:checked) { color: hsl(var(--river-deep)); }
+.river-preferences-description { margin: 0; font-size: 1rem; line-height: 1.65; color: hsl(var(--muted-foreground)); }
+.river-preferences-submit-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem; }
+.river-preferences-feedback { margin: 0; color: hsl(var(--river-teal)); }
 
 .add-mode-switch {
   padding-top: 0.35rem;
@@ -1377,14 +1356,6 @@ summary.auth-text-button::-webkit-details-marker {
     align-items: flex-start;
   }
 
-  .river-preferences-choice {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .river-preferences-choice-copy {
-    white-space: normal;
-  }
 }
 
 @keyframes river-fade-up {
@@ -1894,8 +1865,8 @@ body:has(.glade-home) .glade-menus {
   color: inherit;
   font: inherit;
   letter-spacing: inherit;
-  text-align: left;
-  text-decoration: underline dotted hsl(var(--glade-umber) / 0);
+  text-align: inherit;
+  text-decoration: underline dotted hsl(var(--glade-umber) / 0.5);
   text-underline-offset: 0.2em;
   cursor: text;
   transition: background-color 160ms ease, text-decoration-color 160ms ease;
@@ -1917,45 +1888,60 @@ body:has(.glade-home) .glade-menus {
 .glade-sheet-field:focus { outline: none; border-bottom-color: hsl(var(--glade-umber)); background: hsl(43 70% 98% / 0.95); }
 .glade-sheet-minutes { display: inline-flex; align-items: center; gap: 0.3rem; }
 .glade-sheet-field-minutes { width: 4.2rem; font-variant: normal; }
-.glade-sheet-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem 0.6rem; margin-top: 0.4rem; }
-.glade-sheet-button {
+/* One clear way on, then quieter choices beneath, split by thin rules. */
+.glade-sheet-primary {
   display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  min-height: 40px;
-  padding: 0.4rem 1rem;
-  border: 1px solid hsl(var(--glade-umber) / 0.22);
-  border-radius: 999px;
-  background: hsl(var(--wash) / 0.16);
-  color: hsl(var(--glade-ink));
-  font-family: var(--font-sans);
-  font-size: 0.88rem;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background-color 160ms ease, transform 160ms ease;
-}
-.glade-sheet-button:hover { background: hsl(var(--wash) / 0.32); transform: translateY(-1px); }
-.glade-sheet-button:focus-visible, .glade-sheet-quiet:focus-visible { outline: 3px solid hsl(var(--glade-umber)); outline-offset: 2px; }
-.glade-sheet-primary { background: hsl(var(--wash) / 0.42); border-color: hsl(var(--glade-umber) / 0.3); }
-.glade-sheet-primary::after { content: "→"; font-weight: 500; }
-.glade-sheet-primary:hover { background: hsl(var(--wash) / 0.6); }
-.glade-sheet-danger { background: hsl(8 55% 45% / 0.12); border-color: hsl(8 50% 40% / 0.3); color: hsl(8 55% 30%); }
-.glade-sheet-danger:hover { background: hsl(8 55% 45% / 0.22); }
-.glade-sheet-quiet {
-  min-height: 36px;
-  margin-left: auto;
-  padding: 0 0.2rem;
+  align-items: baseline;
+  gap: 0.45rem;
+  min-height: 44px;
+  margin-top: 0.3rem;
+  padding: 0.2rem 0.1rem;
   border: 0;
   background: none;
-  color: hsl(var(--glade-earth));
-  font-family: var(--font-sans);
-  font-size: 0.8rem;
-  text-decoration: underline hsl(var(--glade-earth) / 0.35);
-  text-underline-offset: 0.2em;
+  color: hsl(var(--glade-ink));
+  font-family: var(--font-serif);
+  font-size: 1.45rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: underline;
+  text-decoration-color: hsl(var(--glade-ochre));
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.25em;
+  cursor: pointer;
+  transition: text-decoration-color 160ms ease;
+}
+.glade-sheet-primary::after { content: "→"; font-weight: 400; }
+.glade-sheet-primary:hover { text-decoration-color: hsl(var(--glade-umber)); }
+.glade-sheet-primary:focus-visible { outline: 3px solid hsl(var(--glade-umber)); outline-offset: 4px; border-radius: 4px; }
+.glade-sheet-primary-small { font-size: 1.05rem; font-weight: 500; }
+.glade-sheet-quiet-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; }
+.glade-sheet-quiet {
+  position: relative;
+  min-height: 44px;
+  padding: 0 0.9rem;
+  border: 0;
+  background: none;
+  color: hsl(var(--glade-ink) / 0.82);
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  text-decoration: underline;
+  text-decoration-color: hsl(var(--glade-ink) / 0.35);
+  text-underline-offset: 0.22em;
   cursor: pointer;
 }
-.glade-sheet-remove:hover { color: hsl(8 55% 36%); text-decoration-color: currentColor; }
+.glade-sheet-quiet-row > * + *::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 32%;
+  bottom: 32%;
+  width: 1px;
+  background: hsl(var(--glade-ink) / 0.45);
+}
+.glade-sheet-quiet:hover { text-decoration-color: currentColor; }
+.glade-sheet-quiet:focus-visible { outline: 3px solid hsl(var(--glade-umber)); outline-offset: 2px; border-radius: 4px; }
+.glade-sheet-quiet-strong { color: hsl(var(--glade-ink)); font-weight: 500; }
+.glade-sheet-remove:hover, .glade-sheet-danger { color: hsl(8 55% 36%); }
 .glade-sheet-confirm p { margin: 0.3rem 0 0; font-size: 0.92rem; font-style: italic; line-height: 1.35; }
 .glade-sheet-message { margin: 0; font-family: var(--font-sans); font-size: 0.76rem; color: hsl(8 55% 34%); }
 .glade-sheet-message:empty { display: none; }
@@ -2135,6 +2121,22 @@ body:has(.glade-home) .glade-menus {
   animation: glade-pop 220ms cubic-bezier(0.3, 0.7, 0.3, 1);
 }
 .glade-menu-panel[hidden] { display: none; }
+
+/* A finished article is discovered by walking up to its golden tree. */
+.glade-home-layout > .glade-tree-memory {
+  position: fixed;
+  visibility: hidden;
+  bottom: auto;
+  transform: translate(-50%, -100%);
+  z-index: 4;
+  width: min(clamp(14.5rem, 21vw, 19rem), calc(100vw - 1.5rem));
+  pointer-events: auto;
+}
+.glade-home-layout > .glade-tree-memory-open { width: min(clamp(17rem, 24vw, 21rem), calc(100vw - 1.5rem)); }
+/* Closed, it is the same little cloud of text as a boat's label; opened, the
+   same sheet. Both are shared with the river further down. */
+.glade-tree-card { --tilt: -0.9deg; }
+.glade-tree-memory .glade-card-title { margin: 0; }
 
 /* What lives inside the dropdowns. */
 .glade-menu-panel .river-time-picker { display: grid; gap: 0.6rem; padding: 0; border: 0; background: none; box-shadow: none; }
@@ -2370,7 +2372,8 @@ body:has(.glade-home) .glade-menus {
     max-height: 72dvh;
   }
   .glade-float { width: min(13rem, 62vw); }
-  .glade-float-lifted { width: min(21rem, calc(100vw - 1.5rem)); }
+  .glade-float-lifted,
+  .glade-home-layout > .glade-tree-memory-open { width: min(21rem, calc(100vw - 1.5rem)); }
   .glade-card { padding: 0.65rem 0.8rem; }
   .glade-card-title { font-size: 0.96rem; -webkit-line-clamp: 2; }
 }
@@ -2396,7 +2399,8 @@ body:has(.glade-home) .glade-menus {
   font-variant: small-caps;
   letter-spacing: 0.05em;
 }
-.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card {
+.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card,
+.glade-home-layout > .glade-tree-memory:not(.glade-tree-memory-open) .glade-card {
   --cloud: 43 60% 95%;
   --cloud-belly: 36 32% 72%;
   justify-items: center;
@@ -2411,7 +2415,8 @@ body:has(.glade-home) .glade-menus {
   --cloud-belly: 186 22% 62%;
 }
 /* The cloud: a few soft puffs, a little grey underneath, edges lost in the air. */
-.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card::before {
+.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card::before,
+.glade-home-layout > .glade-tree-memory:not(.glade-tree-memory-open) .glade-card::before {
   --puff: 0.86;
   inset: -0.45rem -0.8rem;
   background:
@@ -2426,12 +2431,16 @@ body:has(.glade-home) .glade-menus {
   filter: blur(2px) drop-shadow(0 6px 8px hsl(var(--glade-umber) / calc(0.14 - var(--far, 0) * 0.08)));
   transition: opacity 200ms ease;
 }
-.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card:hover:not(:disabled) { filter: none; }
-.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card:hover:not(:disabled)::before { --puff: 0.96; }
-.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card::after { display: none; }
+.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card:hover:not(:disabled),
+.glade-home-layout > .glade-tree-memory:not(.glade-tree-memory-open) .glade-card:hover:not(:disabled) { filter: none; }
+.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card:hover:not(:disabled)::before,
+.glade-home-layout > .glade-tree-memory:not(.glade-tree-memory-open) .glade-card:hover:not(:disabled)::before { --puff: 0.96; }
+.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card::after,
+.glade-home-layout > .glade-tree-memory:not(.glade-tree-memory-open) .glade-card::after { display: none; }
 /* The titles are what you came for: large, and a long one stops gracefully
    after three lines (the whole of it is there when you lift the piece). */
-.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card-title {
+.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card-title,
+.glade-home-layout > .glade-tree-memory:not(.glade-tree-memory-open) .glade-card-title {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
@@ -2445,10 +2454,43 @@ body:has(.glade-home) .glade-menus {
   padding: 0.1rem 0.3rem;
 }
 .glade-home-layout .glade-afloat .glade-float-pool:not(.glade-float-lifted) .glade-card-title { font-size: 1.12rem; -webkit-line-clamp: 1; }
-.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card-meta { padding-top: 0; font-size: 0.9rem; color: hsl(var(--glade-ink) / 0.75); }
-.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card-meta::before { display: none; }
+.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card-meta,
+.glade-home-layout > .glade-tree-memory:not(.glade-tree-memory-open) .glade-card-meta { padding-top: 0; font-size: 0.9rem; color: hsl(var(--glade-ink) / 0.75); }
+.glade-home-layout .glade-afloat .glade-float:not(.glade-float-lifted) .glade-card-meta::before,
+.glade-home-layout > .glade-tree-memory:not(.glade-tree-memory-open) .glade-card-meta::before { display: none; }
 /* Finished, its cloud catches the light. */
 .glade-home-layout .glade-afloat .glade-float-pool[data-state="sailing"] .glade-card { --cloud: 46 90% 90%; --cloud-belly: 42 70% 60%; }
+
+/* Lifted, the label stays a cloud of text, just larger: no sheet of paper. */
+.glade-home-layout .glade-sheet {
+  --cloud: 43 60% 95%;
+  --cloud-belly: 36 32% 72%;
+  justify-items: center;
+  gap: 0.3rem;
+  padding: 1rem 1.4rem 0.6rem;
+  text-align: center;
+  filter: none;
+  text-shadow: 0 0 12px hsl(var(--cloud)), 0 0 4px hsl(var(--cloud) / 0.95), 0 0 1px hsl(var(--cloud) / 0.9);
+}
+.glade-home-layout .glade-float-pool .glade-sheet { --cloud: 168 30% 94%; --cloud-belly: 186 22% 62%; }
+.glade-home-layout .glade-sheet::before {
+  inset: -1.4rem -1.8rem;
+  background:
+    radial-gradient(40% 46% at 32% 34%, hsl(var(--cloud) / 0.9), transparent 74%),
+    radial-gradient(38% 48% at 66% 30%, hsl(var(--cloud) / 0.9), transparent 74%),
+    radial-gradient(56% 50% at 50% 58%, hsl(var(--cloud) / 0.92), transparent 76%),
+    radial-gradient(30% 40% at 16% 64%, hsl(var(--cloud) / 0.8), transparent 74%),
+    radial-gradient(30% 40% at 84% 64%, hsl(var(--cloud) / 0.8), transparent 74%),
+    radial-gradient(60% 20% at 50% 94%, hsl(var(--cloud-belly) / 0.35), transparent 78%);
+  box-shadow: none;
+  clip-path: none;
+  filter: blur(6px);
+}
+.glade-home-layout .glade-sheet::after { display: none; }
+.glade-home-layout .glade-sheet .glade-sheet-title { font-size: 1.5rem; line-height: 1.15; text-wrap: balance; }
+.glade-home-layout .glade-sheet .glade-card-meta { justify-content: center; padding-top: 0; font-size: 0.95rem; color: hsl(var(--glade-ink) / 0.75); }
+.glade-home-layout .glade-sheet .glade-card-meta::before { display: none; }
+.glade-home-layout .glade-sheet .glade-sheet-confirm { display: grid; gap: 0.2rem; justify-items: center; }
 
 /* Add is just a "+" in a quiet circle, beside the menu. */
 .glade-add-toggle {
@@ -2461,6 +2503,7 @@ body:has(.glade-home) .glade-menus {
   font-weight: 400;
   line-height: 1;
 }
+.glade-add-toggle svg { display: block; flex: none; }
 @media (max-width: 40rem) {
   .glade-add-toggle { min-height: 44px; padding: 0; font-size: 1.45rem; }
 }

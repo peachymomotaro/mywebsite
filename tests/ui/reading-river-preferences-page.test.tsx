@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -34,15 +34,15 @@ describe("ReadingRiverPreferencesPage", () => {
 
     expect(screen.getByRole("heading", { name: "Preferences" })).toBeInTheDocument();
     expect(screen.getByText("Choose how often Reading River should send your reminder email.")).toBeInTheDocument();
-    expect(screen.getByLabelText("Email cadence")).toHaveValue("every_other_day");
-    expect(screen.getByRole("option", { name: "Off" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Daily" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Every other day" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Weekly" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Monthly" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Seasonal (every three months)" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Priority rotation")).toHaveValue(5);
-    expect(screen.getByLabelText("Include Book Roulette in reminder emails")).toBeChecked();
+    const cadence = screen.getByRole("group", { name: "Email cadence" });
+    for (const name of ["Off", "Daily", "Every other day", "Weekly", "Monthly", "Seasonal (every three months)"]) {
+      expect(within(cadence).getByRole("radio", { name })).toBeInTheDocument();
+    }
+    expect(within(cadence).getByRole("radio", { name: "Every other day" })).toBeChecked();
+    expect(within(cadence).getByRole("radio", { name: "Daily" })).not.toBeChecked();
+    expect(container.querySelector("select")).toBeNull();
+    expect(screen.queryByLabelText("Priority rotation")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Include Book Roulette in reminder emails")).not.toBeInTheDocument();
     const helperCopy = screen.getByText(/08:00 London time/i);
     expect(helperCopy).toBeInTheDocument();
     expect(helperCopy).toHaveClass("river-preferences-description");
@@ -73,7 +73,7 @@ describe("ReadingRiverPreferencesPage", () => {
 
     expect(screen.getByText("Preferences saved.")).toBeInTheDocument();
     expect(screen.getByText("Preferences saved.")).toHaveAttribute("role", "status");
-    expect(container.querySelectorAll(".editorial-panel")).toHaveLength(1);
+    expect(container.querySelector(".editorial-panel")).toBeNull();
     expect(container.querySelector(".river-preferences-feedback")).not.toBeNull();
   });
 });

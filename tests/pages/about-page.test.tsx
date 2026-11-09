@@ -1,6 +1,5 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-// @ts-expect-error -- the legacy Pages Router page is JavaScript without declarations.
 import About from "@/pages/about";
 
 vi.mock("next/head", () => ({

@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { getDigestArticleUrl } from "@/lib/reading-river/digest-links";
 import {
   getReadingRiverHomeUrl,
   getReadingRiverInviteUrl,
@@ -13,13 +14,6 @@ type DailyDigestEmailItem = {
   siteName?: string | null;
   estimatedMinutes?: number | null;
   tags?: string[];
-};
-
-type DailyDigestBookRoulettePick = {
-  id: string;
-  title: string;
-  author?: string | null;
-  notes?: string | null;
 };
 
 function getResendClient() {
@@ -146,7 +140,8 @@ export async function sendReadingRiverPasswordResetEmail({
   return data;
 }
 
-function getDigestItemUrl(item: DailyDigestEmailItem) {
+function getDigestItemUrl(item: DailyDigestEmailItem, userId?: string) {
+  if (userId) return getDigestArticleUrl(userId, item.id);
   const sourceUrl = item.sourceUrl?.trim();
 
   return sourceUrl ? sourceUrl : getReadingRiverItemUrl(item.id);
@@ -221,16 +216,18 @@ function renderStillWithLinkHtml({ stillUrl, url, title, meta }: { stillUrl: str
   ].join("");
 
   return [
-    `<tr><td class="rr-still" background="${still}" bgcolor="#6f7d5a" width="600" height="375" valign="bottom" align="center" style="height: 375px; padding: 0 24px 34px; background-color: #6f7d5a; background-image: url('${still}'); background-size: cover; background-position: center top; text-align: center;">`,
-    `<!--[if gte mso 9]><v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:600px;height:375px;"><v:fill type="frame" src="${still}" color="#6f7d5a" /><v:textbox inset="0,0,0,0"><div style="height:290px;"></div><![endif]-->`,
+    `<tr><td class="rr-still" background="${still}" bgcolor="#6f7d5a" height="420" valign="bottom" align="center" style="height: 420px; padding: 0; background-color: #6f7d5a; background-image: url('${still}'); background-size: cover; background-position: center; text-align: center;">`,
+    `<!--[if gte mso 9]><v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:640px;height:420px;"><v:fill type="frame" src="${still}" color="#6f7d5a" /><v:textbox inset="0,0,0,0"><![endif]-->`,
+    `<table role="presentation" class="rr-still-content" width="100%" height="420" cellpadding="0" cellspacing="0" border="0" style="height: 420px; border-collapse: collapse;"><tr><td class="rr-label-wrap" valign="bottom" align="center" style="padding: 0 24px 28px;">`,
     label,
+    "</td></tr></table>",
     "<!--[if gte mso 9]></v:textbox></v:rect><![endif]-->",
     "</td></tr>",
   ].join("");
 }
 
-function renderDigestItemText(item: DailyDigestEmailItem) {
-  const url = getDigestItemUrl(item);
+function renderDigestItemText(item: DailyDigestEmailItem, userId?: string) {
+  const url = getDigestItemUrl(item, userId);
   const metaParts = [item.siteName, item.estimatedMinutes ? `${item.estimatedMinutes} min` : null].filter(
     Boolean,
   );
@@ -244,58 +241,20 @@ function renderDigestItemText(item: DailyDigestEmailItem) {
     .join("\n");
 }
 
-function renderBookRouletteHtml(book: DailyDigestBookRoulettePick | null | undefined) {
-  if (!book) {
-    return "";
-  }
-
-  const metaParts = [book.author?.trim() || null].filter(Boolean);
-  const notes = book.notes?.trim();
-
-  return [
-    `<tr><td style="padding: 0 32px 28px;">`,
-    `<div style="padding: 18px 20px; border-top: 1px solid #e3d6bb;">`,
-    `<p style="margin: 0 0 8px; font-family: ${SERIF}; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: ${MUTED};">Book Roulette</p>`,
-    `<p style="margin: 0 0 6px; font-family: ${SERIF}; font-size: 18px; line-height: 1.4; font-style: italic; color: ${INK};">${escapeHtml(book.title)}</p>`,
-    metaParts.length > 0
-      ? `<p style="margin: 0; font-family: ${SERIF}; font-size: 14px; color: ${MUTED};">${escapeHtml(metaParts.join(" · "))}</p>`
-      : "",
-    notes
-      ? `<p style="margin: 10px 0 0; font-family: ${SERIF}; font-size: 15px; line-height: 1.6; color: ${INK};">${escapeHtml(notes)}</p>`
-      : "",
-    "</div>",
-    "</td></tr>",
-  ].join("");
-}
-
-function renderBookRouletteText(book: DailyDigestBookRoulettePick | null | undefined) {
-  if (!book) {
-    return "";
-  }
-
-  return [
-    "Book Roulette",
-    book.title,
-    book.author?.trim() || null,
-    book.notes?.trim() || null,
-  ]
-    .filter(Boolean)
-    .join("\n");
-}
-
 /**
  * The daily email: a painted view of the river, and over it, under an arching
  * branch, a link to the one piece the river has for today.
  */
 export function buildReadingRiverDailyDigestEmail({
+  userId,
   displayName,
   items,
-  bookRoulettePick = null,
   now = new Date(),
 }: {
+  // Omitted only for unpersonalized previews. Sent emails always include it.
+  userId?: string;
   displayName: string;
   items: DailyDigestEmailItem[];
-  bookRoulettePick?: DailyDigestBookRoulettePick | null;
   now?: Date;
 }) {
   const homeUrl = getReadingRiverHomeUrl();
@@ -306,13 +265,11 @@ export function buildReadingRiverDailyDigestEmail({
     : null;
   const stillHtml = renderStillWithLinkHtml({
     stillUrl: getDigestStillUrl(now),
-    url: item ? getDigestItemUrl(item) : homeUrl,
+    url: item ? getDigestItemUrl(item, userId) : homeUrl,
     title: item ? item.title : "Walk down to the river",
     meta,
   });
-  const itemText = item ? renderDigestItemText(item) : "The river is quiet today.";
-  const bookRouletteHtml = renderBookRouletteHtml(bookRoulettePick);
-  const bookRouletteText = renderBookRouletteText(bookRoulettePick);
+  const itemText = item ? renderDigestItemText(item, userId) : "The river is quiet today.";
 
   return {
     subject: "Your Reading River for today",
@@ -322,16 +279,15 @@ export function buildReadingRiverDailyDigestEmail({
       "<head>",
       `<meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Your Reading River for today</title>`,
       // On a phone the picture is narrower, so it needs less height to show the same scene.
-      `<style>@media (max-width: 620px) { .rr-still { height: 260px !important; padding: 0 12px 22px !important; } .rr-label { padding: 10px 12px 8px !important; } .rr-title { font-size: 16px !important; line-height: 1.2 !important; } .rr-meta { font-size: 12px !important; line-height: 1.2 !important; } }</style>`,
+      `<style>@media (max-width: 660px) { .rr-still, .rr-still-content { height: 300px !important; } .rr-label-wrap { padding: 0 16px 22px !important; } .rr-label { padding: 10px 16px !important; } .rr-title { font-size: 18px !important; line-height: 1.3 !important; } .rr-meta { font-size: 12px !important; line-height: 1.3 !important; } }</style>`,
       "</head>",
-      `<body style="margin: 0; padding: 24px 12px; background: #ebe1cb;">`,
+      `<body style="margin: 0; padding: 16px 10px; font-family: ${SERIF}; background: #ebe1cb;">`,
       // The preview line mail apps show beside the subject.
       `<div style="display: none; max-height: 0; overflow: hidden;">${escapeHtml(item ? `${item.title}${meta ? ` · ${meta}` : ""}` : "The river is quiet today.")}</div>`,
       `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;"><tr><td align="center">`,
-      `<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 600px; border-collapse: separate; background: ${PAPER}; border-radius: 18px; overflow: hidden;">`,
+      `<table role="presentation" class="rr-card" width="640" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 640px; border-collapse: separate; background: ${PAPER}; border-radius: 18px; overflow: hidden;">`,
       stillHtml,
-      bookRouletteHtml ? `<tr><td style="height: 22px; line-height: 22px;">&nbsp;</td></tr>${bookRouletteHtml}` : "",
-      `<tr><td style="padding: 16px 28px 18px; font-family: ${SERIF}; font-size: 13px; font-style: italic; color: ${MUTED};"><a href="${escapeHtml(homeUrl)}" style="color: ${MUTED};">Reading River</a></td></tr>`,
+      `<tr><td align="center" style="padding: 14px 20px 16px; text-align: center;"><a href="${escapeHtml(homeUrl)}" style="display: inline-block; padding: 11px 18px; border: 1px solid #c5b69a; border-radius: 6px; background-color: #f1e7d2; font-family: ${SERIF}; font-size: 14px; line-height: 20px; mso-padding-alt: 11px 18px; color: #65513a; text-decoration: none;">Step into the river</a></td></tr>`,
       "</table>",
       "</td></tr></table>",
       "</body>",
@@ -343,28 +299,27 @@ export function buildReadingRiverDailyDigestEmail({
       `Good morning, ${recipientName}. Today on the river:`,
       "",
       itemText,
-      bookRouletteText ? `\n${bookRouletteText}` : "",
       "",
-      `Walk down to the river: ${homeUrl}`,
+      `Step into the river: ${homeUrl}`,
     ].join("\n"),
   };
 }
 
 export async function sendReadingRiverDailyDigestEmail({
+  userId,
   email,
   displayName,
   items,
-  bookRoulettePick = null,
 }: {
+  userId: string;
   email: string;
   displayName: string;
   items: DailyDigestEmailItem[];
-  bookRoulettePick?: DailyDigestBookRoulettePick | null;
 }) {
   const message = buildReadingRiverDailyDigestEmail({
+    userId,
     displayName,
     items,
-    bookRoulettePick,
   });
   const resend = getResendClient();
   const { data, error } = await resend.emails.send({

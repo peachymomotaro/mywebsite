@@ -22,7 +22,7 @@ function getRoot(root) {
 function getNamedField(form, name) {
   const field = form.elements.namedItem(name);
 
-  if (!(field instanceof HTMLInputElement || field instanceof HTMLSelectElement)) {
+  if (!(field instanceof HTMLInputElement)) {
     throw new Error(`Expected field named ${name}.`);
   }
 
@@ -91,67 +91,6 @@ function createField(labelText, inputOptions) {
   return label;
 }
 
-function createSelectField(labelText, selectOptions, optionDefinitions, helperText = "") {
-  const fieldName =
-    typeof selectOptions?.properties?.name === "string" && selectOptions.properties.name
-      ? selectOptions.properties.name
-      : labelText.toLowerCase().replace(/\s+/g, "-");
-  const selectId =
-    typeof selectOptions?.properties?.id === "string" && selectOptions.properties.id
-      ? selectOptions.properties.id
-      : `popup-${fieldName}`;
-  const helperId = `${selectId}-help`;
-  const field = createElement("div", {
-    className: "popup-field",
-  });
-  const labelTextElement = createElement("label", {
-    className: "popup-label",
-    text: labelText,
-    properties: {
-      htmlFor: selectId,
-    },
-  });
-  const select = createElement("select", selectOptions);
-
-  select.id = selectId;
-
-  if (helperText) {
-    select.setAttribute("aria-describedby", helperId);
-  }
-
-  select.append(
-    ...optionDefinitions.map(({ label: optionLabel, value, disabled = false }) =>
-      createElement("option", {
-        text: optionLabel,
-        properties: {
-          value,
-          disabled,
-        },
-      }),
-    ),
-  );
-
-  if (optionDefinitions.some((option) => option.value === "")) {
-    select.value = "";
-  }
-
-  field.append(labelTextElement, select);
-
-  if (helperText) {
-    field.append(
-      createElement("p", {
-        className: "popup-help",
-        text: helperText,
-        properties: {
-          id: helperId,
-        },
-      }),
-    );
-  }
-
-  return field;
-}
-
 function createCard(children) {
   return createElement("section", {
     className: "popup-card",
@@ -187,10 +126,6 @@ function createActions(buttonText, disabled = false) {
 
 function replaceRoot(root, child) {
   root.replaceChildren(child);
-}
-
-function parsePopupPriorityScore(value) {
-  return value === "none" ? null : Number(value);
 }
 
 function parsePopupEstimatedMinutes(value) {
@@ -468,7 +403,6 @@ async function handleSaveSubmit(event, popupRoot, token) {
 
   const url = getNamedField(form, "url").value.trim();
   const title = getNamedField(form, "title").value.trim();
-  const priorityScore = parsePopupPriorityScore(getNamedField(form, "priorityScore").value);
   const estimatedMinutes = parsePopupEstimatedMinutes(getNamedField(form, "estimatedMinutes").value);
 
   if (!form.checkValidity()) {
@@ -484,7 +418,7 @@ async function handleSaveSubmit(event, popupRoot, token) {
       {
         url,
         title,
-        priorityScore,
+        priorityScore: null,
         estimatedMinutes,
       },
       {
@@ -569,10 +503,6 @@ function renderSignedOut(root, message = "", role = "alert") {
     ],
   });
   const card = createCard([
-    createElement("p", {
-      className: "popup-eyebrow",
-      text: "Reading River",
-    }),
     createElement("h1", {
       className: "popup-title",
       text: "Sign in to Reading River",
@@ -632,51 +562,17 @@ function renderSignedIn(root, activeTab, token, message = "", role = "status") {
           value: activeTab.estimatedMinutes ? String(activeTab.estimatedMinutes) : "",
         },
       }),
-      createSelectField(
-        "Priority",
-        {
-          className: "popup-input",
-          properties: {
-            name: "priorityScore",
-            required: true,
-          },
-        },
-        [
-          {
-            label: "Choose priority setting",
-            value: "",
-            disabled: true,
-          },
-          {
-            label: "No priority (stream only)",
-            value: "none",
-          },
-          ...Array.from({ length: 10 }, (_, index) => {
-            const value = index + 1;
-
-            return {
-              label: String(value),
-              value: String(value),
-            };
-          }),
-        ],
-        "No priority keeps an item in the stream only, so it never appears in the left column.",
-      ),
       createActions("Save article", true),
     ],
   });
   const card = createCard([
-    createElement("p", {
-      className: "popup-eyebrow",
-      text: "Signed in",
-    }),
     createElement("h1", {
       className: "popup-title",
       text: "Save this page",
     }),
     createElement("p", {
       className: "popup-copy",
-      text: "Capture the current tab with a priority setting so it’s ready for later.",
+      text: "Capture the current article and add it to your river.",
     }),
     form,
   ]);
@@ -696,10 +592,6 @@ function renderSignedIn(root, activeTab, token, message = "", role = "status") {
 
 function renderBootError(root) {
   const card = createCard([
-    createElement("p", {
-      className: "popup-eyebrow",
-      text: "Reading River",
-    }),
     createElement("h1", {
       className: "popup-title",
       text: "Popup unavailable",

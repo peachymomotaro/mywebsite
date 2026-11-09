@@ -41,6 +41,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
     return (
       <AuthShell
+        eyebrow=""
         frameClassName="max-w-md"
         title="Enter the stream"
         description={

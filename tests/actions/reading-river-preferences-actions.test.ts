@@ -75,14 +75,10 @@ describe("Reading River preferences actions", () => {
       where: { userId: "user-1" },
       update: {
         digestCadence: "every_other_day",
-        includeBookRouletteInDigest: true,
-        priorityRandomPoolSize: 5,
       },
       create: {
         ...getAppSettingsDefaults("user-1"),
         digestCadence: "every_other_day",
-        includeBookRouletteInDigest: true,
-        priorityRandomPoolSize: 5,
       },
     });
     expect(actionMocks.revalidatePath).toHaveBeenCalledWith("/reading-river/preferences");

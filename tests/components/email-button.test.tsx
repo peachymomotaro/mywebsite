@@ -11,7 +11,7 @@ describe("EmailButton", () => {
 
   it("keeps the email address out of the DOM until the visitor clicks", () => {
     let clickedHref = "";
-    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function () {
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
       clickedHref = this.href;
     });
 
@@ -29,7 +29,7 @@ describe("EmailButton", () => {
 
   it("adds an encoded subject when one is supplied", () => {
     let clickedHref = "";
-    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function () {
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
       clickedHref = this.href;
     });
 

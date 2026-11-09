@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -41,7 +41,10 @@ const mocks = vi.hoisted(() => ({
     ],
     recentlyPassed: [],
   })),
-  markAsReadMock: vi.fn(async () => {}),
+  markAsReadMock: vi.fn(async ({ id }: { id: string }) => ({
+    id, title: "Eddy piece 1", sourceUrl: "https://example.com/eddy-1", siteName: null,
+    readAt: "2026-11-08T12:00:00.000Z",
+  })),
   skipReadingItemMock: vi.fn(async () => {}),
   deleteReadingItemMock: vi.fn(async () => {}),
   deleteBookMock: vi.fn(async () => {}),
@@ -49,6 +52,8 @@ const mocks = vi.hoisted(() => ({
 
 const eddiesMock = vi.hoisted(() => ({ getEddyArticles: vi.fn(async (): Promise<unknown[]> => []) }));
 vi.mock("@/lib/reading-river/eddies", () => eddiesMock);
+const forestMock = vi.hoisted(() => ({ getForestArticles: vi.fn(async (): Promise<unknown[]> => []) }));
+vi.mock("@/lib/reading-river/forest", () => forestMock);
 const eddy = (n: number) => ({ id: `eddy-${n}`, title: `Eddy piece ${n}`, sourceUrl: `https://example.com/eddy-${n}`, siteName: null, estimatedMinutes: 10 });
 
 vi.mock("next/link", () => ({
@@ -189,6 +194,7 @@ describe("ReadingRiverHomePage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Live stream article/ }));
     const sheet = within(document.getElementById("river-bank-lifted")!);
+    fireEvent.click(sheet.getByRole("button", { name: "Edit" }));
     fireEvent.click(sheet.getByRole("button", { name: /Change the title/ }));
     const title = sheet.getByLabelText("Title");
     fireEvent.change(title, { target: { value: "A better title" } });
@@ -233,5 +239,32 @@ describe("ReadingRiverHomePage", () => {
     const sailing = pool.getByRole("button", { name: /Eddy piece 1/ });
     expect(sailing).toHaveTextContent("sailing out to sea");
     expect(sailing.closest("li")).toHaveAttribute("data-state", "sailing");
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("A tree has been planted"));
+    expect(screen.queryByRole("list", { name: "Trees planted" })).not.toBeInTheDocument();
+  });
+
+  it("restores finished articles for the world without adding a forest list or remote article links", async () => {
+    forestMock.getForestArticles.mockResolvedValueOnce([{
+      id: "finished-1", title: "A remembered essay", sourceUrl: "https://example.com/remembered",
+      siteName: "Example", readAt: "2026-11-07T12:00:00.000Z",
+    }]);
+    const { default: ReadingRiverHomePage } = await import("@/app/reading-river/page");
+    render(await ReadingRiverHomePage({}));
+    expect(forestMock.getForestArticles).toHaveBeenLastCalledWith("user-1");
+    expect(screen.queryByText("Your forest")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "A remembered essay" })).not.toBeInTheDocument();
+  });
+
+  it("keeps the article in the eddies and plants no tree when saving fails", async () => {
+    eddiesMock.getEddyArticles.mockResolvedValueOnce([eddy(1)]);
+    mocks.markAsReadMock.mockRejectedValueOnce(new Error("Offline"));
+    const { default: ReadingRiverHomePage } = await import("@/app/reading-river/page");
+    render(await ReadingRiverHomePage({}));
+    const pool = within(screen.getByRole("list", { name: "In the eddies" }));
+    fireEvent.click(pool.getByRole("button", { name: /Eddy piece 1/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Finished" }));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Couldn't save"));
+    expect(screen.queryByRole("list", { name: "Trees planted" })).not.toBeInTheDocument();
+    expect(pool.getByRole("button", { name: /Eddy piece 1/ }).closest("li")).not.toHaveAttribute("data-state", "sailing");
   });
 });

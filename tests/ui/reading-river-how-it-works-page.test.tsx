@@ -15,55 +15,19 @@ describe("ReadingRiverHowItWorksPage", () => {
       ),
     ).toBeInTheDocument();
     expect(container.querySelector(".editorial-page-kicker")).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "The Philosophy and How It Works" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "The Philosophy" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Reading and finishing" })).toBeInTheDocument();
+    expect(screen.getByText(/Pieces arrive in a continuous stream/)).toBeInTheDocument();
+    expect(screen.getByText(/pool holds up to five pieces/)).toBeInTheDocument();
+    expect(screen.getByText(/Finishing an article plants a golden tree/)).toBeInTheDocument();
+    expect(screen.getByText(/Each day the 16 articles in the river are chosen randomly/)).toBeInTheDocument();
+    expect(screen.getByText(/unfolding the paper/)).toBeInTheDocument();
+    expect(screen.queryByText(/gentle chance/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Three pieces drift by at a time/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/under Still reading/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Drifted past/)).not.toBeInTheDocument();
+    expect(container.querySelectorAll(".river-how-steps li")).toHaveLength(4);
 
-    const howItWorksHeading = screen.getByRole("heading", { name: "How It Works" });
-    const philosophyHeading = screen.getByRole("heading", { name: "The Philosophy and How It Works" });
-
-    expect(
-      howItWorksHeading.compareDocumentPosition(philosophyHeading) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-
-    expect(
-      screen.getByText(/Find things that you think are worth reading\./i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /Put the things you think are worthwhile into the river, where they become fiches\. Paste a link and we fetch its title and reading time for you\./i,
-      ),
-    ).toBeInTheDocument();
-
-    const randomPickIntro = screen.getByText(
-      /When you want to read something, return to the river and go ficheing\./i,
-    );
-    const randomPickExplanation = screen.getByText(
-      /Three pieces drift by at a time\. Choose one to bring it to the bank, or let them drift on and three others will come into view\./i,
-    );
-    const algorithmIntro = screen.getByText(
-      /If you're interested, here is how the river chooses what drifts by:/i,
-    );
-    expect(
-      screen.getByText(
-        /every piece has the same chance as any other/i,
-      ),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /Anything you open stays on the bank, under Still reading, until you mark it as read/i,
-      ),
-    ).toBeInTheDocument();
-
-    expect(
-      randomPickIntro.compareDocumentPosition(randomPickExplanation) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(
-      randomPickExplanation.compareDocumentPosition(algorithmIntro) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
   });
 
   it("links to the cited influences explicitly", async () => {
@@ -95,7 +59,7 @@ describe("ReadingRiverHowItWorksPage", () => {
 
     expect(screen.queryByText(/I plan to add a Chrome extension soon\./i)).not.toBeInTheDocument();
 
-    const extensionLinks = screen.getAllByRole("link", { name: "here" });
+    const extensionLinks = [screen.getByRole("link", { name: "Firefox extension" }), screen.getByRole("link", { name: "Chrome extension" })];
 
     expect(extensionLinks).toHaveLength(2);
     expect(extensionLinks[0]).toHaveAttribute(
@@ -106,5 +70,35 @@ describe("ReadingRiverHowItWorksPage", () => {
       "href",
       "https://chromewebstore.google.com/detail/reading-river/gclbpodffcebdmecehkolmejiopfjhnl",
     );
+  });
+
+  it("links each painting the river quotes to its Wikipedia page", async () => {
+    const { default: HowItWorksPage } = await import("@/app/reading-river/how-it-works/page");
+    render(await HowItWorksPage());
+
+    expect(screen.getByRole("heading", { name: "The Paintings" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "John Constable, The Hay Wain" })).toHaveAttribute(
+      "href",
+      "https://en.wikipedia.org/wiki/The_Hay_Wain",
+    );
+    expect(screen.getByRole("link", { name: "J. M. W. Turner, The Fighting Temeraire" })).toHaveAttribute(
+      "href",
+      "https://en.wikipedia.org/wiki/The_Fighting_Temeraire",
+    );
+    const wikipediaLinks = screen.getAllByRole("link").filter((link) => link.getAttribute("href")?.startsWith("https://en.wikipedia.org/wiki/"));
+    expect(wikipediaLinks).toHaveLength(13);
+    expect(screen.getByText(/see if you can find them!/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Barge Haulers on the Volga" })).toHaveAttribute(
+      "href",
+      "https://en.wikipedia.org/wiki/Barge_Haulers_on_the_Volga",
+    );
+    expect(screen.getByRole("link", { name: "What Freedom!" })).toHaveAttribute("href", "https://en.wikipedia.org/wiki/Ilya_Repin");
+
+    // Where each painting is stays hidden behind its own spoiler until opened.
+    const spoilers = document.querySelectorAll("details.river-how-spoiler");
+    // Repin's two set the colours, so they're in the note above rather than hidden.
+    expect(spoilers).toHaveLength(11);
+    spoilers.forEach((spoiler) => expect(spoiler).not.toHaveAttribute("open"));
+    expect(spoilers[0].querySelector("summary")).toHaveTextContent("Spoiler");
   });
 });

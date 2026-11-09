@@ -30,7 +30,10 @@ import { addGallery, type Oxbow } from "./glade-gallery";
 import type { GladeSurroundings } from "./glade-sound";
 import { addWanders } from "./glade-wanders";
 import { addRiverside } from "./glade-riverside";
+import { createPaperBoatGeometry } from "./glade-paper-boat";
 import { GLADE_LEAVE_MS } from "./glade-timing";
+import { createArticleTreeGrove, createTreeGrove, nearbyArticleTree, plantArticleTrees, TREE_SPACING, type ForestTree } from "./glade-forest";
+import type { ForestArticle } from "@/lib/reading-river/forest";
 
 export { GLADE_LEAVE_MS };
 
@@ -131,6 +134,8 @@ const NEAR_GONE = 13.5;
 
 /** Very slow: a fifth of a unit a second, a few minutes to pass by. */
 const STREAM_SPEED = 0.2;
+/** Size of the folded-paper boats relative to their modelled geometry. */
+const PAPER_BOAT_SCALE = 0.85;
 const STREAM_SPACING = 17;
 /** Pieces wrap round out of sight, this far up and down from the centre. */
 const STREAM_MIN_WINDOW = 170;
@@ -155,6 +160,9 @@ type Options = {
   onVisible: (ids: string[]) => void;
   /** Called a few times a second with how near you are to the water and the rain, for the sound. */
   onSurroundings?: (surroundings: GladeSurroundings) => void;
+  onArticleTree?: (article: ForestArticle | null) => void;
+  /** The nearby article's label, positioned over the tree on every frame. */
+  treeMemory?: () => HTMLElement | null;
 };
 
 export type GladeControls = {
@@ -162,6 +170,7 @@ export type GladeControls = {
   /** Walk to the nearest piece not already in reach. Returns its id, if there was one. */
   walkToNext: () => string | null;
   face: () => void;
+  setForest: (articles: ForestArticle[]) => void;
   dispose: () => void;
 };
 
@@ -196,6 +205,7 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
   /** Where the walker stands, so trees in the way can step aside. */
   const sightLine = { value: new THREE.Vector3() };
   const random = seeded(42);
+  let walkLimit = WALK_LIMIT;
 
   // --- The river's line --------------------------------------------------
   const curve = new THREE.CatmullRomCurve3(
@@ -323,7 +333,9 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
   }
 
   const centreArc = arcAtZ(ORBIT_CENTER.z);
-  const nearArc = arcAtZ(9);
+  // You start on the near bank just upstream of the bridge, where the first piece
+  // drifts past: the eddies lie straight ahead across the river, the bridge to the right.
+  const nearArc = arcAtZ(-12);
 
   // --- Sky ---------------------------------------------------------------
   const skyMaterial = keep(new THREE.ShaderMaterial({
@@ -366,13 +378,15 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
       }
     `,
   }));
-  scene.add(new THREE.Mesh(keep(new THREE.SphereGeometry(500, 32, 16)), skyMaterial));
+  const sky = new THREE.Mesh(keep(new THREE.SphereGeometry(500, 32, 16)), skyMaterial);
+  scene.add(sky);
 
   // --- Ground: banks, sand and the glade's grass, all the way round -------------
   const groundGeometry = keep(new THREE.PlaneGeometry(640, 640, 300, 300));
   groundGeometry.rotateX(-Math.PI / 2);
   groundGeometry.translate(0, 0, -10);
-  {
+  let groundExtent = 320;
+  function shapeGround(extent: number) {
     const position = groundGeometry.attributes.position as THREE.BufferAttribute;
     const colors = new Float32Array(position.count * 3);
     const sand = new THREE.Color(C.sand);
@@ -383,8 +397,10 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
     const grassDeep = new THREE.Color(C.grassDeep);
     const color = new THREE.Color();
     for (let index = 0; index < position.count; index += 1) {
-      const x = position.getX(index);
-      const z = position.getZ(index);
+      const x = position.getX(index) * extent / groundExtent;
+      const z = (position.getZ(index) + 10) * extent / groundExtent - 10;
+      position.setX(index, x);
+      position.setZ(index, z);
       const d = distanceToRiver(x, z);
       const n = noise2(x * 0.08, z * 0.08);
       const n2 = noise2(x * 0.3 + 11, z * 0.3 - 4);
@@ -402,8 +418,12 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
       colors[index * 3 + 2] = color.b;
     }
     groundGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    position.needsUpdate = true;
     groundGeometry.computeVertexNormals();
+    groundGeometry.computeBoundingSphere();
+    groundExtent = extent;
   }
+  shapeGround(320);
   const groundMaterial = keep(new THREE.MeshLambertMaterial({ vertexColors: true }));
   paintLook(groundMaterial, { wind, dapple: 0.16, dappleScale: 0.35 });
   const ground = new THREE.Mesh(groundGeometry, groundMaterial);
@@ -757,7 +777,7 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
     { x: -30, z: 12, s: 2.2 }, { x: 31, z: 6, s: 2 }, { x: -33, z: -6, s: 1.9 }, { x: 34, z: -16, s: 2.1 },
     { x: 30, z: -40, s: 2 }, { x: -30, z: -34, s: 1.9 },
   ];
-  for (let attempt = 0; attempt < 2400 && trees.length < 300; attempt += 1) {
+  for (let attempt = 0; attempt < 2400 && trees.length < 60; attempt += 1) {
     const x = (random() - 0.5) * 300;
     const z = ORBIT_CENTER.z + (random() - 0.5) * 300;
     if (distanceToRiver(x, z) < 11) continue;
@@ -768,6 +788,7 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
     // Cole's peninsula stays open fields.
     if (Math.hypot(x - oxbow.centre.x, z - oxbow.centre.z) < oxbow.radius + 3) continue;
     if (random() > 0.2 + THREE.MathUtils.smoothstep(fromCentre, 28, 70) * 0.8) continue;
+    if (trees.some((tree) => Math.hypot(x - tree.x, z - tree.z) < TREE_SPACING)) continue;
     trees.push({ x, z, s: 1.1 + random() * 1.2 });
   }
 
@@ -788,44 +809,20 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
   paintLook(trunkMaterial, { wind, dapple: 0.1, nearFade: 14, sightTo: sightLine });
   const crownMaterial = keep(new THREE.MeshLambertMaterial());
   paintLook(crownMaterial, { wind, gust, nearFade: 14, sightTo: sightLine, strength: 0.05, dapple: 0.45, dappleScale: 0.9 });
-  const CROWNS = 4;
-  const trunks = new THREE.InstancedMesh(trunkGeometry, trunkMaterial, trees.length);
-  const crowns = new THREE.InstancedMesh(crownGeometry, crownMaterial, trees.length * CROWNS);
-  const treeShadows = new THREE.InstancedMesh(shadowGeometry, shadowMaterial, trees.length);
+  const treeAssets = { trunkGeometry, crownGeometry, shadowGeometry, trunkMaterial, crownMaterial,
+    shadowMaterial, groundHeight, colors: C.leaf };
+  const backgroundGrove = createTreeGrove(trees, treeAssets);
+  scene.add(backgroundGrove.group);
+  const backgroundTreeCount = trees.length;
+  let articleTrees: ForestTree[] = [];
+  let articleGrove: ReturnType<typeof createArticleTreeGrove> | null = null;
+  let nearbyTreeId: string | null = null;
+  let nearbyTree: ForestTree | null = null;
   const matrix = new THREE.Matrix4();
   const quaternion = new THREE.Quaternion();
   const scale = new THREE.Vector3();
   const place = new THREE.Vector3();
   const tint = new THREE.Color();
-  trees.forEach((tree, index) => {
-    const groundY = groundHeight(tree.x, tree.z);
-    place.set(tree.x, groundY - 0.1, tree.z);
-    scale.set(tree.s, tree.s, tree.s);
-    matrix.compose(place, quaternion.identity(), scale);
-    trunks.setMatrixAt(index, matrix);
-    place.set(tree.x + 1.2 * tree.s, groundY + 0.05, tree.z + 0.6 * tree.s);
-    scale.set(tree.s * 5.5, 1, tree.s * 4.2);
-    matrix.compose(place, quaternion.identity(), scale);
-    treeShadows.setMatrixAt(index, matrix);
-    const base = C.leaf[Math.floor(random() * C.leaf.length)];
-    for (let k = 0; k < CROWNS; k += 1) {
-      const angle = random() * Math.PI * 2;
-      const spread = k === 0 ? 0 : 0.75 + random() * 0.35;
-      place.set(
-        tree.x + Math.cos(angle) * spread * tree.s,
-        groundY + tree.s * (3 + (k === 0 ? 0.4 : random() * 1.1)),
-        tree.z + Math.sin(angle) * spread * tree.s,
-      );
-      // Narrower than they are tall: slim, upright crowns.
-      const s = tree.s * (k === 0 ? 1.15 : 0.7 + random() * 0.25);
-      scale.set(s * 0.72, s * (0.95 + random() * 0.25), s * 0.72);
-      quaternion.setFromEuler(new THREE.Euler(random(), random() * 6, random()));
-      matrix.compose(place, quaternion, scale);
-      crowns.setMatrixAt(index * CROWNS + k, matrix);
-      crowns.setColorAt(index * CROWNS + k, tint.set(base).offsetHSL((random() - 0.5) * 0.03, 0, (random() - 0.4) * 0.12));
-    }
-  });
-  scene.add(treeShadows, trunks, crowns);
 
   // --- Tufts of grass and reeds along the banks --------------------------------------
   const bladeParts: THREE.BufferGeometry[] = [];
@@ -932,58 +929,30 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
     tugAt: gallery.tugAt,
   });
 
-  // --- Rafts for the pieces afloat, and ripples --------------------------------
+  // --- Large folded-paper boats for the pieces afloat ---------------------
   const plankGeometry = keep(new THREE.BoxGeometry(0.42, 0.16, 1.6));
-  const poleGeometry = keep(new THREE.CylinderGeometry(0.025, 0.03, 1.1, 5));
-  const raftWood = ["#8a6339", "#a77a45", "#6e4c2b"];
-  // Bake six rigid wooden pieces into one vertex-coloured draw call per raft.
-  // The flag and shadow remain separate so they can still animate normally.
-  const raftBodyMaterial = keep(new THREE.MeshLambertMaterial({ vertexColors: true }));
-  const raftBodyGeometry = (() => {
-    const pieces: THREE.BufferGeometry[] = [];
-    const add = (geometry: THREE.BufferGeometry, colour: string, position: THREE.Vector3,
-      rotation = new THREE.Euler(), scale = new THREE.Vector3(1, 1, 1)) => {
-      const part = geometry.clone();
-      const matrix = new THREE.Matrix4().compose(position, new THREE.Quaternion().setFromEuler(rotation), scale);
-      part.applyMatrix4(matrix);
-      const tint = new THREE.Color(colour);
-      const count = part.getAttribute("position").count;
-      const colours = new Float32Array(count * 3);
-      for (let index = 0; index < count; index += 1) {
-        colours[index * 3] = tint.r;
-        colours[index * 3 + 1] = tint.g;
-        colours[index * 3 + 2] = tint.b;
-      }
-      part.setAttribute("color", new THREE.BufferAttribute(colours, 3));
-      pieces.push(part);
-    };
-    for (let plank = 0; plank < 4; plank += 1) {
-      add(plankGeometry, raftWood[plank % 3], new THREE.Vector3((plank - 1.5) * 0.44, 0, (plank % 2) * 0.08));
-    }
-    add(plankGeometry, raftWood[2], new THREE.Vector3(0, 0.1, 0),
-      new THREE.Euler(0, Math.PI / 2, 0), new THREE.Vector3(0.6, 0.8, 1.15));
-    add(poleGeometry, raftWood[2], new THREE.Vector3(0.3, 0.6, 0.3));
-    const merged = mergeGeometries(pieces);
-    pieces.forEach((piece) => piece.dispose());
-    if (!merged) throw new Error("Unable to batch the raft geometry");
-    return keep(merged);
-  })();
+  const paperBoatGeometry = keep(createPaperBoatGeometry());
+  const paperBoatMaterial = keep(new THREE.MeshLambertMaterial({
+    vertexColors: true, side: THREE.DoubleSide, flatShading: true,
+    emissive: new THREE.Color("#d9cbb0"), emissiveIntensity: 0.16,
+  }));
+  const foldGeometry = keep(new THREE.EdgesGeometry(paperBoatGeometry, 24));
+  const foldMaterial = keep(new THREE.LineBasicMaterial({ color: "#9e8763", transparent: true, opacity: 0.24 }));
   const rafts: THREE.Group[] = [];
-  const pennantGeometry = keep(new THREE.PlaneGeometry(0.42, 0.22));
-  pennantGeometry.translate(0.21, 0, 0);
-  const pennantMaterial = keep(new THREE.MeshLambertMaterial({ color: new THREE.Color(C.cream), side: THREE.DoubleSide }));
   function raftAt(index: number) {
     while (rafts.length <= index) {
       const raft = new THREE.Group();
-      raft.add(new THREE.Mesh(raftBodyGeometry, raftBodyMaterial));
-      const pennant = new THREE.Mesh(pennantGeometry, pennantMaterial);
-      pennant.position.set(0.3, 1.02, 0.3);
-      pennant.name = "pennant";
-      raft.add(pennant);
+      // The boat sits in its own group so its size can be tuned without
+      // touching the raft's own scale, which the pool animates.
+      const boat = new THREE.Group();
+      boat.scale.setScalar(PAPER_BOAT_SCALE);
+      boat.add(new THREE.Mesh(paperBoatGeometry, paperBoatMaterial));
+      boat.add(new THREE.LineSegments(foldGeometry, foldMaterial));
       const shade = new THREE.Mesh(shadowGeometry, shadowMaterial);
-      shade.scale.set(3, 1, 3.2);
+      shade.scale.set(3.4, 1, 5.6);
       shade.position.y = -0.08;
-      raft.add(shade);
+      boat.add(shade);
+      raft.add(boat);
       raft.visible = false;
       scene.add(raft);
       rafts.push(raft);
@@ -1121,7 +1090,6 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
 
   // Solid things on the ground the walker goes round.
   const fixedObstacles: Obstacle[] = [
-    ...trees.map((tree) => ({ x: tree.x, z: tree.z, r: 0.2 * tree.s + 0.25 })),
     ...riverside.willows.map((at) => ({ x: at.x, z: at.z, r: 0.8 })),
     ...riverside.logPoints.map((at) => ({ x: at.x, z: at.z, r: 0.65 })),
     ...rockSpots.map((rock) => ({ x: rock.x, z: rock.y, r: rock.z * 1.1 })),
@@ -1129,8 +1097,63 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
     ...gallery.obstacles,
     ...wanders.obstacles,
   ];
+  const sceneryObstacles = [...fixedObstacles];
+  function setForest(articles: ForestArticle[]) {
+    articleTrees = plantArticleTrees(articles, {
+      centre: ORBIT_CENTER,
+      existing: trees.slice(0, backgroundTreeCount),
+      canPlant: (x, z) => distanceToRiver(x, z) >= 12
+        && Math.hypot(x - ORBIT_CENTER.x, z - ORBIT_CENTER.z) >= 20
+        && Math.hypot(x - cottageAt.x, z - cottageAt.z) >= 12
+        && Math.hypot(x - oxbow.centre.x, z - oxbow.centre.z) >= oxbow.radius + 5
+        && sceneryObstacles.every((obstacle) => Math.hypot(x - obstacle.x, z - obstacle.z) >= obstacle.r + 7),
+    });
+    articleGrove?.dispose();
+    articleGrove = createArticleTreeGrove(articleTrees, treeAssets);
+    nearbyTreeId = null;
+    nearbyTree = null;
+    options.onArticleTree?.(null);
+    scene.add(articleGrove.group);
+    trees.splice(backgroundTreeCount, trees.length - backgroundTreeCount, ...articleTrees);
+    fixedObstacles.splice(0, fixedObstacles.length, ...sceneryObstacles,
+      ...trees.map((tree) => ({ x: tree.x, z: tree.z, r: 0.2 * tree.s + 0.25 })));
+    walkLimit = articleTrees.reduce((limit, tree) => Math.max(limit,
+      Math.hypot(tree.x - ORBIT_CENTER.x, tree.z - ORBIT_CENTER.z) + 20), WALK_LIMIT);
+    if (walkLimit + 80 > groundExtent) shapeGround(walkLimit + 80);
+    dirty = true;
+  }
   const nearbyObstacles: Obstacle[] = [];
   let lookAroundAt = 0;
+  const treeLabelPoint = new THREE.Vector3();
+  let treeLabelSize: { element: HTMLElement; id: string; open: string; viewport: number; width: number; height: number } | null = null;
+
+  function layoutTreeMemory() {
+    const label = options.treeMemory?.();
+    if (!label) return;
+    const tree = nearbyTree;
+    if (!tree || label.dataset.articleId !== tree.article.id) {
+      label.style.visibility = "hidden";
+      return;
+    }
+    // Opening the label, or asking before uprooting, changes its size: measure again.
+    const open = label.dataset.open ?? "";
+    if (treeLabelSize?.element !== label || treeLabelSize.id !== tree.article.id
+      || treeLabelSize.open !== open || treeLabelSize.viewport !== width) {
+      treeLabelSize = { element: label, id: tree.article.id, open, viewport: width, width: label.offsetWidth, height: label.offsetHeight };
+    }
+    treeLabelPoint.set(tree.x, groundHeight(tree.x, tree.z) + tree.s * 5.2, tree.z).project(camera);
+    const onScreen = treeLabelPoint.z > -1 && treeLabelPoint.z < 1
+      && Math.abs(treeLabelPoint.x) < 1 && Math.abs(treeLabelPoint.y) < 1;
+    label.style.visibility = onScreen ? "visible" : "hidden";
+    if (!onScreen) return;
+    const halfWidth = treeLabelSize.width / 2 + 12;
+    const x = (treeLabelPoint.x * 0.5 + 0.5) * width;
+    const y = (-treeLabelPoint.y * 0.5 + 0.5) * height;
+    const left = Math.max(halfWidth, Math.min(width - halfWidth, x));
+    label.style.left = `${left}px`;
+    label.style.top = `${Math.max(treeLabelSize.height + 84, y)}px`;
+    label.style.setProperty("--tree-pin", `${x - left + treeLabelSize.width / 2}px`);
+  }
 
   /** Which creatures are near enough to step round? Checked a few times a second. */
   function lookAround(now: number) {
@@ -1138,6 +1161,12 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
     lookAroundAt = now + 250;
     nearbyObstacles.length = 0;
     life.around(walkerAt, nearbyObstacles);
+    const tree = nearbyArticleTree(articleTrees, walkerAt, nearbyTreeId);
+    nearbyTree = tree;
+    if ((tree?.article.id ?? null) !== nearbyTreeId) {
+      nearbyTreeId = tree?.article.id ?? null;
+      options.onArticleTree?.(tree?.article ?? null);
+    }
     options.onSurroundings?.({
       river: Math.max(0, distanceToRiver(walkerAt.x, walkerAt.z) - RIVER_HALF_WIDTH),
       rain: Math.hypot(walkerAt.x - wanders.showerAt.x, walkerAt.z - wanders.showerAt.z),
@@ -1195,7 +1224,7 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
 
   function clampToGlade(point: THREE.Vector3) {
     const offset = new THREE.Vector2(point.x - ORBIT_CENTER.x, point.z - ORBIT_CENTER.z);
-    if (offset.length() > WALK_LIMIT) offset.setLength(WALK_LIMIT);
+    if (offset.length() > walkLimit) offset.setLength(walkLimit);
     return new THREE.Vector3(ORBIT_CENTER.x + offset.x, 0, ORBIT_CENTER.z + offset.y);
   }
 
@@ -1303,7 +1332,9 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
   paintScene.add(new THREE.Mesh(keep(new THREE.PlaneGeometry(2, 2)), paintMaterial));
 
   // --- Looking round: drag to orbit, wheel to step closer --------------------------
-  const orbit = { yaw: 0, pitch: ORBIT_PITCH, radius: ORBIT_RADIUS, spin: 0, target: null as number | null };
+  /** The camera starts behind the walker, looking past them to the eddy pool. */
+  const startYaw = Math.atan2(walkerAt.x - poolCentre.x, walkerAt.z - poolCentre.z);
+  const orbit = { yaw: startYaw, pitch: ORBIT_PITCH, radius: ORBIT_RADIUS, spin: 0, target: null as number | null };
   function placeCamera() {
     const flat = Math.cos(orbit.pitch) * orbit.radius;
     camera.position.set(
@@ -1311,6 +1342,7 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
       focus.y + Math.sin(orbit.pitch) * orbit.radius,
       focus.z + Math.cos(orbit.yaw) * flat,
     );
+    sky.position.copy(camera.position);
     camera.lookAt(focus);
     camera.updateMatrixWorld();
   }
@@ -1425,15 +1457,26 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
       const rect = canvas.getBoundingClientRect();
       ndc.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
       raycaster.setFromCamera(ndc, camera);
-      const hit = raycaster.intersectObjects([water, ground, bridge], true)[0];
+      const treeParts = articleGrove?.group.children.filter((part) => part.userData.treeStride) ?? [];
+      const hit = raycaster.intersectObjects([water, ground, bridge, ...treeParts], true)[0];
       if (hit) {
         if (hit.object === water) {
           ripple(hit.point, 1.2);
           ripple(hit.point, 0.6, performance.now() + 180);
         }
-        let part: THREE.Object3D | null = hit.object;
-        while (part && part !== bridge) part = part.parent;
-        walkTo(hit.point.x, hit.point.z, part === bridge);
+        const tree = hit.instanceId !== undefined && hit.object.userData.treeStride
+          ? articleTrees[Math.floor(hit.instanceId / hit.object.userData.treeStride)] : null;
+        if (tree) {
+          // Stop beside the trunk, on the side you're approaching from.
+          const approach = new THREE.Vector2(walkerAt.x - tree.x, walkerAt.z - tree.z);
+          if (approach.lengthSq() === 0) approach.set(0, 1);
+          approach.setLength(4);
+          walkTo(tree.x + approach.x, tree.z + approach.y);
+        } else {
+          let part: THREE.Object3D | null = hit.object;
+          while (part && part !== bridge) part = part.parent;
+          walkTo(hit.point.x, hit.point.z, part === bridge);
+        }
       }
     }
     if (!options.animate()) orbit.spin = 0;
@@ -1567,7 +1610,7 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
   function placeCard(element: HTMLElement, at: THREE.Vector3, fade: number, lifted: boolean,
     pinned?: { left: number; top: number; size: number }) {
     projected.copy(at);
-    projected.y += 0.25;
+    projected.y += 1.15;
     const distance = camera.position.distanceTo(projected);
     projected.project(camera);
     const behind = projected.z > 1;
@@ -1899,8 +1942,6 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
 
       const raft = raftAt(index);
       raft.visible = opacity > 0.02;
-      const pennant = raft.getObjectByName("pennant");
-      if (pennant) pennant.rotation.y = Math.sin(time * 2.1 + seq) * 0.5;
       raft.position.copy(worldPoint);
       raft.rotation.set(
         Math.sin(streamTime * 0.8 + seq) * 0.04,
@@ -2044,6 +2085,7 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
     layoutFloats(now, dt, animate);
     layoutPool(now, animate);
     lookAround(now);
+    layoutTreeMemory();
     if (animate) {
       life.update(now, dt, walkerAt);
       constable.update(now);
@@ -2099,6 +2141,7 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
   frameId = requestAnimationFrame(frame);
 
   return {
+    setForest,
     walkToNext() {
       // Each press goes on to the next piece afloat, in the order they came
       // down the river, and round to the first again after the last.
@@ -2121,7 +2164,7 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
     },
     face() {
       orbit.spin = 0;
-      orbit.target = Math.round(orbit.yaw / (Math.PI * 2)) * Math.PI * 2;
+      orbit.target = startYaw + Math.round((orbit.yaw - startYaw) / (Math.PI * 2)) * Math.PI * 2;
       orbit.pitch = ORBIT_PITCH;
       orbit.radius = ORBIT_RADIUS;
       dirty = true;
@@ -2140,7 +2183,9 @@ export function createGlade(host: HTMLElement, options: Options): GladeControls 
       canvas.removeEventListener("pointercancel", onPointerUp);
       canvas.removeEventListener("wheel", onWheel);
       disposables.forEach((thing) => thing.dispose());
-      [trunks, crowns, treeShadows, tufts, rocks].forEach((mesh) => mesh.dispose());
+      backgroundGrove.dispose();
+      articleGrove?.dispose();
+      [tufts, rocks].forEach((mesh) => mesh.dispose());
       riverside.dispose();
       renderer.dispose();
       canvas.remove();

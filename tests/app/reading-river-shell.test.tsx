@@ -17,6 +17,8 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+vi.mock("@/components/reading-river/glade-fonts", () => ({ gladeFontVariables: "font-spectral-test" }));
+
 vi.mock("next/image", () => ({
   default: ({
     alt,
@@ -52,8 +54,12 @@ describe("EditorialShell", () => {
 
   it("uses the Reading River icon as the route app mark", () => {
     expect(metadata.icons).toEqual({
-      icon: "/reading-river-icon.png",
-      apple: "/reading-river-icon.png",
+      icon: [
+        { url: "/reading-river-icon-32.png", sizes: "32x32", type: "image/png" },
+        { url: "/reading-river-icon-48.png", sizes: "48x48", type: "image/png" },
+        { url: "/reading-river-icon-192.png", sizes: "192x192", type: "image/png" },
+      ],
+      apple: { url: "/reading-river-apple-icon.png", sizes: "180x180", type: "image/png" },
     });
   });
 

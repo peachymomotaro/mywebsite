@@ -234,7 +234,7 @@ describe("extension auth token store", () => {
   });
 
   it("does not export the legacy extension token alias", () => {
-    expect(extensionAuth.getExtensionTokenByToken).toBeUndefined();
+    expect("getExtensionTokenByToken" in extensionAuth).toBe(false);
   });
 
   it("revokes an extension token by hashed token", async () => {
