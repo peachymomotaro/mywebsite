@@ -7,8 +7,8 @@ It replaces the retired Canon Explorer (`/qb`).
 ## Workflow
 
 1. Create a task in POps, or ask an agent to create one (API/MCP). Agents can also edit task titles, descriptions, and tags when asked.
-2. On the task page, pick a pipeline. POps generates a complete prompt: task context, previous runs, decisions, notes, pipeline instructions (versioned), the shared playbook, foundational permission boundaries, and write-back instructions with an idempotency key.
-3. Paste it into an agent conversation. The agent does the work.
+2. On the task page, copy the **task status** by default: a portable factual record of its description, prior runs, decisions and notes, without instructions for executing anything.
+3. Paste the status into an agent and supply your own instructions, **or** attach an explicit reusable workflow. The attached workflow adds versioned instructions, the shared playbook, permission boundaries and reporting instructions with an idempotency key.
 4. The agent writes back, either directly (MCP or an OpenAPI action) or by ending its reply with a `pops-report` block that you paste into the task page.
 5. POps shows the run in the task history, opens any decisions, and updates the suggested next action.
 6. You answer decisions, give feedback on runs, and launch the next pipeline. The next prompt carries everything forward.
@@ -65,7 +65,7 @@ Agents connect to a single Streamable HTTP MCP endpoint:
 
 OAuth connections appear at `/pops/connect` after the token exchange. Revoke a connection there to disable both its access and refresh tokens. Access tokens last one hour; refresh tokens rotate on every use and the connection expires after 30 days, when you reconnect. Replaying a used refresh token revokes the connection. These lifetimes also apply when an agent app stays open.
 
-The MCP tools are `pops_list_tasks`, `pops_get_task`, `pops_get_pipeline_prompt`, `pops_list_pipelines`, `pops_get_playbook`, `pops_create_task`, `pops_update_task`, `pops_record_agent_run`, `pops_create_decision`, `pops_relay_feedback`, and `pops_propose`. Agents can edit titles, descriptions, and tags when asked. The edit tool requires `expectedUpdatedAt` from a fresh `pops_get_task` response and rejects stale edits with a conflict. Omitted fields stay unchanged; tags replace the entire tag list. Each edit is recorded in history as an agent action and leaves human-engagement and resurfacing timestamps unchanged. Task completion and archiving remain owner actions.
+The MCP tools are `pops_list_tasks`, `pops_get_task`, `pops_get_task_brief`, `pops_get_pipeline_prompt`, `pops_list_pipelines`, `pops_get_playbook`, `pops_create_task`, `pops_update_task`, `pops_record_agent_run`, `pops_create_decision`, `pops_relay_feedback`, and `pops_propose`. Agents can edit titles, descriptions, and tags when asked. The edit tool requires `expectedUpdatedAt` from a fresh `pops_get_task` response and rejects stale edits with a conflict. Omitted fields stay unchanged; tags replace the entire tag list. Each edit is recorded in history as an agent action and leaves human-engagement and resurfacing timestamps unchanged. Task completion and archiving remain owner actions.
 
 Other connection options still work:
 
@@ -92,7 +92,7 @@ All routes require `Authorization: Bearer pops_…` and return JSON with `Cache-
 | POST | `/api/pops/v1/tasks` | `tasks:write` — `idempotencyKey` optional |
 | PATCH | `/api/pops/v1/tasks/{id}` | `tasks:write` — title, description, tags; requires `expectedUpdatedAt` |
 | GET | `/api/pops/v1/tasks/{id}` | `tasks:read` — full context for the next agent |
-| GET | `/api/pops/v1/tasks/{id}/prompt?pipeline=` | `tasks:read` |
+| GET | `/api/pops/v1/tasks/{id}/prompt` (optional `?pipeline=`) | `tasks:read` |
 | POST | `/api/pops/v1/tasks/{id}/runs` | `runs:write` — idempotent; 409 if a key is reused with different content |
 | POST | `/api/pops/v1/tasks/{id}/decisions` | `decisions:write` |
 | POST | `/api/pops/v1/runs/{id}/feedback` | `feedback:write` — recorded as *relayed* |
