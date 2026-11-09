@@ -90,7 +90,7 @@ export function reportTemplate(taskId: string, pipeline: PromptPipeline, idempot
       idempotencyKey,
       pipeline: pipeline.slug,
       pipelineVersion: pipeline.version,
-      agentName: "ChatGPT",
+      agentName: "Agent",
       outcome: "completed | partial | blocked | failed",
       attempted: "What you set out to do, in one or two sentences.",
       accomplished: "What you actually achieved. Lead with the result.",
@@ -107,7 +107,7 @@ export function reportTemplate(taskId: string, pipeline: PromptPipeline, idempot
   };
 }
 
-/** Builds a complete, self-contained ChatGPT prompt for one pipeline on one task. */
+/** Builds a complete, self-contained agent prompt for one pipeline on one task. */
 export function buildPipelinePrompt(options: PromptOptions) {
   const { context, pipeline, playbook, idempotencyKey, apiBaseUrl, includePipelineReview } = options;
   const { task } = context;

@@ -1,15 +1,15 @@
 # POps
 
-POps is a private task manager at `/pops` designed around one principle: **minimise the human work remaining**, not maximise AI output. POps itself is a conventional web app. ChatGPT and Claude do the reasoning and research through reusable *pipelines*, and write structured results back.
+POps is a private task manager at `/pops` designed around one principle: **minimise the human work remaining**, not maximise AI output. POps itself is a conventional web app. Agents do the reasoning and research through reusable *pipelines*, and write structured results back.
 
 It replaces the retired Canon Explorer (`/qb`).
 
 ## Workflow
 
-1. Create a task in POps, or ask ChatGPT or Claude to create one (API/MCP). Either app can also edit task titles, descriptions, and tags when asked.
+1. Create a task in POps, or ask an agent to create one (API/MCP). Agents can also edit task titles, descriptions, and tags when asked.
 2. On the task page, pick a pipeline. POps generates a complete prompt: task context, previous runs, decisions, notes, pipeline instructions (versioned), the shared playbook, foundational permission boundaries, and write-back instructions with an idempotency key.
-3. Paste it into a ChatGPT or Claude conversation. The chat app does the work.
-4. The chat app writes back, either directly (MCP, or a Custom GPT action in ChatGPT) or by ending its reply with a `pops-report` block that you paste into the task page.
+3. Paste it into an agent conversation. The agent does the work.
+4. The agent writes back, either directly (MCP or an OpenAPI action) or by ending its reply with a `pops-report` block that you paste into the task page.
 5. POps shows the run in the task history, opens any decisions, and updates the suggested next action.
 6. You answer decisions, give feedback on runs, and launch the next pipeline. The next prompt carries everything forward.
 
@@ -53,25 +53,24 @@ The migration also installs `BEFORE UPDATE OR DELETE` triggers that make `PopsHi
 
 Pipelines and the playbook are seeded lazily on first use when their tables are empty. No tasks are ever seeded in production.
 
-## Connecting ChatGPT and Claude
+## Connecting agents
 
-Both chat apps connect to the same Streamable HTTP MCP endpoint:
+Agents connect to a single Streamable HTTP MCP endpoint:
 
 `https://petercurry.org/api/pops/mcp`
 
-1. **ChatGPT:** in Plugins, add a custom MCP server, enter the URL, choose OAuth and automatic client registration (DCR), and create/install the plugin. If your workspace uses the older developer-mode UI, add it as a custom connector there. No API key or pre-created client secret is needed.
-2. **Claude:** in Customize → Connectors, add a custom connector with the same URL. Choose sign-in and **Register automatically** for the OAuth client rather than Claude's published identity (CIMD).
-3. Sign in with the existing POps owner password and review the connection's callback address and requested permissions. Select **Allow connection**. Enable POps in the conversation.
-4. Try “Create a task in my Writing workspace to research my next essay”, or ask it to rename an existing task, update its description or tags, or record results. The returned task link opens the dashboard.
+1. In your agent app, add a custom MCP connector with this URL. Choose OAuth with automatic client registration (DCR). No API key or pre-created client secret is needed. In Claude, use Customize → Connectors → Add custom connector and choose **Register automatically** rather than Claude's published identity (CIMD).
+2. Sign in with the existing POps owner password and review the connection's callback address and requested permissions. Select **Allow connection**. Enable POps in the conversation.
+3. Try “Create a task in my Writing workspace to research my next essay”, or ask it to rename an existing task, update its description or tags, or record results. The returned task link opens the dashboard.
 
-OAuth connections appear at `/pops/connect` after the token exchange. Revoke a connection there to disable both its access and refresh tokens. Access tokens last one hour; refresh tokens rotate on every use and the connection expires after 30 days, when you reconnect. Replaying a used refresh token revokes the connection. These lifetimes also apply when a chat app stays open.
+OAuth connections appear at `/pops/connect` after the token exchange. Revoke a connection there to disable both its access and refresh tokens. Access tokens last one hour; refresh tokens rotate on every use and the connection expires after 30 days, when you reconnect. Replaying a used refresh token revokes the connection. These lifetimes also apply when an agent app stays open.
 
 The MCP tools are `pops_list_tasks`, `pops_get_task`, `pops_get_pipeline_prompt`, `pops_list_pipelines`, `pops_get_playbook`, `pops_create_task`, `pops_update_task`, `pops_record_agent_run`, `pops_create_decision`, `pops_relay_feedback`, and `pops_propose`. Agents can edit titles, descriptions, and tags when asked. The edit tool requires `expectedUpdatedAt` from a fresh `pops_get_task` response and rejects stale edits with a conflict. Omitted fields stay unchanged; tags replace the entire tag list. Each edit is recorded in history as an agent action and leaves human-engagement and resurfacing timestamps unchanged. Task completion and archiving remain owner actions.
 
 Other connection options still work:
 
-- **Bearer credentials** from `/pops/connect` for Claude Code, Codex, scripts, and Custom GPT actions. Import `/api/pops/v1/openapi.json` into a Custom GPT action and choose API key → Bearer.
-- **Copy and paste:** generate a prompt and import the chat app's `pops-report` block on the task page. Import is idempotent.
+- **Bearer credentials** from `/pops/connect` for coding agents, scripts, and OpenAPI actions. Import `/api/pops/v1/openapi.json` into an agent's OpenAPI action and choose API key → Bearer.
+- **Copy and paste:** generate a prompt and import the agent's `pops-report` block on the task page. Import is idempotent.
 
 ### OAuth deployment
 
@@ -79,9 +78,9 @@ Apply `20261107010000_pops_mcp_oauth` with `npx prisma migrate deploy` before ru
 
 Discovery is public at `/.well-known/oauth-authorization-server`, `/.well-known/oauth-protected-resource`, and `/.well-known/oauth-protected-resource/api/pops/mcp`. Client registration, token exchange, and revocation live under `/api/pops/oauth/`. Registration creates a public client identity only; it grants no task access. The owner-authenticated consent action issues a short-lived, single-use code bound to the exact registered HTTPS callback, client, resource, scopes, and S256 PKCE challenge. Only token hashes are persisted. OAuth access tokens are accepted at the MCP endpoint; the REST API continues to use bearer credentials.
 
-The implementation uses public clients with automatic registration (DCR). It does not advertise CIMD or client-secret authentication. Chat apps may ask you to confirm writes according to their own settings; the connector does not bypass those controls. Workspace administrators may restrict installing custom connectors.
+The implementation uses public clients with automatic registration (DCR). It does not advertise CIMD or client-secret authentication. Agent apps may ask you to confirm writes according to their own settings; the connector does not bypass those controls. Workspace administrators may restrict installing custom connectors.
 
-Current setup references: [OpenAI custom MCP servers](https://developers.openai.com/api/docs/guides/custom-mcp-server), [OpenAI OAuth requirements](https://developers.openai.com/plugins/build/auth), [Claude custom connectors](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp), and [MCP authorization](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization).
+Current setup references: [Claude custom connectors](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp), and [MCP authorization](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization).
 
 ### REST API
 
@@ -116,7 +115,7 @@ All routes require `Authorization: Bearer pops_…` and return JSON with `Cache-
 
 ## Anki and the Quiz Trainer
 
-The `learn-textbook-anki` pipeline asks for cards in the Quiz Trainer inbox format (`{"version":1,"id","deck","front","back"}`, deck `Learning::1Injection::ButtressCards`), in the user's detailed style with a cited `Further reading:` section. Cards appear on the run with *Copy inbox JSON* buttons. ChatGPT may write them to `peachymomotaro/Quiz-Trainer-App/chatgpt/anki-inbox/<id>.json` via its GitHub connector **only when you confirm in the conversation**; the existing add-on then imports them. POps does not build a flashcard app.
+The `learn-textbook-anki` pipeline asks for cards in the Quiz Trainer inbox format (`{"version":1,"id","deck","front","back"}`, deck `Learning::1Injection::ButtressCards`), in the user's detailed style with a cited `Further reading:` section. Cards appear on the run with *Copy inbox JSON* buttons. An agent may write them to `peachymomotaro/Quiz-Trainer-App/chatgpt/anki-inbox/<id>.json` via a GitHub connector **only when you confirm in the conversation**; the existing add-on then imports them. POps does not build a flashcard app.
 
 ## Obsidian
 
@@ -149,7 +148,7 @@ DATABASE_URL=postgresql://pops:pops@127.0.0.1:54329/pops_demo POPS_PASSWORD=loca
 
 ## Trade-offs (smallest reversible choices)
 
-- **Single-owner OAuth with DCR.** Reuses the existing owner login and scoped agent permissions. Supports ChatGPT and Claude without introducing an identity-provider account; adding multiple owners would need owner-bound grants.
+- **Single-owner OAuth with DCR.** Reuses the existing owner login and scoped agent permissions. Supports any MCP agent app without introducing an identity-provider account; adding multiple owners would need owner-bound grants.
 - **Shared database, single owner, no user FK.** Matches "only the site owner"; adding an owner id later is a simple migration.
 - **Pipeline name/summary/workspace are not versioned**, only instructions and expected evidence (what agents execute).
 - **Lazy seeding** of templates rather than a data migration, so editing or archiving templates is never undone.

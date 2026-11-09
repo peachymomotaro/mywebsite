@@ -111,7 +111,7 @@ function report(key: string, overrides: Record<string, unknown> = {}): AgentRunI
   return {
     idempotencyKey: key,
     pipeline: "learn-intro-pair",
-    agentName: "ChatGPT",
+    agentName: "Agent",
     outcome: "completed",
     attempted: "Find one introductory article and one video.",
     accomplished: "Found LeCun et al.'s tutorial and a Stanford lecture.",
@@ -197,7 +197,7 @@ describe.skipIf(!testUrl)("POps on isolated PostgreSQL", () => {
 
   describe("task creation and editing", () => {
     it("creates tasks over the API idempotently and validates input", async () => {
-      const body = { title: "Understand energy-based models", workspace: "learn", projectTags: ["ML", "ml"], idempotencyKey: "chatgpt-create-ebm-1" };
+      const body = { title: "Understand energy-based models", workspace: "learn", projectTags: ["ML", "ml"], idempotencyKey: "agent-create-ebm-1" };
       const first = await tasksRoute.POST(api("/api/pops/v1/tasks", { body }), undefined);
       const again = await tasksRoute.POST(api("/api/pops/v1/tasks", { body }), undefined);
       expect(first.status).toBe(201);
@@ -506,7 +506,7 @@ describe.skipIf(!testUrl)("POps on isolated PostgreSQL", () => {
     });
 
     it("registers a public client and rejects unsafe callback metadata", async () => {
-      const registered = await oauthRegisterRoute.POST(api("/api/pops/oauth/register", { auth: null, body: { client_name: "ChatGPT", redirect_uris: ["https://chatgpt.com/connector_platform_oauth_redirect"] } }));
+      const registered = await oauthRegisterRoute.POST(api("/api/pops/oauth/register", { auth: null, body: { client_name: "Agent", redirect_uris: ["https://agent.example/oauth/callback"] } }));
       expect(registered.status).toBe(201);
       expect(await registered.json()).toMatchObject({ token_endpoint_auth_method: "none" });
       const invalid = await oauthRegisterRoute.POST(api("/api/pops/oauth/register", { auth: null, body: { redirect_uris: ["http://evil.example/"] } }));
@@ -636,7 +636,7 @@ describe.skipIf(!testUrl)("POps on isolated PostgreSQL", () => {
     it("applies at most one of two concurrent edits to the same task version", async () => {
       const { task } = await createTask({ title: "Concurrent", workspace: "work" }, "human");
       const edit = (title: string) => taskRoute.PATCH(api(`/api/pops/v1/tasks/${task.id}`, { method: "PATCH", body: { title, expectedUpdatedAt: task.updatedAt.toISOString() } }), params({ taskId: task.id }));
-      const responses = await Promise.all([edit("ChatGPT edit"), edit("Claude edit")]);
+      const responses = await Promise.all([edit("First agent edit"), edit("Second agent edit")]);
       expect(responses.map((r) => r.status).sort()).toEqual([200, 409]);
       expect(await prisma.popsHistoryEntry.count({ where: { taskId: task.id, kind: "edited" } })).toBe(1);
     });
@@ -698,13 +698,13 @@ describe.skipIf(!testUrl)("POps on isolated PostgreSQL", () => {
     const scenarios = [
       { workspace: "learn", title: "Understand energy-based models", pipeline: "learn-textbook-anki" },
       { workspace: "writing", title: "Essay: is the replication crisis overstated?", pipeline: "writing-sources-counterarguments" },
-      { workspace: "experiments", title: "Does prompt ordering change GPT grading?", pipeline: "experiment-design" },
+      { workspace: "experiments", title: "Does prompt ordering change LLM grading?", pipeline: "experiment-design" },
       { workspace: "work", title: "Investigate flaky Reading River digest cron", pipeline: "work-investigate-problem" },
     ] as const;
 
     for (const scenario of scenarios) {
       it(`${scenario.workspace}: create → prompt → agent writes back → decide → second pipeline sees it`, async () => {
-        // 1. ChatGPT creates the task.
+        // 1. An agent creates the task.
         const created = await (
           await tasksRoute.POST(api("/api/pops/v1/tasks", { body: { title: scenario.title, workspace: scenario.workspace, idempotencyKey: `demo-${scenario.workspace}-1` } }), undefined)
         ).json();
@@ -718,7 +718,7 @@ describe.skipIf(!testUrl)("POps on isolated PostgreSQL", () => {
         expect(prompt).toContain(scenario.title);
         expect(prompt).toContain(`\`${scenario.pipeline}\` v1`);
 
-        // 3–4. ChatGPT does the work and writes back, raising a decision.
+        // 3–4. The agent does the work and writes back, raising a decision.
         const cards =
           scenario.workspace === "learn"
             ? [{ title: "Three cards", kind: "anki_cards", cards: [{ id: "energy-based-model-energy-function-20261106", front: "In LeCun et al. (2006), what does an energy-based model assign to each configuration of variables?", back: "A scalar energy\n\nLower energy means more compatible.\n\nFurther reading:\nLeCun et al. (2006): https://example.org/ebm-tutorial.pdf" }] }]

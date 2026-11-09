@@ -135,7 +135,7 @@ describe("pipeline ranking", () => {
   });
 });
 
-describe("decision copy for ChatGPT", () => {
+describe("decision copy for an agent", () => {
   it("includes the question, options, recommendation, evidence and task context", () => {
     const text = buildDecisionCopy({
       task: { id: "t1", title: "Fix flaky deploy", description: "CI fails on Mondays", workspace: "work", suggestedNextAction: "" },

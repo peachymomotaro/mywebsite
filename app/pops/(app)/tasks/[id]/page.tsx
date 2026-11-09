@@ -230,7 +230,7 @@ export default async function TaskPage({
                     <textarea name="response" maxLength={4000} placeholder="Note (optional)" aria-label="Note on this decision" />
                     <div className="pops-actions">
                       <button type="submit">Decide</button>
-                      <CopyButton className="pops-link-button" label="Copy for ChatGPT" text={decisionCopy(d)} />
+                      <CopyButton className="pops-link-button" label="Copy for agent" text={decisionCopy(d)} />
                       <button type="submit" formAction={withdrawDecisionAction} className="pops-link-button">No longer needed</button>
                     </div>
                   </form>
@@ -241,7 +241,7 @@ export default async function TaskPage({
 
           {isOpen ? (
             <section aria-labelledby="h-next">
-              <h2 id="h-next">Hand it to ChatGPT</h2>
+              <h2 id="h-next">Hand it to an agent</h2>
               <ul className="pops-pipelines">
                 {suggested.map((p) => (
                   <li key={p.slug}>
@@ -260,7 +260,7 @@ export default async function TaskPage({
                 </details>
               ) : null}
               <details className="pops-more" id="import-report">
-                <summary>Record an agent result (Codex or ChatGPT)</summary>
+                <summary>Record an agent result</summary>
                 <ImportReport taskId={task.id} />
               </details>
             </section>

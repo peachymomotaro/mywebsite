@@ -29,18 +29,18 @@ export default async function ConnectPage() {
   return (
     <>
       <h1>Connect</h1>
-      <p className="pops-lede">Connect ChatGPT and Claude to create tasks and write results back from chat. You control task completion and playbook changes.</p>
+      <p className="pops-lede">Connect agents to create tasks and write results back from chat. You control task completion and playbook changes.</p>
 
       <h2>Ways to connect</h2>
       <ol className="pops-list" style={{ borderTop: "var(--pops-rule)" }}>
         <li>
-          <strong>ChatGPT and Claude via MCP.</strong>{" "}
+          <strong>Agents via MCP.</strong>{" "}
           <span className="pops-muted">Add a custom MCP connector using <code>{base}/api/pops/mcp</code>, choose OAuth with automatic client registration, then sign in to POps and allow the connection. No API key is needed.</span>
-          <p className="pops-muted">In ChatGPT, add a custom MCP server from Plugins. In Claude, use Customize &rarr; Connectors &rarr; Add custom connector and choose &ldquo;Register automatically&rdquo;. Enable POps in your conversation.</p>
-          <p className="pops-muted">Try: &ldquo;Create a task in my Writing workspace to research my next essay.&rdquo; You can also ask either app to edit a task&rsquo;s title, description, or tags, or add results. Each connection appears below and can be revoked separately.</p>
+          <p className="pops-muted">In your agent app, add a custom connector with this URL and choose automatic registration (in Claude: Customize &rarr; Connectors &rarr; Add custom connector, then &ldquo;Register automatically&rdquo;). Enable POps in your conversation.</p>
+          <p className="pops-muted">Try: &ldquo;Create a task in my Writing workspace to research my next essay.&rdquo; You can also ask your agent to edit a task&rsquo;s title, description, or tags, or add results. Each connection appears below and can be revoked separately.</p>
         </li>
         <li>
-          <strong>Custom GPT action.</strong>{" "}
+          <strong>OpenAPI action.</strong>{" "}
           <span className="pops-muted">
             Import <code>{base}/api/pops/v1/openapi.json</code> as an action, choosing API key, then Bearer, using a credential below.
           </span>
@@ -54,7 +54,7 @@ export default async function ConnectPage() {
       </ol>
 
       <h2>Agent credentials</h2>
-      <p className="pops-muted">OAuth connections appear here after you connect. Create a bearer credential below for scripts, Claude Code, Codex, or Custom GPT actions.</p>
+      <p className="pops-muted">OAuth connections appear here after you connect. Create a bearer credential below for scripts, coding agents, or OpenAPI actions.</p>
       <NewCredential scopes={AGENT_SCOPES} />
       {credentials.length ? (
         <table className="pops-table" style={{ marginTop: 16 }}>

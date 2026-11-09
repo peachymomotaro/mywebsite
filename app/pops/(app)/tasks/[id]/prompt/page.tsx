@@ -22,7 +22,7 @@ export default async function PromptPage({
   if (!loaded || !pipeline) notFound();
 
   const includeReview = review === "1";
-  const isCodex = slug === "work-implement-change";
+  const isImplementation = slug === "work-implement-change";
   const idempotencyKey = newIdempotencyKey(id, slug, randomBytes(4).toString("hex"));
   const prompt = buildPipelinePrompt({
     context: loaded.context,
@@ -40,15 +40,12 @@ export default async function PromptPage({
       </p>
       <h1>{pipeline.name}</h1>
       <p className="pops-lede">
-        {isCodex
-          ? "Copy the full handoff into Codex. It includes the existing plan, recorded decisions, and safety boundaries. When Codex finishes, record the PR and results on this task."
-          : "Copy this into ChatGPT. When it replies, record its report on this task."}
+        {isImplementation
+          ? "Copy the full handoff into your coding agent. It includes the existing plan, recorded decisions, and safety boundaries. When the agent finishes, record the PR and results on this task."
+          : "Copy this into your agent. When it replies, record its report on this task."}
       </p>
       <div className="pops-actions">
-        <CopyButton text={prompt} label={isCodex ? "Copy for Codex" : "Copy prompt"} />
-        <a href={isCodex ? "https://chatgpt.com/codex" : "https://chatgpt.com/"} target="_blank" rel="noopener noreferrer">
-          {isCodex ? "Open Codex" : "Open ChatGPT"}
-        </a>
+        <CopyButton text={prompt} label={isImplementation ? "Copy agent handoff" : "Copy prompt"} />
       </div>
       <details className="pops-more" style={{ marginTop: 28 }}>
         <summary>Read the prompt ({prompt.length.toLocaleString("en-GB")} characters)</summary>
@@ -58,7 +55,7 @@ export default async function PromptPage({
         {includeReview ? (
           <>Includes a pipeline review step. <Link href={`/pops/tasks/${id}/prompt?pipeline=${slug}`}>Remove it</Link></>
         ) : (
-          <Link href={`/pops/tasks/${id}/prompt?pipeline=${slug}&review=1`}>Also ask ChatGPT to review this pipeline</Link>
+          <Link href={`/pops/tasks/${id}/prompt?pipeline=${slug}&review=1`}>Also ask the agent to review this pipeline</Link>
         )}
         <Link href={`/pops/pipelines/${slug}`}>Edit pipeline</Link>
       </p>

@@ -5,13 +5,13 @@ export type ParsedImport =
   | { ok: false; error: string; issues?: { path: string; message: string }[] };
 
 /**
- * Accepts what ChatGPT prints when it cannot call POps directly: a fenced
+ * Accepts what an agent prints when it cannot call POps directly: a fenced
  * `pops-report` (or json) block, or bare JSON. Either `{ taskId, report }`
  * or the report object itself.
  */
 export function parsePastedReport(text: string): ParsedImport {
   const trimmed = text.trim();
-  if (!trimmed) return { ok: false, error: "Paste the pops-report block from ChatGPT." };
+  if (!trimmed) return { ok: false, error: "Paste the pops-report block from your agent." };
   if (trimmed.length > 200_000) return { ok: false, error: "That paste is too large." };
 
   const fenced =

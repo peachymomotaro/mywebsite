@@ -4,7 +4,7 @@ import type { PopsWorkspace } from "@prisma/client";
 type Option = { label: string; explanation?: string };
 type Evidence = { title: string; url?: string };
 
-/** Text to paste into ChatGPT when Peter wants help deciding. */
+/** Text to paste into an agent when Peter wants help deciding. */
 export function buildDecisionCopy(input: {
   task: { id: string; title: string; description: string; workspace: PopsWorkspace; suggestedNextAction: string };
   decision: { id: string; question: string; recommendation: string; options: Option[]; explanation: string; evidence: Evidence[] };
