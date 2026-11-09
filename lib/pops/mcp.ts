@@ -31,6 +31,12 @@ export const MCP_TOOLS = [
     annotations: { readOnlyHint: true },
   },
   {
+    name: "pops_get_task_brief",
+    description: "Get a portable task status with history and decisions but no workflow instructions.",
+    inputSchema: { type: "object", required: ["taskId"], properties: taskId },
+    annotations: { readOnlyHint: true },
+  },
+  {
     name: "pops_get_pipeline_prompt",
     description: "Get the complete instructions for running one pipeline on one task, including the idempotencyKey to report with.",
     inputSchema: { type: "object", required: ["taskId", "pipeline"], properties: { ...taskId, pipeline: { type: "string" } } },
@@ -97,6 +103,8 @@ async function callTool(principal: AgentPrincipal, name: string, args: Record<st
       return agentOps.listTasks(principal, { workspace: s("workspace") || undefined, status: s("status") || undefined, tag: s("tag") || undefined });
     case "pops_get_task":
       return agentOps.getTask(principal, s("taskId"));
+    case "pops_get_task_brief":
+      return agentOps.getTaskBrief(principal, s("taskId"));
     case "pops_get_pipeline_prompt":
       return agentOps.getPipelinePrompt(principal, s("taskId"), s("pipeline"));
     case "pops_list_pipelines":
