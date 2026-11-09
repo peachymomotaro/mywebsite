@@ -18,7 +18,7 @@ export default async function PipelinesPage({ searchParams }: { searchParams: Pr
         <h1>Pipelines</h1>
         <Link href="/pops/pipelines/new" className="pops-small">New pipeline</Link>
       </div>
-      <p className="pops-lede">Reusable instructions you hand to ChatGPT. Edits are saved as new versions.</p>
+      <p className="pops-lede">Reusable instructions you hand to an agent. Edits are saved as new versions.</p>
 
       {pipelineProposals.length ? (
         <section className="pops-attention" aria-labelledby="h-props">

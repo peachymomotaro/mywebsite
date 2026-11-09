@@ -5,7 +5,7 @@ export type NextStep = {
   description: string;
   label: string;
   pipelineSlug?: string;
-  provider?: "codex" | "chatgpt";
+  provider?: "coding" | "chat";
   canRecordResult: boolean;
 };
 
@@ -36,7 +36,7 @@ export function nextStepForTask(task: NextStepTask, available: ReadonlyArray<Ava
   const exists = (slug: string) => available.some((p) => p.slug === slug);
   const last = task.runs.at(-1);
   const choose = (
-    slug: string, title: string, description: string, label: string, provider: "codex" | "chatgpt" = "chatgpt",
+    slug: string, title: string, description: string, label: string, provider: "coding" | "chat" = "chat",
     canRecordResult = false,
   ): NextStep | null =>
     exists(slug) ? { kind: "pipeline", title, description, label, pipelineSlug: slug, provider, canRecordResult } : null;
@@ -45,9 +45,9 @@ export function nextStepForTask(task: NextStepTask, available: ReadonlyArray<Ava
     const step = choose(
       "work-implement-change",
       "Implement the planned change",
-      task.suggestedNextAction || "The plan is ready. Hand it to Codex with all previous work and decisions.",
-      "Copy Codex handoff",
-      "codex",
+      task.suggestedNextAction || "The plan is ready. Hand it to a coding agent with all previous work and decisions.",
+      "Copy agent handoff",
+      "coding",
       true,
     );
     if (step) return step;
@@ -91,7 +91,7 @@ export function nextStepForTask(task: NextStepTask, available: ReadonlyArray<Ava
       description: task.suggestedNextAction || "Use this pipeline to advance the task.",
       label: "Prepare next handoff",
       pipelineSlug: first.slug,
-      provider: "chatgpt",
+      provider: "chat",
       canRecordResult: false,
     }
     : null;

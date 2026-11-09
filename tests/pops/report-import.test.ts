@@ -10,7 +10,7 @@ const report = {
 };
 
 describe("pasted report import", () => {
-  it("reads a fenced pops-report block out of a full ChatGPT reply", () => {
+  it("reads a fenced pops-report block out of a full agent reply", () => {
     const text = `Here is what I found...\n\n\`\`\`pops-report\n${JSON.stringify({ taskId: "task1", report })}\n\`\`\`\nGood luck!`;
     expect(parsePastedReport(text)).toEqual({ ok: true, taskId: "task1", report });
   });

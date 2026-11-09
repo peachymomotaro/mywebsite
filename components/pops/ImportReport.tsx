@@ -9,7 +9,7 @@ export function ImportReport({ taskId }: { taskId: string }) {
     <form action={action} aria-label="Import agent report">
       <input type="hidden" name="taskId" value={taskId} />
       <label htmlFor="pops-import">
-        Paste ChatGPT&rsquo;s <code>pops-report</code> block (or its whole reply). Re-importing the same report is safe.
+        Paste the agent&rsquo;s <code>pops-report</code> block (or its whole reply). Re-importing the same report is safe.
       </label>
       <textarea id="pops-import" name="report" className="pops-code" style={{ minHeight: "8em" }} required />
       <div className="pops-actions">

@@ -13,12 +13,12 @@ const task = {
 };
 
 describe("POps guided next action", () => {
-  it("offers a one-click Codex handoff after a completed plan, even on an existing task", () => {
+  it("offers a one-click agent handoff after a completed plan, even on an existing task", () => {
     expect(nextStepForTask(task, pipelines)).toMatchObject({
       kind: "pipeline",
       pipelineSlug: "work-implement-change",
-      provider: "codex",
-      label: "Copy Codex handoff",
+      provider: "coding",
+      label: "Copy agent handoff",
       canRecordResult: true,
     });
   });
