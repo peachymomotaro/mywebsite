@@ -5,7 +5,7 @@ import type { AgentPrincipal } from "@/lib/pops/agent-auth";
 import { isTaskStatus, isWorkspace, type AgentScope } from "@/lib/pops/constants";
 import { loadPromptContext, loadPromptPipeline } from "@/lib/pops/context";
 import { createProposal, getCurrentPlaybook, getPipelineStats, listPipelines, rankPipelinesForTask } from "@/lib/pops/library";
-import { buildPipelinePrompt, newIdempotencyKey } from "@/lib/pops/prompt";
+import { buildPipelinePrompt, buildTaskBrief, newIdempotencyKey } from "@/lib/pops/prompt";
 import { createDecision, recordAgentRun, recordRunFeedback } from "@/lib/pops/runs";
 import { createTask, listTasks, PopsConflictError, PopsNotFoundError, updateTask } from "@/lib/pops/tasks";
 import { agentTaskPatchSchema, formatZodError, type AgentTaskPatchInput, type AgentRunInput, type CreateDecisionInput, type CreateTaskInput, type ProposalInput } from "@/lib/pops/validation";
@@ -86,6 +86,13 @@ export const agentOps = {
       playbookVersion: playbook.version,
       url: `${siteBaseUrl()}/pops/tasks/${taskId}`,
     };
+  },
+
+  async getTaskBrief(principal: AgentPrincipal, taskId: string) {
+    requireScope(principal, "tasks:read");
+    const loaded = await loadPromptContext(taskId);
+    if (!loaded) throw new PopsNotFoundError("Task");
+    return { taskId, brief: buildTaskBrief(loaded.context, siteBaseUrl()), workflowAttached: false };
   },
 
   async getPipelinePrompt(principal: AgentPrincipal, taskId: string, pipelineSlug: string) {

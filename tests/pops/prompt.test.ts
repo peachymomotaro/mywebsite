@@ -5,7 +5,7 @@ import { FOUNDATIONAL_BOUNDARIES } from "@/lib/pops/constants";
 import { buildDecisionCopy } from "@/lib/pops/decision-copy";
 import { DEFAULT_PIPELINES, DEFAULT_PLAYBOOK } from "@/lib/pops/defaults";
 import { rankPipelinesForTask } from "@/lib/pops/library";
-import { buildPipelinePrompt, reportTemplate, type PromptContext, type PromptPipeline } from "@/lib/pops/prompt";
+import { buildPipelinePrompt, buildTaskBrief, reportTemplate, type PromptContext, type PromptPipeline } from "@/lib/pops/prompt";
 import { agentRunSchema } from "@/lib/pops/validation";
 
 const context: PromptContext = {
@@ -60,6 +60,23 @@ function build(includePipelineReview = false) {
     includePipelineReview,
   });
 }
+
+describe("standalone task status", () => {
+  it("carries task history, decisions and notes but no workflow instructions", () => {
+    const status = buildTaskBrief(context, "https://petercurry.org");
+    expect(status).toContain("# POps task status: Understand energy-based models");
+    expect(status).toContain("Build enough intuition");
+    expect(status).toContain("Found LeCun's 2006 tutorial");
+    expect(status).toContain("Still open — Include Hopfield networks? (unresolved)");
+    expect(status).toContain("I know VAEs well.");
+    expect(status).toContain("https://petercurry.org/pops/tasks/task_ebm");
+    expect(status).not.toContain("## Pipeline:");
+    expect(status).not.toContain("## Shared playbook");
+    expect(status).not.toContain("## Permission boundaries");
+    expect(status).not.toContain("## Write back to POps");
+    expect(status).not.toContain("pops-report");
+  });
+});
 
 describe("pipeline prompt generation", () => {
   it("contains task identity, context, previous work, decisions and notes", () => {

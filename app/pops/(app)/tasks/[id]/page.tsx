@@ -242,6 +242,11 @@ export default async function TaskPage({
           {isOpen ? (
             <section aria-labelledby="h-next">
               <h2 id="h-next">Hand it to an agent</h2>
+              <p className="pops-small pops-muted">Copy the task status and add your own instructions, or attach a reusable workflow below. The status includes history and decisions but no execution instructions.</p>
+              <div className="pops-actions">
+                <Link className="pops-button" href={`/pops/tasks/${task.id}/prompt`}>Copy task status</Link>
+              </div>
+              <h3>Or attach a reusable workflow</h3>
               <ul className="pops-pipelines">
                 {suggested.map((p) => (
                   <li key={p.slug}>
