@@ -8,6 +8,7 @@ import { readingRiverPath } from "@/lib/reading-river/routes";
 
 type ShellNavProps = {
   isAdmin?: boolean;
+  isSignedIn?: boolean;
 };
 
 /**
@@ -15,7 +16,7 @@ type ShellNavProps = {
  * the glade they fold into the little river mark in the corner, which opens
  * them when you tap it.
  */
-export function ShellNav({ isAdmin = false }: ShellNavProps) {
+export function ShellNav({ isAdmin = false, isSignedIn = false }: ShellNavProps) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -71,6 +72,14 @@ export function ShellNav({ isAdmin = false }: ShellNavProps) {
           <Link href={readingRiverPath("/admin")} className="river-shell-nav-link">
             Admin
           </Link>
+        ) : null}
+        {isSignedIn ? (
+          // A form rather than a link, so nothing can sign you out just by prefetching it.
+          <form method="post" action={readingRiverPath("/logout")} className="river-shell-signout">
+            <button type="submit" className="river-shell-nav-link river-shell-nav-button">
+              Sign out
+            </button>
+          </form>
         ) : null}
       </nav>
     </div>

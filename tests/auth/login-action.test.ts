@@ -89,7 +89,7 @@ vi.mock("@/lib/reading-river/rate-limit", () => ({
 
 import { hashPassword } from "@/lib/reading-river/auth";
 import { loginAction, requestPasswordResetAction } from "@/app/reading-river/login/actions";
-import { GET as logout } from "@/app/reading-river/logout/route";
+import { GET as logout, POST as signOut } from "@/app/reading-river/logout/route";
 
 describe("login action", () => {
   beforeEach(() => {
@@ -408,5 +408,23 @@ describe("login action", () => {
     expect(sessionMocks.revokeSession).toHaveBeenCalledWith("session-token");
     expect(response.headers.get("location")).toContain("/reading-river/login");
     expect(response.headers.get("set-cookie")).toContain("reading-river-session=");
+  });
+
+  it("signs out from the Sign out button's form post", async () => {
+    actionMocks.setCookieStore({
+      set: vi.fn(),
+      delete: vi.fn(),
+      get: vi.fn(() => ({ value: "session-token" })),
+    });
+
+    const response = await signOut(
+      new Request("https://reading-river.test/reading-river/logout", { method: "POST" }),
+    );
+
+    expect(sessionMocks.revokeSession).toHaveBeenCalledWith("session-token");
+    // 303 so the browser follows with a GET rather than re-posting to the login page.
+    expect(response.status).toBe(303);
+    expect(response.headers.get("location")).toContain("/reading-river/login");
+    expect(response.headers.get("set-cookie")).toMatch(/reading-river-session=;.*Max-Age=0/i);
   });
 });

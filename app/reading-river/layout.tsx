@@ -31,9 +31,11 @@ export const preferredRegion = "lhr1";
 export function EditorialShell({
   children,
   isAdmin = false,
+  isSignedIn = false,
 }: {
   children: ReactNode;
   isAdmin?: boolean;
+  isSignedIn?: boolean;
 }) {
   return (
     <div className={`editorial-shell editorial-shell-frame ${gladeFontVariables}`}>
@@ -50,7 +52,7 @@ export function EditorialShell({
           />
           <span className="river-shell-brand-copy">Reading River</span>
         </Link>
-        <ShellNav isAdmin={isAdmin} />
+        <ShellNav isAdmin={isAdmin} isSignedIn={isSignedIn} />
       </header>
       {children}
     </div>
@@ -66,7 +68,7 @@ export default async function RootLayout({
     const currentUser = await getCurrentUser();
 
     return (
-      <EditorialShell isAdmin={currentUser?.isAdmin ?? false}>
+      <EditorialShell isAdmin={currentUser?.isAdmin ?? false} isSignedIn={Boolean(currentUser)}>
         {children}
       </EditorialShell>
     );
