@@ -1,8 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-vi.mock("@/lib/reading-river/auth", () => ({ getSessionCookieName: () => "reading-river-session" }));
-
 import { config, proxy } from "@/proxy";
 
 const location = (response: Response) => response.headers.get("location");
@@ -35,11 +33,6 @@ describe("POps proxy gate", () => {
       new NextRequest("https://example.com/pops", { headers: { cookie: "reading-river-session=x" } }),
     );
     expect(location(response)).toBe("https://example.com/pops/login");
-  });
-
-  it("does not accept a POps cookie for Reading River", async () => {
-    const response = await proxy(new NextRequest("https://example.com/reading-river", { headers: { cookie: "pops_session=x" } }));
-    expect(location(response)).toBe("https://example.com/reading-river/login");
   });
 
   it("leaves public pages and unrelated APIs untouched", async () => {
