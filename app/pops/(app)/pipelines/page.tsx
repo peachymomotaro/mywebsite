@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { WORKSPACES } from "@/lib/pops/constants";
-import { getPipelineStats, listPipelines, listProposals } from "@/lib/pops/library";
+import { DeletePipelineControl } from "@/components/pops/DeletePipelineControl";
+import { getPipelineStats, isSystemPipeline, listPipelines, listProposals } from "@/lib/pops/library";
 
 export const metadata = { title: "Pipelines" };
 
-export default async function PipelinesPage({ searchParams }: { searchParams: Promise<{ archived?: string }> }) {
-  const { archived } = await searchParams;
+export default async function PipelinesPage({ searchParams }: { searchParams: Promise<{ archived?: string; deleted?: string }> }) {
+  const { archived, deleted } = await searchParams;
   const showArchived = archived === "1";
   const [all, stats, proposals] = await Promise.all([listPipelines({ includeArchived: true }), getPipelineStats(), listProposals("pending")]);
   const pipelines = all.filter((p) => p.archived === showArchived);
@@ -19,6 +20,7 @@ export default async function PipelinesPage({ searchParams }: { searchParams: Pr
         <Link href="/pops/pipelines/new" className="pops-small">New pipeline</Link>
       </div>
       <p className="pops-lede">Reusable instructions you hand to an agent. Edits are saved as new versions.</p>
+      {deleted === "1" ? <p className="pops-notice" role="status">Pipeline deleted. Its previous runs and versions were preserved.</p> : null}
 
       {pipelineProposals.length ? (
         <section className="pops-attention" aria-labelledby="h-props">
@@ -48,6 +50,7 @@ export default async function PipelinesPage({ searchParams }: { searchParams: Pr
               <div className="pops-row">
                 <Link href={`/pops/pipelines/${p.slug}`} className="pops-plain">{p.name}</Link>
                 <span className="pops-meta">{p.workspace ? WORKSPACES[p.workspace].label : "Any workspace"}</span>
+                {!isSystemPipeline(p.slug) ? <DeletePipelineControl id={p.id} name={p.name} /> : null}
               </div>
               <div className="pops-sub">
                 {p.summary}
