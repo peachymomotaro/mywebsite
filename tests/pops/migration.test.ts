@@ -28,6 +28,6 @@ describe("POps migration safety", () => {
 
   it("adds only a nullable POps soft-delete timestamp without touching historical rows", () => {
     expect(deletionSql).toContain('ALTER TABLE "PopsPipeline" ADD COLUMN "deletedAt" TIMESTAMP(3)');
-    expect(deletionSql).not.toMatch(/\\b(?:DROP|TRUNCATE|DELETE\\s+FROM|UPDATE)\\b/i);
+    expect(deletionSql).not.toMatch(/\b(?:DROP|TRUNCATE|DELETE\s+FROM|UPDATE)\b/i);
   });
 });
