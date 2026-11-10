@@ -180,7 +180,38 @@ export async function createPipeline(
   if (!input.name.trim() || !input.instructions.trim()) throw new Error("Name and instructions are required.");
   const db = getPopsDb();
   return db.$transaction(async (tx) => {
-    if (await tx.popsPipeline.findUnique({ where: { slug } })) throw new PopsConflictError("That slug is taken.");
+    const existing = await tx.popsPipeline.findUnique({ where: { slug } });
+    if (existing && !existing.deletedAt) throw new PopsConflictError("That slug is taken.");
+    if (existing) {
+      // Reusing a deleted slug starts a new active version of the same pipeline.
+      // Keep its stable identity, immutable earlier versions and historical runs.
+      const nextVersion = existing.currentVersion + 1;
+      const restored = await tx.popsPipeline.updateMany({
+        where: { id: existing.id, deletedAt: { not: null }, currentVersion: existing.currentVersion },
+        data: {
+          deletedAt: null,
+          archived: false,
+          name: input.name.trim().slice(0, 120),
+          workspace: input.workspace,
+          summary: input.summary.trim().slice(0, 400),
+          currentVersion: nextVersion,
+        },
+      });
+      if (restored.count !== 1) throw new PopsConflictError("That pipeline changed. Reload and try again.");
+      await tx.popsPipelineVersion.create({
+        data: {
+          pipelineId: existing.id,
+          version: nextVersion,
+          instructions: input.instructions.trim(),
+          expectedEvidence: input.expectedEvidence.trim(),
+          changeNote: input.changeNote?.trim() || "Recreated after deletion",
+          author: "human",
+          createdAt: now,
+        },
+      });
+      if (input.proposalId) await markProposal(tx, input.proposalId, "accepted", `Recreated as pipeline version ${nextVersion}`, now);
+      return tx.popsPipeline.findUniqueOrThrow({ where: { id: existing.id } });
+    }
     const pipeline = await tx.popsPipeline.create({
       data: {
         slug,
