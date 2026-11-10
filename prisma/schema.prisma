@@ -8,6 +8,19 @@ datasource db {
   url       = env("DATABASE_URL")
 }
 
+// ---------------------------------------------------------------------------
+// Reading River tables. Reading River now lives in its own repository
+// (github.com/peachymomotaro/reading-river), which owns these tables and their
+// migrations. They stay listed here only because this website shares the same
+// database: removing them from this file would make `prisma migrate dev` here
+// generate a migration that DELETES them.
+//
+// Do not change these models or create migrations for them in this repo.
+// Make Reading River schema changes in the reading-river repo instead. This
+// copy may lag behind it (for example, reading-river has dropped the
+// `pinned` and `restingUntil` columns).
+// ---------------------------------------------------------------------------
+
 enum SourceType {
   url
   pdf

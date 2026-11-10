@@ -1,29 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionCookieName } from "@/lib/reading-river/auth";
-import {
-  readingRiverPath,
-  READING_RIVER_BASE_PATH,
-} from "@/lib/reading-river/routes";
 
 // Kept local (not imported from lib/pops/auth) so the proxy bundle stays free
 // of Node crypto and database code.
 const POPS_SESSION_COOKIE = "pops_session";
-
-function isPublicReadingRiverPath(pathname: string) {
-  const extensionApiPath = readingRiverPath("/api/extension");
-
-  return (
-    pathname.startsWith(readingRiverPath("/music/")) ||
-    pathname === extensionApiPath ||
-    pathname.startsWith(`${extensionApiPath}/`) ||
-    pathname === readingRiverPath("/beta") ||
-    pathname === readingRiverPath("/invite") ||
-    pathname === readingRiverPath("/login") ||
-    pathname === readingRiverPath("/logout") ||
-    pathname.startsWith(`${readingRiverPath("/invite")}/`) ||
-    pathname.startsWith(`${readingRiverPath("/reset-password")}/`)
-  );
-}
 
 /** The Canon Explorer (QB) has been replaced by POps. */
 function retireQB(request: NextRequest) {
@@ -61,30 +40,8 @@ function protectPOps(request: NextRequest) {
   return NextResponse.redirect(loginUrl);
 }
 
-function protectReadingRiver(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  if (request.headers.has("next-action")) {
-    return NextResponse.next();
-  }
-
-  if (isPublicReadingRiverPath(pathname)) {
-    return NextResponse.next();
-  }
-
-  const hasSessionCookie = Boolean(
-    request.cookies.get(getSessionCookieName())?.value
-  );
-
-  if (!hasSessionCookie) {
-    return NextResponse.redirect(
-      new URL(readingRiverPath("/login"), request.url)
-    );
-  }
-
-  return NextResponse.next();
-}
-
+// Reading River (/reading-river) is served by its own Vercel project, which
+// does its own sign-in checks; see the rewrites in next.config.ts.
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -102,10 +59,6 @@ export async function proxy(request: NextRequest) {
     return protectPOps(request);
   }
 
-  if (pathname.startsWith(READING_RIVER_BASE_PATH)) {
-    return protectReadingRiver(request);
-  }
-
   return NextResponse.next();
 }
 
@@ -117,6 +70,5 @@ export const config = {
     "/api/qb/:path*",
     "/pops",
     "/pops/:path*",
-    "/reading-river/:path*",
   ],
 };
