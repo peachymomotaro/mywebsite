@@ -459,6 +459,45 @@ describe.skipIf(!testUrl)("POps on isolated PostgreSQL", () => {
       await expect(deletePipeline(created.id)).rejects.toThrow(/not found/i);
     });
 
+    it("reuses the slug of a soft-deleted human pipeline without losing version and run history", async () => {
+      const original = await createPipeline({
+        slug: "reusable-slug", name: "Old pipeline", workspace: "learn",
+        summary: "Previous instructions", instructions: "Old instructions", expectedEvidence: "Old evidence",
+      });
+      const { task } = await createTask({ title: "Historical run", workspace: "learn" }, "human");
+      const { run } = await recordAgentRun(task.id, report("reused-slug-0001", {
+        pipeline: original.slug, pipelineVersion: 1,
+      }), { channel: "api" });
+
+      await deletePipeline(original.id);
+      expect(await getPipeline(original.slug)).toBeNull();
+
+      const recreated = await createPipeline({
+        slug: original.slug, name: "Replacement pipeline", workspace: "writing",
+        summary: "Replacement instructions", instructions: "New instructions", expectedEvidence: "New evidence",
+      });
+      expect(recreated.id).toBe(original.id);
+      expect(recreated.currentVersion).toBe(2);
+      expect(recreated.deletedAt).toBeNull();
+      expect(recreated.archived).toBe(false);
+      expect(recreated.name).toBe("Replacement pipeline");
+      expect(recreated.workspace).toBe("writing");
+
+      const versions = await prisma.popsPipelineVersion.findMany({
+        where: { pipelineId: original.id }, orderBy: { version: "asc" },
+      });
+      expect(versions.map((v) => v.version)).toEqual([1, 2]);
+      expect(versions.map((v) => v.instructions)).toEqual(["Old instructions", "New instructions"]);
+      expect((await prisma.popsAgentRun.findUniqueOrThrow({ where: { id: run.id } })).pipelineVersion).toBe(1);
+      expect((await listPipelines()).filter((p) => p.slug === original.slug)).toHaveLength(1);
+      expect((await loadPromptPipeline(original.slug))?.version).toBe(2);
+
+      await expect(createPipeline({
+        slug: original.slug, name: "Duplicate", workspace: null,
+        summary: "", instructions: "Duplicate instructions", expectedEvidence: "",
+      })).rejects.toThrow(/slug is taken/i);
+    });
+
     it("rejects invalid pipeline ids and protects seeded templates even after their versions change", async () => {
       await expect(deletePipeline("other-user-id")).rejects.toThrow(/Invalid pipeline ID/);
       const seeded = await getPipeline("learn-intro-pair");
