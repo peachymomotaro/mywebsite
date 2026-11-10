@@ -5,7 +5,7 @@ import { PipelineFields } from "@/components/pops/PipelineFields";
 import { DeletePipelineControl } from "@/components/pops/DeletePipelineControl";
 import { WORKSPACES } from "@/lib/pops/constants";
 import { formatDateTime } from "@/lib/pops/format";
-import { getPipeline, getPipelineStats, getProposal } from "@/lib/pops/library";
+import { getPipeline, getPipelineStats, getProposal, isSystemPipeline } from "@/lib/pops/library";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -121,7 +121,7 @@ export default async function PipelinePage({
           <input type="hidden" name="archived" value={pipeline.archived ? "false" : "true"} />
           <button type="submit" className="pops-link-button pops-small">{pipeline.archived ? "Restore this pipeline" : "Archive this pipeline"}</button>
         </form>
-        {current.author !== "system" ? <DeletePipelineControl id={pipeline.id} name={pipeline.name} /> : null}
+        {!isSystemPipeline(pipeline.slug) && !pipeline.versions.some((v) => v.version === 1 && v.author === "system") ? <DeletePipelineControl id={pipeline.id} name={pipeline.name} /> : null}
       </div>
     </>
   );
