@@ -222,3 +222,19 @@
   .pops-history > li > details > summary, .pops-history .pops-entry-plain { grid-template-columns: 52px minmax(0, 1fr); gap: 8px; }
   .pops-table { display: block; overflow-x: auto; }
 }
+
+/* Confirmed pipeline deletion: distinct from reversible archive. */
+.pops-delete-dialog {
+  color: var(--text);
+  background: var(--bg-elevated);
+  border: var(--pops-rule);
+  border-radius: 10px;
+  padding: 24px;
+  width: min(440px, calc(100vw - 32px));
+  max-width: 100%;
+}
+.pops-delete-dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
+.pops-delete-dialog h2 { margin: 0 0 12px; }
+.pops-delete-dialog .pops-actions { justify-content: flex-end; }
+.pops button.pops-danger { background: #a52e30; border-color: #a52e30; color: white; }
+.pops button.pops-danger:hover { background: #812023; border-color: #812023; }
