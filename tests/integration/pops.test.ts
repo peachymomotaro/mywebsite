@@ -42,7 +42,9 @@ import * as oauthMetadataRoute from "@/app/.well-known/oauth-protected-resource/
 import { createPopsSession, revokePopsSession, validatePopsSession } from "@/lib/pops/auth";
 import { loadPromptContext, loadPromptPipeline } from "@/lib/pops/context";
 import {
+  createPipeline,
   createProposal,
+  deletePipeline,
   ensurePopsDefaults,
   getCurrentPlaybook,
   getPipeline,
@@ -63,13 +65,14 @@ import {
   snoozeTask,
   updateTask,
 } from "@/lib/pops/tasks";
-import { createTaskAction, importReportAction, setStatusAction } from "@/app/pops/actions";
+import { createTaskAction, deletePipelineAction, importReportAction, setStatusAction } from "@/app/pops/actions";
 import * as tasksRoute from "@/app/api/pops/v1/tasks/route";
 import * as taskRoute from "@/app/api/pops/v1/tasks/[taskId]/route";
 import * as runsRoute from "@/app/api/pops/v1/tasks/[taskId]/runs/route";
 import * as decisionsRoute from "@/app/api/pops/v1/tasks/[taskId]/decisions/route";
 import * as feedbackRoute from "@/app/api/pops/v1/runs/[runId]/feedback/route";
 import * as proposalsRoute from "@/app/api/pops/v1/proposals/route";
+import * as promptRoute from "@/app/api/pops/v1/tasks/[taskId]/prompt/route";
 import * as mcpRoute from "@/app/api/pops/mcp/route";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -430,6 +433,58 @@ describe.skipIf(!testUrl)("POps on isolated PostgreSQL", () => {
   });
 
   describe("pipelines, playbook and proposals", () => {
+    it("soft-deletes a human pipeline, prevents new prompts, and preserves past runs and immutable versions", async () => {
+      const created = await createPipeline({
+        slug: "temporary-deletable", name: "Temporary pipeline", workspace: "learn",
+        summary: "Disposable pipeline", instructions: "Find a paper.", expectedEvidence: "A paper",
+      });
+      const { task } = await createTask({ title: "Use a temporary pipeline", workspace: "learn" }, "human");
+      const earlier = await recordAgentRun(task.id, report("before-delete-0001", { pipeline: created.slug, pipelineVersion: 1 }), { channel: "api" });
+
+      await deletePipeline(created.id);
+      const stored = await prisma.popsPipeline.findUniqueOrThrow({ where: { id: created.id } });
+      expect(stored.deletedAt).not.toBeNull();
+      expect((await listPipelines({ includeArchived: true })).map((p) => p.slug)).not.toContain(created.slug);
+      expect(await getPipeline(created.slug)).toBeNull();
+      expect(await loadPromptPipeline(created.slug)).toBeNull();
+      expect(await prisma.popsPipelineVersion.count({ where: { pipelineId: created.id } })).toBe(1);
+      expect((await prisma.popsAgentRun.findUniqueOrThrow({ where: { id: earlier.run.id } })).pipelineSlug).toBe(created.slug);
+      expect((await prisma.popsAgentRun.findUniqueOrThrow({ where: { id: earlier.run.id } })).pipelineVersion).toBe(1);
+      expect(await prisma.popsHistoryEntry.count({ where: { taskId: task.id, kind: "agent_run" } })).toBe(1);
+      const apiPrompt = await promptRoute.GET(api(`/api/pops/v1/tasks/${task.id}/prompt?pipeline=${created.slug}`), params({ taskId: task.id }));
+      expect(apiPrompt.status).toBe(404);
+      const lateResult = await recordAgentRun(task.id, report("after-delete-0001", { pipeline: created.slug, pipelineVersion: 1 }), { channel: "api" });
+      expect(lateResult.run.pipelineSlug).toBe(created.slug);
+      expect(await prisma.popsAgentRun.count({ where: { pipelineSlug: created.slug } })).toBe(2);
+      await expect(deletePipeline(created.id)).rejects.toThrow(/not found/i);
+    });
+
+    it("rejects invalid pipeline ids and protects seeded templates even after their versions change", async () => {
+      await expect(deletePipeline("other-user-id")).rejects.toThrow(/Invalid pipeline ID/);
+      const seeded = await getPipeline("learn-intro-pair");
+      expect(seeded).not.toBeNull();
+      await savePipelineVersion("learn-intro-pair", { instructions: "Updated instructions.", expectedEvidence: "", changeNote: "Owner edit" });
+      await expect(deletePipeline(seeded!.id)).rejects.toThrow(/System pipelines cannot be deleted/);
+      expect((await getPipeline("learn-intro-pair"))?.deletedAt).toBeNull();
+    });
+
+    it("requires an owner session before mutation, reports errors and redirects after confirmed deletion", async () => {
+      const created = await createPipeline({
+        slug: "action-delete-test", name: "Action test", workspace: null,
+        summary: "", instructions: "Test workflow.", expectedEvidence: "",
+      });
+      const initial = { status: "idle" as const, message: "" };
+      await expect(deletePipelineAction(initial, form({ id: created.id }))).rejects.toThrow(/NEXT_REDIRECT \/pops\/login/);
+      expect((await prisma.popsPipeline.findUniqueOrThrow({ where: { id: created.id } })).deletedAt).toBeNull();
+
+      cookieJar.value = await createPopsSession();
+      const bad = await deletePipelineAction(initial, form({ id: "invalid" }));
+      expect(bad.status).toBe("error");
+      expect(bad.message).toMatch(/Invalid pipeline ID/);
+      await expect(deletePipelineAction(initial, form({ id: created.id }))).rejects.toThrow(/NEXT_REDIRECT \/pops\/pipelines\?deleted=1/);
+      expect((await prisma.popsPipeline.findUniqueOrThrow({ where: { id: created.id } })).deletedAt).not.toBeNull();
+    });
+
     it("versions pipeline edits and keeps old versions immutable", async () => {
       const version = await savePipelineVersion("learn-intro-pair", {
         instructions: "Find one article and one video. Prefer under 20 minutes.",

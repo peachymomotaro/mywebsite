@@ -4,6 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const sql = readFileSync(path.join(__dirname, "../../prisma/migrations/20261106120000_pops_v1/migration.sql"), "utf8");
+const deletionSql = readFileSync(path.join(__dirname, "../../prisma/migrations/20261110220000_pops_pipeline_deletion/migration.sql"), "utf8");
 
 describe("POps migration safety", () => {
   it("only creates or alters POps objects", () => {
@@ -23,5 +24,10 @@ describe("POps migration safety", () => {
     for (const table of ["PopsHistoryEntry", "PopsAgentRun", "PopsPipelineVersion", "PopsPlaybookVersion"]) {
       expect(sql).toContain(`BEFORE UPDATE OR DELETE ON "${table}"`);
     }
+  });
+
+  it("adds only a nullable POps soft-delete timestamp without touching historical rows", () => {
+    expect(deletionSql).toContain('ALTER TABLE "PopsPipeline" ADD COLUMN "deletedAt" TIMESTAMP(3)');
+    expect(deletionSql).not.toMatch(/\b(?:DROP|TRUNCATE|DELETE\s+FROM|UPDATE)\b/i);
   });
 });

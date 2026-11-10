@@ -79,7 +79,7 @@ export async function getPipelineStats() {
 export async function listPipelines(options: { includeArchived?: boolean } = {}) {
   await ensurePopsDefaults();
   return getPopsDb().popsPipeline.findMany({
-    where: options.includeArchived ? undefined : { archived: false },
+    where: { deletedAt: null, ...(options.includeArchived ? {} : { archived: false }) },
     orderBy: [{ workspace: "asc" }, { name: "asc" }],
   });
 }
@@ -117,7 +117,7 @@ export function rankPipelinesForTask(
 export async function getPipeline(slug: string) {
   await ensurePopsDefaults();
   return getPopsDb().popsPipeline.findUnique({
-    where: { slug },
+    where: { slug, deletedAt: null },
     include: {
       versions: { orderBy: { version: "desc" } },
       proposals: { where: { status: "pending" }, orderBy: { createdAt: "asc" } },
@@ -134,6 +134,33 @@ export async function getPipelineVersion(slug: string, version?: number) {
 }
 
 const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{2,59}$/;
+const PIPELINE_ID_PATTERN = /^c[a-z0-9]{20,39}$/;
+
+/** System templates remain protected even after the owner adds newer versions. */
+export function isSystemPipeline(slug: string) {
+  return DEFAULT_PIPELINES.some((pipeline) => pipeline.slug === slug);
+}
+
+/** A confirmed deletion is a tombstone: never remove immutable versions or runs. */
+export async function deletePipeline(id: string, now = new Date()) {
+  if (!PIPELINE_ID_PATTERN.test(id)) throw new Error("Invalid pipeline ID.");
+  return getPopsDb().$transaction(async (tx) => {
+    const pipeline = await tx.popsPipeline.findUnique({
+      where: { id },
+      include: { versions: { where: { version: 1 }, select: { author: true } } },
+    });
+    if (!pipeline || pipeline.deletedAt) throw new PopsNotFoundError("Pipeline");
+    if (isSystemPipeline(pipeline.slug) || pipeline.versions.some((version) => version.author === "system")) {
+      throw new PopsConflictError("System pipelines cannot be deleted.");
+    }
+    const updated = await tx.popsPipeline.updateMany({
+      where: { id, deletedAt: null },
+      data: { deletedAt: now },
+    });
+    if (updated.count !== 1) throw new PopsConflictError("The pipeline changed. Reload and try again.");
+    return pipeline.slug;
+  });
+}
 
 export async function createPipeline(
   input: {
@@ -197,7 +224,7 @@ export async function savePipelineVersion(
   const db = getPopsDb();
   return db.$transaction(async (tx) => {
     const pipeline = await tx.popsPipeline.findUnique({ where: { slug } });
-    if (!pipeline) throw new PopsNotFoundError("Pipeline");
+    if (!pipeline || pipeline.deletedAt) throw new PopsNotFoundError("Pipeline");
     const nextVersion = pipeline.currentVersion + 1;
     await tx.popsPipelineVersion.create({
       data: {
@@ -212,7 +239,7 @@ export async function savePipelineVersion(
     });
     // Optimistic concurrency: only advance if nobody else did meanwhile.
     const advanced = await tx.popsPipeline.updateMany({
-      where: { id: pipeline.id, currentVersion: pipeline.currentVersion },
+      where: { id: pipeline.id, currentVersion: pipeline.currentVersion, deletedAt: null },
       data: {
         currentVersion: nextVersion,
         name: input.name?.trim() ? input.name.trim().slice(0, 120) : undefined,
@@ -227,7 +254,8 @@ export async function savePipelineVersion(
 }
 
 export async function setPipelineArchived(slug: string, archived: boolean) {
-  await getPopsDb().popsPipeline.update({ where: { slug }, data: { archived } });
+  const changed = await getPopsDb().popsPipeline.updateMany({ where: { slug, deletedAt: null }, data: { archived } });
+  if (!changed.count) throw new PopsNotFoundError("Pipeline");
 }
 
 export async function getCurrentPlaybook() {
@@ -294,7 +322,7 @@ export async function createProposal(input: ProposalInput, now = new Date()) {
   if (data.kind === "pipeline_change") {
     if (!data.pipelineSlug) throw new Error("pipelineSlug is required for a pipeline_change proposal.");
     const pipeline = await db.popsPipeline.findUnique({ where: { slug: data.pipelineSlug } });
-    if (!pipeline) throw new PopsNotFoundError("Pipeline");
+    if (!pipeline || pipeline.deletedAt) throw new PopsNotFoundError("Pipeline");
     pipelineId = pipeline.id;
   }
   if (data.taskId && !(await db.popsTask.findUnique({ where: { id: data.taskId }, select: { id: true } }))) {
@@ -317,7 +345,7 @@ export async function createProposal(input: ProposalInput, now = new Date()) {
 
 export async function listProposals(status: "pending" | "accepted" | "rejected" = "pending") {
   return getPopsDb().popsProposal.findMany({
-    where: { status },
+    where: { status, OR: [{ pipelineId: null }, { pipeline: { deletedAt: null } }] },
     orderBy: { createdAt: status === "pending" ? "asc" : "desc" },
     take: 100,
     include: { pipeline: { select: { slug: true, name: true } }, task: { select: { id: true, title: true } } },
@@ -327,7 +355,7 @@ export async function listProposals(status: "pending" | "accepted" | "rejected" 
 export async function getProposal(id: string) {
   return getPopsDb().popsProposal.findUnique({
     where: { id },
-    include: { pipeline: { select: { slug: true, name: true } } },
+    include: { pipeline: { select: { slug: true, name: true, deletedAt: true } } },
   });
 }
 
