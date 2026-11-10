@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createAgentCredential, revokeAgentCredential } from "@/lib/pops/agent-auth";
 import { isTaskStatus, isWorkspace } from "@/lib/pops/constants";
-import { createPipeline, reviewProposal, savePipelineVersion, savePlaybookVersion, setPipelineArchived } from "@/lib/pops/library";
+import { createPipeline, deletePipeline, reviewProposal, savePipelineVersion, savePlaybookVersion, setPipelineArchived } from "@/lib/pops/library";
 import { parsePastedReport } from "@/lib/pops/report-import";
 import { answerDecision, recordAgentRun, recordRunFeedback, withdrawDecision } from "@/lib/pops/runs";
 import { requireOwner } from "@/lib/pops/session";
@@ -272,6 +272,20 @@ export async function archivePipelineAction(formData: FormData) {
   await setPipelineArchived(slug, str(formData, "archived") === "true");
   refresh("/pops/pipelines", `/pops/pipelines/${slug}`);
   redirect(`/pops/pipelines/${slug}`);
+}
+
+export type DeletePipelineState = { status: "idle" | "error"; message: string };
+
+/** Owner-only server mutation; agents are deliberately not granted deletion. */
+export async function deletePipelineAction(_previous: DeletePipelineState, formData: FormData): Promise<DeletePipelineState> {
+  await requireOwner();
+  try {
+    await deletePipeline(str(formData, "id"));
+  } catch (error) {
+    return { status: "error", message: error instanceof Error ? error.message : "Could not delete pipeline." };
+  }
+  refresh("/pops/pipelines", "/pops");
+  redirect("/pops/pipelines?deleted=1");
 }
 
 export async function savePlaybookAction(formData: FormData) {
