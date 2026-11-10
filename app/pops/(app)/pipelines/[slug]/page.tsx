@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { archivePipelineAction, reviewProposalAction, savePipelineAction } from "@/app/pops/actions";
 import { PipelineFields } from "@/components/pops/PipelineFields";
+import { DeletePipelineControl } from "@/components/pops/DeletePipelineControl";
 import { WORKSPACES } from "@/lib/pops/constants";
 import { formatDateTime } from "@/lib/pops/format";
 import { getPipeline, getPipelineStats, getProposal } from "@/lib/pops/library";
@@ -114,11 +115,14 @@ export default async function PipelinePage({
         </ol>
       </details>
 
-      <form action={archivePipelineAction}>
-        <input type="hidden" name="slug" value={slug} />
-        <input type="hidden" name="archived" value={pipeline.archived ? "false" : "true"} />
-        <button type="submit" className="pops-link-button pops-small">{pipeline.archived ? "Restore this pipeline" : "Archive this pipeline"}</button>
-      </form>
+      <div className="pops-actions">
+        <form action={archivePipelineAction}>
+          <input type="hidden" name="slug" value={slug} />
+          <input type="hidden" name="archived" value={pipeline.archived ? "false" : "true"} />
+          <button type="submit" className="pops-link-button pops-small">{pipeline.archived ? "Restore this pipeline" : "Archive this pipeline"}</button>
+        </form>
+        {current.author !== "system" ? <DeletePipelineControl id={pipeline.id} name={pipeline.name} /> : null}
+      </div>
     </>
   );
 }
