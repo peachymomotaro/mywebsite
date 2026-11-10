@@ -123,6 +123,26 @@ describe("EditorialShell", () => {
     );
   });
 
+  it("offers Sign out as a form post only when someone is signed in", () => {
+    const { rerender } = render(
+      <EditorialShell isSignedIn={true}>
+        <div>child</div>
+      </EditorialShell>
+    );
+
+    const button = screen.getByRole("button", { name: "Sign out" });
+    expect(button).toHaveAttribute("type", "submit");
+    expect(button.closest("form")).toHaveAttribute("method", "post");
+    expect(button.closest("form")).toHaveAttribute("action", "/reading-river/logout");
+
+    rerender(
+      <EditorialShell>
+        <div>child</div>
+      </EditorialShell>
+    );
+    expect(screen.queryByRole("button", { name: "Sign out" })).not.toBeInTheDocument();
+  });
+
   it("keeps the shell navigation visible on the read history route", () => {
     mocks.usePathnameMock.mockReturnValue("/reading-river/history");
 
@@ -268,10 +288,12 @@ describe("RootLayout", () => {
       "true"
     );
     expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
   });
 
   it("hides admin navigation for logged-out users", async () => {
     await renderShellForUser(null);
+    expect(screen.queryByRole("button", { name: "Sign out" })).not.toBeInTheDocument();
 
     expect(screen.getByRole("link", { name: "Reading River" })).toHaveAttribute(
       "href",
