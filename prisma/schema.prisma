@@ -316,6 +316,7 @@ enum PopsWorkspace {
   writing
   experiments
   work
+  personal
 }
 
 enum PopsTaskStatus {
