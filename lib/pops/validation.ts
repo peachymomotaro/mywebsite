@@ -46,8 +46,9 @@ export const agentTaskPatchSchema = z.object({
   title: required(200).optional(),
   description: text(8000).optional(),
   projectTags: tagListSchema.optional(),
+  workspace: workspaceSchema.optional(),
   expectedUpdatedAt: z.iso.datetime(),
-}).strict().refine((patch) => patch.title !== undefined || patch.description !== undefined || patch.projectTags !== undefined, "Supply at least one task detail to change.");
+}).strict().refine((patch) => patch.title !== undefined || patch.description !== undefined || patch.projectTags !== undefined || patch.workspace !== undefined, "Supply at least one task detail to change.");
 export type AgentTaskPatchInput = z.input<typeof agentTaskPatchSchema>;
 
 export const sourceSchema = z.object({
