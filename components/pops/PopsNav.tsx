@@ -10,6 +10,7 @@ const PRIMARY = [
   { href: "/pops/writing", label: "Writing" },
   { href: "/pops/experiments", label: "Experiments" },
   { href: "/pops/work", label: "Work" },
+  { href: "/pops/personal", label: "Personal" },
 ];
 
 const SECONDARY = [

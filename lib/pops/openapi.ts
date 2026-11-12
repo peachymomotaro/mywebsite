@@ -7,11 +7,12 @@ const taskPatch = {
   type: "object",
   additionalProperties: false,
   required: ["expectedUpdatedAt"],
-  anyOf: [{ required: ["title"] }, { required: ["description"] }, { required: ["projectTags"] }],
+  anyOf: [{ required: ["title"] }, { required: ["description"] }, { required: ["projectTags"] }, { required: ["workspace"] }],
   properties: {
     title: { type: "string", minLength: 1, maxLength: 200 },
     description: { type: "string", maxLength: 8000 },
     projectTags: { type: "array", maxItems: 12, items: { type: "string", maxLength: 40 }, description: "Replace all tags; use [] to clear them." },
+    workspace: { type: "string", enum: ["learn", "writing", "experiments", "work", "personal"], description: "Move a task to another workspace without changing its id, status, or history." },
     expectedUpdatedAt: { type: "string", format: "date-time", description: "Copy task.updatedAt from getTask. If it changed, read the task again before editing." },
   },
 };
@@ -104,7 +105,7 @@ export function buildOpenApiDocument() {
           operationId: "listTasks",
           summary: "List tasks (active and paused by default)",
           parameters: [
-            { name: "workspace", in: "query", schema: { type: "string", enum: ["learn", "writing", "experiments", "work"] } },
+            { name: "workspace", in: "query", schema: { type: "string", enum: ["learn", "writing", "experiments", "work", "personal"] } },
             { name: "status", in: "query", schema: { type: "string", enum: ["active", "paused", "completed", "archived"] } },
             { name: "tag", in: "query", schema: str },
           ],
@@ -123,7 +124,7 @@ export function buildOpenApiDocument() {
                   properties: {
                     title: str,
                     description: str,
-                    workspace: { type: "string", enum: ["learn", "writing", "experiments", "work"] },
+                    workspace: { type: "string", enum: ["learn", "writing", "experiments", "work", "personal"] },
                     projectTags: strArr,
                     parentId: str,
                     suggestedNextAction: str,
@@ -141,7 +142,7 @@ export function buildOpenApiDocument() {
         get: { operationId: "getTask", summary: "Task context: details, previous runs, decisions, notes, pipelines", parameters: taskIdParam, responses: ok },
         patch: {
           operationId: "updateTask",
-          summary: "Edit task title, description, or tags when Peter asks; read the current task first",
+          summary: "Edit task title, description, tags, or workspace when Peter asks; read the current task first",
           parameters: taskIdParam,
           requestBody: { required: true, content: { "application/json": { schema: taskPatch } } },
           responses: { ...ok, "409": { description: "Task changed since it was read; fetch it again before editing" } },

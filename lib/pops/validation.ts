@@ -1,3 +1,4 @@
+import type { PopsWorkspace } from "@prisma/client";
 import { z } from "zod";
 import { ANKI_DEFAULT_DECK, WORKSPACE_KEYS } from "@/lib/pops/constants";
 
@@ -28,7 +29,7 @@ export const tagListSchema = z
   .max(12)
   .transform((tags) => Array.from(new Set(tags.filter(Boolean))));
 
-export const workspaceSchema = z.enum(WORKSPACE_KEYS as [string, ...string[]]);
+export const workspaceSchema = z.enum(WORKSPACE_KEYS as [PopsWorkspace, ...PopsWorkspace[]]);
 
 export const createTaskSchema = z.object({
   title: required(200),
@@ -46,8 +47,9 @@ export const agentTaskPatchSchema = z.object({
   title: required(200).optional(),
   description: text(8000).optional(),
   projectTags: tagListSchema.optional(),
+  workspace: workspaceSchema.optional(),
   expectedUpdatedAt: z.iso.datetime(),
-}).strict().refine((patch) => patch.title !== undefined || patch.description !== undefined || patch.projectTags !== undefined, "Supply at least one task detail to change.");
+}).strict().refine((patch) => patch.title !== undefined || patch.description !== undefined || patch.projectTags !== undefined || patch.workspace !== undefined, "Supply at least one task detail to change.");
 export type AgentTaskPatchInput = z.input<typeof agentTaskPatchSchema>;
 
 export const sourceSchema = z.object({
