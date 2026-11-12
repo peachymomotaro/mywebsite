@@ -35,6 +35,15 @@ export const WORKSPACES: Record<
       "Never spend money, start paid compute, create cloud resources or deploy anything. Estimate and ask.",
     ],
   },
+  personal: {
+    label: "Personal",
+    path: "/pops/personal",
+    purpose:
+      "Manage personal life, administrative decisions, relationships and personal productivity without mixing them into professional work.",
+    boundaries: [
+      "Never send personal communications, make purchases or change external accounts without explicit authorisation.",
+    ],
+  },
   work: {
     label: "Work",
     path: "/pops/work",
