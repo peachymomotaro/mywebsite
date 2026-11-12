@@ -1,5 +1,6 @@
 import type { AgentPrincipal } from "@/lib/pops/agent-auth";
 import { agentOps, describeError } from "@/lib/pops/agent-ops";
+import { WORKSPACE_KEYS } from "@/lib/pops/constants";
 import { buildOpenApiDocument } from "@/lib/pops/openapi";
 
 /**
@@ -21,7 +22,7 @@ export const MCP_TOOLS = [
   {
     name: "pops_list_tasks",
     description: "List POps tasks. Defaults to active and paused tasks.",
-    inputSchema: { type: "object", properties: { workspace: { type: "string", enum: ["learn", "writing", "experiments", "work", "personal"] }, status: { type: "string" }, tag: { type: "string" } } },
+    inputSchema: { type: "object", properties: { workspace: { type: "string", enum: WORKSPACE_KEYS }, status: { type: "string" }, tag: { type: "string" } } },
     annotations: { readOnlyHint: true },
   },
   {
@@ -64,6 +65,20 @@ export const MCP_TOOLS = [
     name: "pops_update_task",
     description: "Edit only the title, description, tags, or workspace Peter asks you to change. Read pops_get_task first and copy task.updatedAt into patch.expectedUpdatedAt. Omitted fields stay unchanged; projectTags replaces all tags. If the task changed, read it again before editing. Cannot change task status.",
     inputSchema: { type: "object", required: ["taskId", "patch"], properties: { ...taskId, patch: bodySchema("/tasks/{taskId}", "patch") } },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
+  },
+  {
+    name: "pops_move_task",
+    description: "Move one existing POps task to a different workspace. Read pops_get_task first and copy task.updatedAt into expectedUpdatedAt; if stale, read again. The task keeps its identity, status, history, and parent/subtask links. Subtasks are not automatically moved, so move them separately if requested.",
+    inputSchema: {
+      type: "object",
+      required: ["taskId", "workspace", "expectedUpdatedAt"],
+      properties: {
+        ...taskId,
+        workspace: { type: "string", enum: WORKSPACE_KEYS, description: "Destination workspace, including personal." },
+        expectedUpdatedAt: { type: "string", format: "date-time", description: "Copy task.updatedAt from pops_get_task to avoid stale edits." },
+      },
+    },
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
   },
   {
@@ -115,6 +130,8 @@ async function callTool(principal: AgentPrincipal, name: string, args: Record<st
       return agentOps.createTask(principal, args as never);
     case "pops_update_task":
       return agentOps.updateTask(principal, s("taskId"), args.patch as never);
+    case "pops_move_task":
+      return agentOps.updateTask(principal, s("taskId"), { workspace: s("workspace") as never, expectedUpdatedAt: s("expectedUpdatedAt") });
     case "pops_record_agent_run":
       return agentOps.recordRun(principal, s("taskId"), args.report as never, "mcp");
     case "pops_create_decision":
@@ -148,7 +165,7 @@ export async function handleMcpMessage(principal: AgentPrincipal, message: JsonR
       return rpcResult(message.id, {
         protocolVersion: SUPPORTED_VERSIONS.includes(requested) ? requested : SUPPORTED_VERSIONS[0],
         capabilities: { tools: { listChanged: false } },
-        serverInfo: { name: "pops", version: "1.1.0" },
+        serverInfo: { name: "pops", version: "1.2.0" },
         instructions:
           "POps is Peter Curry's personal task system. Read a task with pops_get_task before working on it. Record results once with pops_record_agent_run. Never change task status; the permission boundaries in each prompt are absolute.",
       });
