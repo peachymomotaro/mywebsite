@@ -730,6 +730,41 @@ describe.skipIf(!testUrl)("POps on isolated PostgreSQL", () => {
       expect(childMove.result.structuredContent.task.workspace).toBe("experiments");
     });
 
+    it("exposes pops_move_task for explicit workspace moves with optimistic locking and preserved relationships", async () => {
+      const { exchange } = await authorization();
+      const tokens = await exchangeOAuthToken(exchange);
+      const { task: parent } = await createTask({ title: "Ladder", workspace: "work", description: "Keep description", projectTags: ["ladder"] }, "human");
+      const { task: child } = await createTask({ title: "Matt's GitHub subtask", workspace: "work", parentId: parent.id }, "human");
+
+      const tools = await (await mcpRoute.POST(api("/api/pops/mcp", { auth: tokens.access_token, body: { jsonrpc: "2.0", id: 1, method: "tools/list" } }))).json();
+      const moveSpec = tools.result.tools.find((t: { name: string }) => t.name === "pops_move_task");
+      expect(moveSpec.inputSchema.required).toEqual(["taskId", "workspace", "expectedUpdatedAt"]);
+      expect(moveSpec.inputSchema.properties.workspace.enum).toContain("personal");
+
+      const before = await (await rpc(tokens.access_token, "pops_get_task", { taskId: parent.id })).json();
+      const args = { taskId: parent.id, workspace: "experiments", expectedUpdatedAt: before.result.structuredContent.task.updatedAt };
+      const moved = await (await rpc(tokens.access_token, "pops_move_task", args)).json();
+      expect(moved.result.isError).toBe(false);
+      expect(moved.result.structuredContent.task).toMatchObject({ id: parent.id, workspace: "experiments", status: "active", title: "Ladder", description: "Keep description", projectTags: ["ladder"] });
+      const unchangedChild = await prisma.popsTask.findUniqueOrThrow({ where: { id: child.id } });
+      expect(unchangedChild.parentId).toBe(parent.id);
+      expect(unchangedChild.workspace).toBe("work");
+      expect(await prisma.popsHistoryEntry.count({ where: { taskId: parent.id, kind: "edited", actor: "agent" } })).toBe(1);
+
+      const stale = await (await rpc(tokens.access_token, "pops_move_task", { ...args, workspace: "personal" })).json();
+      expect(stale.result.isError).toBe(true);
+      expect(JSON.parse(stale.result.content[0].text).error).toBe("conflict");
+      const fresh = await (await rpc(tokens.access_token, "pops_get_task", { taskId: parent.id })).json();
+      const personal = await (await rpc(tokens.access_token, "pops_move_task", { taskId: parent.id, workspace: "personal", expectedUpdatedAt: fresh.result.structuredContent.task.updatedAt })).json();
+      expect(personal.result.isError).toBe(false);
+      expect(personal.result.structuredContent.task.workspace).toBe("personal");
+      expect((await prisma.popsTask.findUniqueOrThrow({ where: { id: child.id } })).parentId).toBe(parent.id);
+
+      const invalid = await (await rpc(tokens.access_token, "pops_move_task", { taskId: parent.id, workspace: "not-a-workspace", expectedUpdatedAt: personal.result.structuredContent.task.updatedAt })).json();
+      expect(invalid.result.isError).toBe(true);
+      expect(JSON.parse(invalid.result.content[0].text).error).toBe("validation_failed");
+    });
+
     it("supports Personal as a first-class workspace for task creation, listing and moves", async () => {
       const { exchange } = await authorization();
       const tokens = await exchangeOAuthToken(exchange);
