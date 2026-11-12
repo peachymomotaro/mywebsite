@@ -21,7 +21,7 @@ export const MCP_TOOLS = [
   {
     name: "pops_list_tasks",
     description: "List POps tasks. Defaults to active and paused tasks.",
-    inputSchema: { type: "object", properties: { workspace: { type: "string", enum: ["learn", "writing", "experiments", "work"] }, status: { type: "string" }, tag: { type: "string" } } },
+    inputSchema: { type: "object", properties: { workspace: { type: "string", enum: ["learn", "writing", "experiments", "work", "personal"] }, status: { type: "string" }, tag: { type: "string" } } },
     annotations: { readOnlyHint: true },
   },
   {
@@ -62,7 +62,7 @@ export const MCP_TOOLS = [
   },
   {
     name: "pops_update_task",
-    description: "Edit only the title, description, or tags Peter asks you to change. Read pops_get_task first and copy task.updatedAt into patch.expectedUpdatedAt. Omitted fields stay unchanged; projectTags replaces all tags. If the task changed, read it again before editing. Cannot change task status.",
+    description: "Edit only the title, description, tags, or workspace Peter asks you to change. Read pops_get_task first and copy task.updatedAt into patch.expectedUpdatedAt. Omitted fields stay unchanged; projectTags replaces all tags. If the task changed, read it again before editing. Cannot change task status.",
     inputSchema: { type: "object", required: ["taskId", "patch"], properties: { ...taskId, patch: bodySchema("/tasks/{taskId}", "patch") } },
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
   },
