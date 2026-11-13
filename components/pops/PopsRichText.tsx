@@ -11,7 +11,7 @@ function inlineMarkdown(text: string): ReactNode[] {
     if (index > cursor) nodes.push(text.slice(cursor, index));
     if (match[1] !== undefined) {
       const url = safeChecklistUrl(match[2]);
-      nodes.push(url ? <a key={index} href={url} target="_blank" rel="noopener noreferrer nofollow">{match[1]}</a> : match[0]);
+      nodes.push(url ? <a key={index} href={url} target="_blank" rel="noopener noreferrer nofollow">{inlineMarkdown(match[1])}</a> : match[0]);
     } else if (match[4] !== undefined) nodes.push(<strong key={index}>{match[4]}</strong>);
     else if (match[6] !== undefined) nodes.push(<em key={index}>{match[6]}</em>);
     cursor = index + match[0].length;
