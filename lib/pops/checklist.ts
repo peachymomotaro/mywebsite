@@ -19,8 +19,10 @@ export function safeChecklistUrl(value: string | null | undefined): string | nul
 export function readChecklist(value: unknown): ChecklistItem[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((item): ChecklistItem[] => {
-    if (!item || typeof item !== "object" || typeof item.id !== "string" || typeof item.title !== "string" || typeof item.done !== "boolean") return [];
-    return [{ id: item.id, title: item.title, url: safeChecklistUrl(typeof item.url === "string" ? item.url : null), done: item.done }];
+    if (!item || typeof item !== "object") return [];
+    const entry = item as Record<string, unknown>;
+    if (typeof entry.id !== "string" || typeof entry.title !== "string" || typeof entry.done !== "boolean") return [];
+    return [{ id: entry.id, title: entry.title, url: safeChecklistUrl(typeof entry.url === "string" ? entry.url : null), done: entry.done }];
   }).slice(0, 100);
 }
 
