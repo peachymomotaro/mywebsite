@@ -1,28 +1,7 @@
 import Head from "next/head";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import EmailButton from "../components/EmailButton";
-
-const READING_RIVER_IMAGE = "/ReadingRiver.png";
 
 export default function Projects() {
-  const [activeImage, setActiveImage] = useState(null);
-
-  useEffect(() => {
-    if (!activeImage) {
-      return undefined;
-    }
-
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") {
-        setActiveImage(null);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeImage]);
-
   return (
     <>
       <Head>
@@ -139,44 +118,52 @@ export default function Projects() {
           <div className="project-kicker">Personal tool</div>
           <h2>Reading River</h2>
           <p className="lead">
-            Reading River is a way to lower the pressure to read everything. It 
-            is aimed at people who spend a lot of time reading, and who want to make 
-            calmer choices about what to read next. 
+            Reading River is a way to lower the pressure to read everything.
+            It is for people who save more than they can possibly read, and
+            want to make calmer choices about what deserves their attention.
           </p>
           <p>
-            The core idea is that your reading list should be more like a river
-            than a bucket. You wade in at a spot, grab something you want to
-            read, and then let the rest keep moving.
+            The idea, borrowed from Oliver Burkeman, is to treat your reading
+            list as a river rather than a bucket. You wade in, choose something
+            that catches your eye, and let the rest keep moving.
           </p>
         </div>
         <div className="reading-river-panels">
-          {/*
           <section className="reading-river-panel">
-            <h3>The Basics</h3>
-            <ol>
-              <li>Find things that you think are worth reading.</li>
-              <li>
-                Put them into the river, where they become fiches. Set how
-                important each fiche is with the priority setting.
-              </li>
-              <li>When you want to read something, return to the river.</li>
-            </ol>
-          </section>
-          */}
-
-          <section className="reading-river-panel">
-            <h3>The Philosophy and How It Works</h3>
+            <h3>Take a walk, not a queue</h3>
             <p>
-              Things often seem much more important than they are when we see them for the
-              first time. Letting things sit lets us better assess how worthwhile they are.
-              The Reading River can also send out an email including items from your River, 
-              creating a small personal newsletter curated by you.
+              Save an article with the Chrome or Firefox extension, or add a link
+              directly. Each day, a small selection from your collection drifts
+              past as paper boats in a painted, three-dimensional riverside
+              landscape. Walk along the bank, see what catches your eye, and
+              choose how much reading time you have. There is no ranked list to
+              work through and no search box demanding that you find the
+              &ldquo;right&rdquo; thing.
             </p>
             <p>
-              If you set how long you have to read, it first winnows your list
-              down to pieces that fit that time, falling back to shorter
-              options if needed. Then it sorts by a simple equation that
-              considers priority, reading time, and age.
+              When you start reading, the piece moves into the <em>eddies</em>,
+              a quiet pool where up to five unfinished articles wait for you.
+              Finish one and its boat becomes a tree on the bank. Over time you
+              grow a forest of what you have read, and you can return to those
+              pieces later.
+            </p>
+            <p>
+              One article from your river also arrives by email each day: a
+              gentle invitation to read, not another digest to catch up on.
+              The landscape takes small visual cues from paintings by Monet,
+              Constable, Turner and others.
+            </p>
+          </section>
+
+          <section className="reading-river-panel">
+            <h3>The philosophy</h3>
+            <p>
+              Things can seem urgent when we first encounter them. Saving a
+              link gives you permission not to read it now; letting it drift
+              past later makes it easier to decide whether it still matters.
+              Reading River is intentionally less efficient than a searchable
+              backlog. The point is to spend more attention on reading, and
+              less on managing things to read.
             </p>
             <ul className="reading-river-source-list">
               <li>
@@ -187,7 +174,7 @@ export default function Projects() {
                 >
                   Oliver Burkeman on the river
                 </a>
-                <p>The primary inspiration for the philosophy of the site, and the source of the idea that reading should be treated like a river, not a bucket.</p>
+                <p>The original river-not-bucket idea, and the main inspiration for Reading River.</p>
               </li>
               <li>
                 <a
@@ -197,10 +184,7 @@ export default function Projects() {
                 >
                   David Epstein, How To Improve Your Information Diet
                 </a>
-                <p>
-                  As David Epstein puts it: "With your information diet, the whole goal is to be intentional about what you’re consuming."
-                  The Reading River adds an intentionality to your reading. 
-                </p>
+                <p>On making intentional choices about what information we consume.</p>
               </li>
               <li>
                 <a
@@ -210,69 +194,28 @@ export default function Projects() {
                 >
                   Andy Matuschak on programming attention
                 </a>
-                <p>
-                  Reading River treats saving a link as a way of deciding to pay
-                  attention later, not right now.
-                </p>
+                <p>Saving something can be a decision to pay attention later, rather than immediately.</p>
               </li>
             </ul>
           </section>
         </div>
         <div className="reading-river-contact-box">
           <p>
-            If you&apos;d like to join the Reading River beta, just drop me an email saying you'd like to try it and I'll get back to you.
+            You can explore the river without an account: the guest version lets
+            you wander among 15 articles drawn from a fixed collection of 30.
+            Reading River is also running a small beta for people who want
+            their own river.
           </p>
-          <EmailButton
-            className="reading-river-email-button"
-            label="Sign up for the Reading River"
-            subject="Reading River"
-          />
+          <Link className="button reading-river-guest-link" href="/reading-river/guest">
+            Explore the guest river
+          </Link>
+          <p>
+            <Link href="/reading-river/waiting-list">Join the beta waiting list</Link>
+            {" · "}
+            <Link href="/reading-river/how-it-works">How Reading River works</Link>
+          </p>
         </div>
-        <button
-          className="media-button reading-river-project-image"
-          type="button"
-          onClick={() =>
-            setActiveImage({
-              src: READING_RIVER_IMAGE,
-              alt: "Reading River app screenshot"
-            })
-          }
-          aria-label="Expand Reading River app screenshot"
-        >
-          <img
-            src={READING_RIVER_IMAGE}
-            alt="Reading River app screenshot"
-            loading="lazy"
-          />
-        </button>
       </section>
-
-      {activeImage ? (
-        <div
-          className="lightbox"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setActiveImage(null)}
-        >
-          <div
-            className="lightbox-content"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              className="lightbox-close"
-              type="button"
-              onClick={() => setActiveImage(null)}
-            >
-              Close
-            </button>
-            <img
-              className="lightbox-image"
-              src={activeImage.src}
-              alt={activeImage.alt}
-            />
-          </div>
-        </div>
-      ) : null}
 
     </>
   );
