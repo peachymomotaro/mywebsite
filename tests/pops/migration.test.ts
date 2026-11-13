@@ -32,7 +32,7 @@ describe("POps migration safety", () => {
     expect(checklistSql).toContain('ALTER TABLE "PopsTask"');
     expect(checklistSql).toContain('DEFAULT \'agent\'');
     expect(checklistSql).toContain('DEFAULT \'[]\'::jsonb');
-    expect(checklistSql).not.toMatch(/\\b(?:DROP|TRUNCATE|DELETE\\s+FROM|UPDATE)\\b/i);
+    expect(checklistSql).not.toMatch(/\b(?:DROP|TRUNCATE|DELETE\s+FROM|UPDATE)\b/i);
   });
 
   it("adds only a nullable POps soft-delete timestamp without touching historical rows", () => {
