@@ -180,7 +180,7 @@ export async function setTaskMode(id: string, mode: PopsTaskMode, now = new Date
       : items;
     const updated = await tx.popsTask.update({
       where: { id },
-      data: { taskMode: mode, checklist, lastHumanEngagementAt: now, resurfaceAfter: null },
+      data: { taskMode: mode, checklist: checklist as Prisma.InputJsonValue, lastHumanEngagementAt: now, resurfaceAfter: null },
     });
     await appendHistory(tx, { taskId: id, kind: "edited", actor: "human", summary: `Selected ${mode === "checklist" ? "my checklist" : "agent handoff"} mode`, createdAt: now });
     return updated;
