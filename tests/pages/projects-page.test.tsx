@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import Projects from "@/pages/projects";
 
@@ -84,7 +84,7 @@ describe("Projects page", () => {
     ).toHaveAttribute("href", "/bayesgame");
   });
 
-  it("presents Reading River as a project with its philosophy, links, and image", () => {
+  it("describes the current Reading River experience and links to the live guest river", () => {
     render(<Projects />);
 
     const bayesianHeading = screen.getByRole("heading", {
@@ -98,59 +98,26 @@ describe("Projects page", () => {
       bayesianHeading.compareDocumentPosition(readingRiverHeading) &
         Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
-    expect(
-      screen.getByText(/more like a river than a bucket/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/lower the pressure to read everything/i)
-    ).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Open Reading River" })).toBeNull();
-    expect(screen.queryByRole("heading", { name: "The Basics" })).toBeNull();
-    expect(
-      screen.queryByText(/Find things that you think are worth reading/i)
-    ).toBeNull();
-    expect(
-      screen.getByRole("heading", { name: "The Philosophy and How It Works" })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Letting things sit lets us better assess/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/If you set how long you have to read/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: "Oliver Burkeman on the river" })
-    ).toHaveAttribute("href", "https://www.oliverburkeman.com/river");
-    expect(
-      screen.getByRole("link", {
-        name: "David Epstein, How To Improve Your Information Diet",
-      })
-    ).toHaveAttribute(
-      "href",
-      "https://davidepstein.substack.com/p/how-to-improve-your-information-diet"
+    expect(screen.getByText(/river rather than a bucket/i)).toBeInTheDocument();
+    expect(screen.getByText(/lower the pressure to read everything/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Take a walk, not a queue" })).toBeInTheDocument();
+    expect(screen.getByText(/paper boats in a painted/i)).toBeInTheDocument();
+    expect(screen.getByText(/up to five unfinished articles/i)).toBeInTheDocument();
+    expect(screen.getByText(/becomes a tree on the bank/i)).toBeInTheDocument();
+    expect(screen.getByText(/One article from your river also arrives by email each day/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Oliver Burkeman on the river" })).toHaveAttribute(
+      "href", "https://www.oliverburkeman.com/river"
     );
-    expect(
-      screen.getByText(
-        "If you'd like to join the Reading River beta, just drop me an email saying you'd like to try it and I'll get back to you."
-      )
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Sign up for the Reading River/i })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("img", { name: "Reading River app screenshot" })
-    ).toHaveAttribute("src", "/ReadingRiver.png");
-    expect(
-      screen.getByText(/drop me an email/i).compareDocumentPosition(
-        screen.getByRole("img", { name: "Reading River app screenshot" })
-      ) & Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Expand Reading River app screenshot" })
+    expect(screen.getByRole("link", { name: "Explore the guest river" })).toHaveAttribute(
+      "href", "/reading-river/guest"
     );
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(
-      screen.getAllByRole("img", { name: "Reading River app screenshot" })
-    ).toHaveLength(2);
+    expect(screen.getByRole("link", { name: "Join the beta waiting list" })).toHaveAttribute(
+      "href", "/reading-river/waiting-list"
+    );
+    expect(screen.getByRole("link", { name: "How Reading River works" })).toHaveAttribute(
+      "href", "/reading-river/how-it-works"
+    );
+    expect(screen.queryByText(/Then it sorts by a simple equation/i)).toBeNull();
+    expect(screen.queryByRole("img", { name: "Reading River app screenshot" })).toBeNull();
   });
 });
