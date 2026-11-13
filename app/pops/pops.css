@@ -238,3 +238,37 @@
 .pops-delete-dialog .pops-actions { justify-content: flex-end; }
 .pops button.pops-danger { background: #a52e30; border-color: #a52e30; color: white; }
 .pops button.pops-danger:hover { background: #812023; border-color: #812023; }
+
+/* Human and agent modes share a task, but have distinct primary actions. */
+.pops-task-mode { margin: 14px 0 18px; }
+.pops-task-mode p { margin: 8px 0 0; }
+.pops-mode-switch { display: inline-flex; gap: 3px; padding: 3px; border: var(--pops-rule); border-radius: 8px; }
+.pops-mode-switch form { margin: 0; }
+.pops button.pops-mode-active { background: var(--text); color: var(--bg); }
+.pops-mode-switch button { background: transparent; color: var(--muted); border: none; border-radius: 5px; font-size: 0.84rem; padding: 4px 12px; }
+.pops-mode-switch button:hover { background: var(--bg-elevated); color: var(--text); }
+.pops-mode-switch button.pops-mode-active:hover { background: var(--text); color: var(--bg); }
+.pops-guided-details .pops-richtext p { margin: 0 0 8px; }
+.pops-markdown-list { margin: 4px 0 12px; padding-left: 20px; }
+.pops-markdown-list li { margin: 5px 0; overflow-wrap: anywhere; }
+.pops-richtext a { overflow-wrap: anywhere; color: var(--accent); }
+.pops-checklist-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.pops-checklist-heading h2 { margin: 0 0 8px; }
+.pops-checklist-progress { width: 100%; height: 5px; margin: 2px 0 12px; accent-color: var(--accent); }
+.pops-checklist-items { padding: 0; margin: 0; list-style: none; }
+.pops-checklist-items > li { display: flex; align-items: baseline; gap: 10px; padding: 9px 0; border-bottom: var(--pops-rule); }
+.pops-checklist-items > li:last-child { border-bottom: none; }
+.pops-checklist-toggle, .pops-checklist-remove { margin: 0; }
+.pops button.pops-checklist-box { width: 20px; height: 20px; padding: 0; line-height: 18px; border: 1px solid var(--border); background: transparent; color: var(--text); font-size: 0.9rem; }
+.pops button.pops-checklist-box[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+.pops-checklist-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.pops-checklist-text a { color: var(--accent); }
+.pops-checklist-done .pops-checklist-text { text-decoration: line-through; color: var(--muted); }
+.pops-checklist-done .pops-checklist-text a { color: inherit; }
+.pops button.pops-link-button.pops-checklist-remove, .pops-checklist-remove button { font-size: 0.78rem; }
+.pops-checklist-add { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; }
+.pops-checklist-add input[name="title"] { flex: 2 1 210px; min-width: 0; }
+.pops-checklist-add input[name="url"] { flex: 1 1 160px; min-width: 0; }
+@media (max-width: 640px) {
+  .pops-checklist-remove button { font-size: 0.74rem; }
+}

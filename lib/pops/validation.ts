@@ -32,6 +32,7 @@ export const tagListSchema = z
 export const workspaceSchema = z.enum(WORKSPACE_KEYS as [PopsWorkspace, ...PopsWorkspace[]]);
 
 export const createTaskSchema = z.object({
+  taskMode: z.enum(["agent", "checklist"]).default("agent"),
   title: required(200),
   description: text(8000).default(""),
   workspace: workspaceSchema,

@@ -4,6 +4,18 @@ POps is a private task manager at `/pops` designed around one principle: **minim
 
 It replaces the retired Canon Explorer (`/qb`).
 
+## Personal checklists and agent handoffs
+
+Every task now offers two explicit modes in its header: **My checklist** and **Agent handoff**.
+The mode is saved per task, can be changed at any time, and never changes its completion status.
+
+- **My checklist** is for actions the owner will do directly. It displays linked reading/action items, individual check-offs and a progress bar; completing all items does not mark the task complete. The owner can add or remove actions. When an existing task is first switched to this mode, Markdown bullets in its suggested next action are imported as checklist items.
+- **Agent handoff** keeps the existing recommended pipeline, next agent prompt and report-import workflow. Switching to an agent does not erase the checklist, and agent reports do not check off its items.
+
+The Quick Add form defaults to **My checklist** but offers **Agent handoff**; API-created tasks and legacy tasks default to agent mode for compatibility. The suggested next-action guidance renders Markdown links, bullets and emphasis safely (http/https links only).
+
+Deploy the additive `20261113150000_pops_personal_checklist` migration with `npx prisma migrate deploy` before using the new code.
+
 ## Workflow
 
 1. Create a task in POps, or ask an agent to create one (API/MCP). Agents can also edit task titles, descriptions, and tags when asked.

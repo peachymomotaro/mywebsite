@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 const sql = readFileSync(path.join(__dirname, "../../prisma/migrations/20261106120000_pops_v1/migration.sql"), "utf8");
 const deletionSql = readFileSync(path.join(__dirname, "../../prisma/migrations/20261110220000_pops_pipeline_deletion/migration.sql"), "utf8");
+const checklistSql = readFileSync(path.join(__dirname, "../../prisma/migrations/20261113150000_pops_personal_checklist/migration.sql"), "utf8");
 
 describe("POps migration safety", () => {
   it("only creates or alters POps objects", () => {
@@ -24,6 +25,14 @@ describe("POps migration safety", () => {
     for (const table of ["PopsHistoryEntry", "PopsAgentRun", "PopsPipelineVersion", "PopsPlaybookVersion"]) {
       expect(sql).toContain(`BEFORE UPDATE OR DELETE ON "${table}"`);
     }
+  });
+
+  it("only adds task-mode and checklist fields without altering previous task data", () => {
+    expect(checklistSql).toContain('CREATE TYPE "PopsTaskMode"');
+    expect(checklistSql).toContain('ALTER TABLE "PopsTask"');
+    expect(checklistSql).toContain('DEFAULT \'agent\'');
+    expect(checklistSql).toContain('DEFAULT \'[]\'::jsonb');
+    expect(checklistSql).not.toMatch(/\b(?:DROP|TRUNCATE|DELETE\s+FROM|UPDATE)\b/i);
   });
 
   it("adds only a nullable POps soft-delete timestamp without touching historical rows", () => {
