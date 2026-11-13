@@ -1,4 +1,6 @@
-import type { PopsActor, PopsHistoryKind, PopsTaskStatus, PopsWorkspace, Prisma } from "@prisma/client";
+import type { PopsActor, PopsHistoryKind, PopsTaskMode, PopsTaskStatus, PopsWorkspace, Prisma } from "@prisma/client";
+import { randomUUID } from "node:crypto";
+import { itemsFromSuggestedAction, readChecklist, safeChecklistUrl } from "@/lib/pops/checklist";
 import { RESURFACE_AFTER_DAYS, RESURFACE_LIMIT, SNOOZE_DAYS } from "@/lib/pops/constants";
 import { getPopsDb } from "@/lib/pops/db";
 import { createTaskSchema, tagListSchema, type CreateTaskInput } from "@/lib/pops/validation";
@@ -71,6 +73,7 @@ export async function createTask(input: CreateTaskInput, actor: PopsActor, now =
         projectTags: data.projectTags,
         parentId: data.parentId,
         suggestedNextAction: data.suggestedNextAction,
+        taskMode: data.taskMode,
         recommendedPipelines: data.recommendedPipelines,
         createdBy: actor,
         creationKey: data.idempotencyKey,
@@ -159,6 +162,61 @@ export async function updateTask(id: string, patch: TaskPatch, now = new Date(),
       });
     }
     return updated;
+  });
+}
+
+/** A task can be worked on personally or handed to an agent; switching never loses prior work. */
+export async function setTaskMode(id: string, mode: PopsTaskMode, now = new Date()) {
+  const db = getPopsDb();
+  return db.$transaction(async (tx) => {
+    const task = await tx.popsTask.findUnique({ where: { id } });
+    if (!task) throw new PopsNotFoundError("Task");
+    if (task.taskMode === mode) return task;
+
+    const items = readChecklist(task.checklist);
+    // Import explicit linked bullets once; ordinary prose/agent prompts aren't converted.
+    const checklist = mode === "checklist" && items.length === 0
+      ? itemsFromSuggestedAction(task.suggestedNextAction).map((item) => ({ ...item, id: randomUUID(), done: false }))
+      : items;
+    const updated = await tx.popsTask.update({
+      where: { id },
+      data: { taskMode: mode, checklist, lastHumanEngagementAt: now, resurfaceAfter: null },
+    });
+    await appendHistory(tx, { taskId: id, kind: "edited", actor: "human", summary: `Selected ${mode === "checklist" ? "my checklist" : "agent handoff"} mode`, createdAt: now });
+    return updated;
+  });
+}
+
+export async function changeChecklist(id: string, change: { kind: "add"; title: string; url?: string } | { kind: "toggle" | "remove"; itemId: string }, now = new Date()) {
+  const db = getPopsDb();
+  return db.$transaction(async (tx) => {
+    const task = await tx.popsTask.findUnique({ where: { id } });
+    if (!task) throw new PopsNotFoundError("Task");
+    if (task.status === "completed" || task.status === "archived") throw new Error("Reopen this task to edit its checklist.");
+    let items = readChecklist(task.checklist);
+    let summary: string;
+    if (change.kind === "add") {
+      const title = change.title.trim();
+      if (!title || title.length > 300) throw new Error("Checklist item must be 1–300 characters.");
+      if (items.length >= 100) throw new Error("The checklist has reached its 100-item limit.");
+      const url = change.url?.trim() || null;
+      if (url && !safeChecklistUrl(url)) throw new Error("Links must use http or https.");
+      items = [...items, { id: randomUUID(), title, url: safeChecklistUrl(url), done: false }];
+      summary = `Added checklist item: ${title}`;
+    } else {
+      const item = items.find((entry) => entry.id === change.itemId);
+      if (!item) throw new PopsNotFoundError("Checklist item");
+      items = change.kind === "toggle"
+        ? items.map((entry) => entry.id === item.id ? { ...entry, done: !entry.done } : entry)
+        : items.filter((entry) => entry.id !== item.id);
+      summary = change.kind === "remove" ? `Removed checklist item: ${item.title}` : `${item.done ? "Reopened" : "Checked off"}: ${item.title}`;
+    }
+    const applied = await tx.popsTask.updateMany({
+      where: { id, updatedAt: task.updatedAt },
+      data: { checklist: items as Prisma.InputJsonValue, lastHumanEngagementAt: now, resurfaceAfter: null },
+    });
+    if (applied.count !== 1) throw new PopsConflictError("This checklist changed. Reload and try again.");
+    await appendHistory(tx, { taskId: id, kind: "edited", actor: "human", summary, createdAt: now });
   });
 }
 
