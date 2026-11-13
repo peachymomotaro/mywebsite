@@ -58,8 +58,8 @@ export default function Projects() {
             <p>
               Something can seem urgent when you first come across it.
               Leave a link for a few days and you may no longer want to read it.
-              I wanted a reading list that I could return to without feeling
-              that I had a backlog to clear.
+              The river leaves room to choose what to read when you return,
+              without treating every saved link as unfinished work.
             </p>
             <ul className="reading-river-source-list">
               <li>
