@@ -15,6 +15,103 @@ export default function Projects() {
         <h1>Projects</h1>
       </header>
 
+      <section className="reading-river-project" id="reading-river">
+        <div className="reading-river-project-copy">
+          <div className="project-kicker">Personal tool</div>
+          <h2>Reading River</h2>
+          <p className="lead">
+            Reading River is a way to lower the pressure to read everything.
+            It is for people who save more articles than they can read.
+          </p>
+          <p>
+            The idea comes from Oliver Burkeman: a reading list should be
+            more like a river than a bucket. You wade in, choose something
+            that interests you, and let the rest pass.
+          </p>
+        </div>
+        <div className="reading-river-panels">
+          <section className="reading-river-panel">
+            <h3>How it works</h3>
+            <p>
+              Save a link directly or use the Chrome or Firefox extension.
+              Each day, 16 articles are drawn from your collection. They float
+              past as paper boats in a three-dimensional riverside scene. You
+              can walk along the bank, look at their titles, and open one.
+            </p>
+            <p>
+              Opening an article moves it to the <em>eddies</em>, a pool that
+              holds up to five pieces you have started reading. You can return
+              to them later or send them back to the river. Finish an article
+              and a golden tree grows on the bank. The trees stay where they
+              were planted; you can walk up to one to reread its article.
+            </p>
+            <p>
+              The river borrows details from paintings. Monet&apos;s Japanese
+              bridge crosses the water, and Turner&apos;s <em>Fighting Temeraire</em>
+              is towed downstream. There is also a daily email containing
+              an article from your saved collection.
+            </p>
+          </section>
+
+          <section className="reading-river-panel">
+            <h3>The philosophy</h3>
+            <p>
+              Something can seem urgent when you first come across it.
+              Leave a link for a few days and you may no longer want to read it.
+              I wanted a reading list that I could return to without feeling
+              that I had a backlog to clear.
+            </p>
+            <ul className="reading-river-source-list">
+              <li>
+                <a
+                  href="https://www.oliverburkeman.com/river"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Oliver Burkeman on the river
+                </a>
+                <p>The source of the river-not-bucket idea.</p>
+              </li>
+              <li>
+                <a
+                  href="https://davidepstein.substack.com/p/how-to-improve-your-information-diet"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  David Epstein, How To Improve Your Information Diet
+                </a>
+                <p>On being deliberate about what you read.</p>
+              </li>
+              <li>
+                <a
+                  href="https://notes.andymatuschak.org/Spaced_repetition_systems_can_be_used_to_program_attention"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Andy Matuschak on programming attention
+                </a>
+                <p>On using spaced repetition to direct attention over time.</p>
+              </li>
+            </ul>
+          </section>
+        </div>
+        <div className="reading-river-contact-box">
+          <p>
+            You can try the guest river without an account. Each visit
+            shows 15 articles chosen from a fixed pool of 30. To start saving
+            your own links, join the beta waiting list.
+          </p>
+          <Link className="button reading-river-guest-link" href="/reading-river/guest">
+            Explore the guest river
+          </Link>
+          <p>
+            <Link href="/reading-river/waiting-list">Join the beta waiting list</Link>
+            {" · "}
+            <Link href="/reading-river/how-it-works">How Reading River works</Link>
+          </p>
+        </div>
+      </section>
+
       <section className="capstone-project" id="exploring-bayesian-optimisers">
         <span id="capstone-bo" className="legacy-anchor" aria-hidden="true" />
         <div className="project-kicker">Machine learning capstone</div>
@@ -113,109 +210,6 @@ export default function Projects() {
         </div>
       </section>
 
-      <section className="reading-river-project" id="reading-river">
-        <div className="reading-river-project-copy">
-          <div className="project-kicker">Personal tool</div>
-          <h2>Reading River</h2>
-          <p className="lead">
-            Reading River is a way to lower the pressure to read everything.
-            It is for people who save more than they can possibly read, and
-            want to make calmer choices about what deserves their attention.
-          </p>
-          <p>
-            The idea, borrowed from Oliver Burkeman, is to treat your reading
-            list as a river rather than a bucket. You wade in, choose something
-            that catches your eye, and let the rest keep moving.
-          </p>
-        </div>
-        <div className="reading-river-panels">
-          <section className="reading-river-panel">
-            <h3>Take a walk, not a queue</h3>
-            <p>
-              Save an article with the Chrome or Firefox extension, or add a link
-              directly. Each day, a small selection from your collection drifts
-              past as paper boats in a painted, three-dimensional riverside
-              landscape. Walk along the bank, see what catches your eye, and
-              choose how much reading time you have. There is no ranked list to
-              work through and no search box demanding that you find the
-              &ldquo;right&rdquo; thing.
-            </p>
-            <p>
-              When you start reading, the piece moves into the <em>eddies</em>,
-              a quiet pool where up to five unfinished articles wait for you.
-              Finish one and its boat becomes a tree on the bank. Over time you
-              grow a forest of what you have read, and you can return to those
-              pieces later.
-            </p>
-            <p>
-              One article from your river also arrives by email each day: a
-              gentle invitation to read, not another digest to catch up on.
-              The landscape takes small visual cues from paintings by Monet,
-              Constable, Turner and others.
-            </p>
-          </section>
-
-          <section className="reading-river-panel">
-            <h3>The philosophy</h3>
-            <p>
-              Things can seem urgent when we first encounter them. Saving a
-              link gives you permission not to read it now; letting it drift
-              past later makes it easier to decide whether it still matters.
-              Reading River is intentionally less efficient than a searchable
-              backlog. The point is to spend more attention on reading, and
-              less on managing things to read.
-            </p>
-            <ul className="reading-river-source-list">
-              <li>
-                <a
-                  href="https://www.oliverburkeman.com/river"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Oliver Burkeman on the river
-                </a>
-                <p>The original river-not-bucket idea, and the main inspiration for Reading River.</p>
-              </li>
-              <li>
-                <a
-                  href="https://davidepstein.substack.com/p/how-to-improve-your-information-diet"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  David Epstein, How To Improve Your Information Diet
-                </a>
-                <p>On making intentional choices about what information we consume.</p>
-              </li>
-              <li>
-                <a
-                  href="https://notes.andymatuschak.org/Spaced_repetition_systems_can_be_used_to_program_attention"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Andy Matuschak on programming attention
-                </a>
-                <p>Saving something can be a decision to pay attention later, rather than immediately.</p>
-              </li>
-            </ul>
-          </section>
-        </div>
-        <div className="reading-river-contact-box">
-          <p>
-            You can explore the river without an account: the guest version lets
-            you wander among 15 articles drawn from a fixed collection of 30.
-            Reading River is also running a small beta for people who want
-            their own river.
-          </p>
-          <Link className="button reading-river-guest-link" href="/reading-river/guest">
-            Explore the guest river
-          </Link>
-          <p>
-            <Link href="/reading-river/waiting-list">Join the beta waiting list</Link>
-            {" · "}
-            <Link href="/reading-river/how-it-works">How Reading River works</Link>
-          </p>
-        </div>
-      </section>
 
     </>
   );
