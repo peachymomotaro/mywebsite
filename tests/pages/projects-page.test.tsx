@@ -95,16 +95,16 @@ describe("Projects page", () => {
     });
 
     expect(
-      bayesianHeading.compareDocumentPosition(readingRiverHeading) &
+      readingRiverHeading.compareDocumentPosition(bayesianHeading) &
         Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
-    expect(screen.getByText(/river rather than a bucket/i)).toBeInTheDocument();
+    expect(screen.getByText(/more like a river than a bucket/i)).toBeInTheDocument();
     expect(screen.getByText(/lower the pressure to read everything/i)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Take a walk, not a queue" })).toBeInTheDocument();
-    expect(screen.getByText(/paper boats in a painted/i)).toBeInTheDocument();
-    expect(screen.getByText(/up to five unfinished articles/i)).toBeInTheDocument();
-    expect(screen.getByText(/becomes a tree on the bank/i)).toBeInTheDocument();
-    expect(screen.getByText(/One article from your river also arrives by email each day/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "How it works" })).toBeInTheDocument();
+    expect(screen.getByText(/paper boats in a three-dimensional riverside scene/i)).toBeInTheDocument();
+    expect(screen.getByText(/up to five pieces you have started reading/i)).toBeInTheDocument();
+    expect(screen.getByText(/a golden tree grows on the bank/i)).toBeInTheDocument();
+    expect(screen.getByText(/daily email containing/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Oliver Burkeman on the river" })).toHaveAttribute(
       "href", "https://www.oliverburkeman.com/river"
     );
