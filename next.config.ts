@@ -28,6 +28,9 @@ const nextConfig: NextConfig = {
     }, {
       source: "/max-danger",
       headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
+    }, {
+      source: "/complexity-lab",
+      headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
     }];
   },
   turbopack: {

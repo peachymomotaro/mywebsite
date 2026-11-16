@@ -5,3 +5,4 @@ Disallow: /qb
 Disallow: /api/qb
 Disallow: /max-danger
 Disallow: /escape-from-max
+Disallow: /complexity-lab

@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        disallow: ["/pops", "/api/pops", "/qb", "/api/qb", "/max-danger", "/escape-from-max"],
+        disallow: ["/pops", "/api/pops", "/qb", "/api/qb", "/max-danger", "/escape-from-max", "/complexity-lab"],
       },
       {
         userAgent: "*",
