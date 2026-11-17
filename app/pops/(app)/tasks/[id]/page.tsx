@@ -120,7 +120,7 @@ export default async function TaskPage({
             ))}
           </span>
         </span>
-        <span className="pops-actions" style={{ marginTop: 0 }}>
+        <div className="pops-actions" style={{ marginTop: 0 }}>
           {isOpen ? (
             <>
               <StatusForm id={task.id} status="completed" label="Mark complete" primary />
@@ -132,7 +132,7 @@ export default async function TaskPage({
           )}
           {editing ? null : <Link href={`/pops/tasks/${task.id}?edit=1`} className="pops-small pops-muted">Edit</Link>}
           <DeleteTaskControl id={task.id} name={task.title} activeSubtasks={activeSubtasks} />
-        </span>
+        </div>
       </div>
       {error ? <p className="pops-notice pops-error" role="alert">{error}</p> : null}
 
