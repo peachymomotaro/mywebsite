@@ -54,13 +54,16 @@ export async function createTask(input: CreateTaskInput, actor: PopsActor, now =
 
   if (data.idempotencyKey) {
     const existing = await db.popsTask.findUnique({ where: { creationKey: data.idempotencyKey } });
-    if (existing) return { task: existing, duplicate: true };
+    if (existing) {
+      if (existing.deletedAt) throw new PopsNotFoundError("Task");
+      return { task: existing, duplicate: true };
+    }
   }
 
   return db.$transaction(async (tx) => {
     if (data.parentId) {
       const parent = await tx.popsTask.findUnique({ where: { id: data.parentId } });
-      if (!parent) throw new PopsNotFoundError("Parent task");
+      if (!parent || parent.deletedAt) throw new PopsNotFoundError("Parent task");
     }
 
     const task = await tx.popsTask.create({
@@ -104,6 +107,30 @@ export async function createTask(input: CreateTaskInput, actor: PopsActor, now =
   });
 }
 
+/**
+ * Owner-only soft deletion. Task history and run records remain append-only.
+ * Reject tasks with live subtasks, so no child silently loses its parent.
+ * An optimistic update ensures that two concurrent delete attempts cannot
+ * both succeed or race an edit.
+ */
+export async function deleteTask(id: string, now = new Date()) {
+  const db = getPopsDb();
+  if (!/^c[a-z0-9]{8,39}$/.test(id)) throw new PopsNotFoundError("Task");
+  return db.$transaction(async (tx) => {
+    const task = await tx.popsTask.findUnique({ where: { id }, select: { id: true, deletedAt: true } });
+    if (!task || task.deletedAt) throw new PopsNotFoundError("Task");
+    const subtasks = await tx.popsTask.count({ where: { parentId: id, deletedAt: null } });
+    if (subtasks) throw new PopsConflictError("Delete or move this task's subtasks first.");
+    const updated = await tx.popsTask.updateMany({
+      where: { id, deletedAt: null },
+      data: { deletedAt: now, resurfaceAfter: null },
+    });
+    if (updated.count !== 1) throw new PopsConflictError("Task was already deleted.");
+    await appendHistory(tx, { taskId: id, kind: "edited", actor: "human", summary: "Task deleted", createdAt: now });
+    return task;
+  });
+}
+
 export type TaskPatch = {
   title?: string;
   description?: string;
@@ -117,7 +144,7 @@ export async function updateTask(id: string, patch: TaskPatch, now = new Date(),
   const db = getPopsDb();
   return db.$transaction(async (tx) => {
     const task = await tx.popsTask.findUnique({ where: { id } });
-    if (!task) throw new PopsNotFoundError("Task");
+    if (!task || task.deletedAt) throw new PopsNotFoundError("Task");
     if (expectedUpdatedAt && task.updatedAt.getTime() !== expectedUpdatedAt.getTime()) {
       throw new PopsConflictError("Task changed. Read it again before applying your edit.");
     }
@@ -144,7 +171,7 @@ export async function updateTask(id: string, patch: TaskPatch, now = new Date(),
       updatedAt: new Date(Math.max(now.getTime(), task.updatedAt.getTime() + 1)),
       ...(actor === "human" ? { lastHumanEngagementAt: now, resurfaceAfter: null } : {}),
     };
-    const applied = await tx.popsTask.updateMany({ where: { id, ...(expectedUpdatedAt ? { updatedAt: expectedUpdatedAt } : {}) }, data });
+    const applied = await tx.popsTask.updateMany({ where: { id, deletedAt: null, ...(expectedUpdatedAt ? { updatedAt: expectedUpdatedAt } : {}) }, data });
     if (applied.count !== 1) throw new PopsConflictError("Task changed. Read it again before applying your edit.");
     const updated = await tx.popsTask.findUniqueOrThrow({ where: { id } });
 
@@ -167,7 +194,7 @@ export async function setTaskStatus(id: string, status: PopsTaskStatus, now = ne
   const db = getPopsDb();
   return db.$transaction(async (tx) => {
     const task = await tx.popsTask.findUnique({ where: { id } });
-    if (!task) throw new PopsNotFoundError("Task");
+    if (!task || task.deletedAt) throw new PopsNotFoundError("Task");
     if (task.status === status) return task;
 
     const updated = await tx.popsTask.update({
@@ -203,7 +230,7 @@ export async function addTaskNote(
   const db = getPopsDb();
   await db.$transaction(async (tx) => {
     const task = await tx.popsTask.findUnique({ where: { id }, select: { id: true } });
-    if (!task) throw new PopsNotFoundError("Task");
+    if (!task || task.deletedAt) throw new PopsNotFoundError("Task");
     await appendHistory(tx, {
       taskId: id,
       kind: note.kind ?? (note.url ? "evidence" : "note"),
@@ -251,6 +278,7 @@ export async function listTasks(filter: TaskListFilter = {}) {
   return db.popsTask.findMany({
     where: {
       workspace: filter.workspace,
+      deletedAt: null,
       status: { in: filter.statuses ?? ["active", "paused"] },
       projectTags: filter.tag ? { has: filter.tag } : undefined,
       parentId: filter.topLevelOnly ? null : undefined,
@@ -272,12 +300,12 @@ export async function listTasks(filter: TaskListFilter = {}) {
 export async function getTaskDetail(id: string) {
   const db = getPopsDb();
   return db.popsTask.findUnique({
-    where: { id },
+    where: { id, deletedAt: null },
     include: {
-      parent: { select: { id: true, title: true } },
-      subtasks: { orderBy: { createdAt: "asc" } },
-      linksFrom: { include: { toTask: { select: { id: true, title: true, workspace: true, status: true } } } },
-      linksTo: { include: { fromTask: { select: { id: true, title: true, workspace: true, status: true } } } },
+      parent: { select: { id: true, title: true, deletedAt: true } },
+      subtasks: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } },
+      linksFrom: { where: { toTask: { deletedAt: null } }, include: { toTask: { select: { id: true, title: true, workspace: true, status: true } } } },
+      linksTo: { where: { fromTask: { deletedAt: null } }, include: { fromTask: { select: { id: true, title: true, workspace: true, status: true } } } },
       history: { orderBy: [{ createdAt: "asc" }, { id: "asc" }] },
       runs: { orderBy: { createdAt: "asc" }, include: { feedback: true } },
       decisions: { orderBy: { createdAt: "asc" } },
@@ -296,6 +324,7 @@ export async function getResurfacingCandidates(now = new Date(), workspace?: Pop
   return db.popsTask.findMany({
     where: {
       workspace,
+      deletedAt: null,
       parentId: null,
       AND: [
         notSnoozed,
