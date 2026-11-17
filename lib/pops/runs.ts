@@ -142,7 +142,11 @@ export async function recordAgentRun(taskId: string, input: AgentRunInput, optio
   } catch (error) {
     if (isUniqueViolation(error)) {
       const raced = await replay();
-      if (raced) return raced;
+      if (raced) {
+        const task = await db.popsTask.findFirst({ where: { id: taskId, deletedAt: null }, select: { id: true } });
+        if (!task) throw new PopsNotFoundError("Task");
+        return raced;
+      }
     }
     throw error;
   }
