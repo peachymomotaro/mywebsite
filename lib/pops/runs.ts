@@ -58,12 +58,16 @@ export async function recordAgentRun(taskId: string, input: AgentRunInput, optio
   };
 
   const earlier = await replay();
-  if (earlier) return earlier;
+  if (earlier) {
+    const task = await db.popsTask.findUnique({ where: { id: taskId }, select: { deletedAt: true } });
+    if (!task || task.deletedAt) throw new PopsNotFoundError("Task");
+    return earlier;
+  }
 
   try {
     return await db.$transaction(async (tx) => {
       const task = await tx.popsTask.findUnique({ where: { id: taskId } });
-      if (!task) throw new PopsNotFoundError("Task");
+      if (!task || task.deletedAt) throw new PopsNotFoundError("Task");
 
       const pipeline = report.pipeline
         ? await tx.popsPipeline.findUnique({ where: { slug: report.pipeline } })
@@ -189,8 +193,8 @@ export async function createDecision(taskId: string, input: CreateDecisionInput,
   const db = getPopsDb();
   try {
     return await db.$transaction(async (tx) => {
-      const task = await tx.popsTask.findUnique({ where: { id: taskId }, select: { id: true } });
-      if (!task) throw new PopsNotFoundError("Task");
+      const task = await tx.popsTask.findUnique({ where: { id: taskId }, select: { id: true, deletedAt: true } });
+      if (!task || task.deletedAt) throw new PopsNotFoundError("Task");
       const dedupeKey = parsed.idempotencyKey ? `decision:${parsed.idempotencyKey}` : undefined;
       const result = await insertDecision(tx, taskId, parsed, actor, now, dedupeKey);
       if (result.duplicate && result.decision.taskId !== taskId) {
@@ -219,7 +223,7 @@ export async function answerDecision(
   const db = getPopsDb();
   return db.$transaction(async (tx) => {
     const decision = await tx.popsDecision.findUnique({ where: { id: decisionId } });
-    if (!decision) throw new PopsNotFoundError("Decision");
+    if (!decision || !(await tx.popsTask.findFirst({ where: { id: decision.taskId, deletedAt: null }, select: { id: true } }))) throw new PopsNotFoundError("Decision");
     if (decision.status !== "open") throw new PopsConflictError("This decision has already been closed.");
     const updated = await tx.popsDecision.update({
       where: { id: decisionId },
@@ -245,6 +249,7 @@ export async function withdrawDecision(decisionId: string, now = new Date()) {
   await db.$transaction(async (tx) => {
     const decision = await tx.popsDecision.findUnique({ where: { id: decisionId } });
     if (!decision || decision.status !== "open") return;
+    if (!(await tx.popsTask.findFirst({ where: { id: decision.taskId, deletedAt: null }, select: { id: true } }))) throw new PopsNotFoundError("Decision");
     await tx.popsDecision.update({ where: { id: decisionId }, data: { status: "withdrawn", answeredAt: now } });
     await appendHistory(tx, {
       taskId: decision.taskId,
@@ -268,7 +273,7 @@ export async function recordRunFeedback(
   const db = getPopsDb();
   return db.$transaction(async (tx) => {
     const run = await tx.popsAgentRun.findUnique({ where: { id: runId } });
-    if (!run) throw new PopsNotFoundError("Run");
+    if (!run || !(await tx.popsTask.findFirst({ where: { id: run.taskId, deletedAt: null }, select: { id: true } }))) throw new PopsNotFoundError("Run");
     const feedback = await tx.popsRunFeedback.upsert({
       where: { runId },
       create: { runId, ...data, relayed: Boolean(options.relayed) },
