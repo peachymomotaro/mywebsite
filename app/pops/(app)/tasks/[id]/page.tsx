@@ -11,6 +11,7 @@ import {
   withdrawDecisionAction,
 } from "@/app/pops/actions";
 import { CopyButton } from "@/components/pops/CopyButton";
+import { DeleteTaskControl } from "@/components/pops/DeleteTaskControl";
 import { ImportReport } from "@/components/pops/ImportReport";
 import { RunDetail } from "@/components/pops/RunDetail";
 import { siteBaseUrl } from "@/lib/pops/agent-ops";
@@ -72,6 +73,7 @@ export default async function TaskPage({
   const openDecisions = task.decisions.filter((d) => d.status === "open");
   const recentWork = task.runs.slice(-3).map((r) => `${formatDate(r.createdAt)}: ${r.accomplished.split("\n")[0]}`);
   const workspace = WORKSPACES[task.workspace];
+  const activeSubtasks = task.subtasks.length;
   const isOpen = task.status === "active" || task.status === "paused";
   const showAll = activity === "all";
   const history = showAll ? task.history : task.history.filter((h) => KEY_KINDS.includes(h.kind));
@@ -101,7 +103,7 @@ export default async function TaskPage({
     <>
       <p className="pops-crumb">
         <Link href={workspace.path}>{workspace.label}</Link>
-        {task.parent ? (
+        {task.parent && !task.parent.deletedAt ? (
           <>
             {" / "}
             <Link href={`/pops/tasks/${task.parent.id}`}>{task.parent.title}</Link>
@@ -118,7 +120,7 @@ export default async function TaskPage({
             ))}
           </span>
         </span>
-        <span className="pops-actions" style={{ marginTop: 0 }}>
+        <div className="pops-actions" style={{ marginTop: 0 }}>
           {isOpen ? (
             <>
               <StatusForm id={task.id} status="completed" label="Mark complete" primary />
@@ -129,7 +131,8 @@ export default async function TaskPage({
             <StatusForm id={task.id} status="active" label="Reopen" primary />
           )}
           {editing ? null : <Link href={`/pops/tasks/${task.id}?edit=1`} className="pops-small pops-muted">Edit</Link>}
-        </span>
+          <DeleteTaskControl id={task.id} name={task.title} activeSubtasks={activeSubtasks} />
+        </div>
       </div>
       {error ? <p className="pops-notice pops-error" role="alert">{error}</p> : null}
 

@@ -21,7 +21,7 @@ export function shapePromptContext(task: TaskDetail): PromptContext {
       projectTags: task.projectTags,
       status: task.status,
       suggestedNextAction: task.suggestedNextAction,
-      parent: task.parent,
+      parent: task.parent && !task.parent.deletedAt ? { id: task.parent.id, title: task.parent.title } : null,
       subtasks: task.subtasks.map((s) => ({ id: s.id, title: s.title, status: s.status })),
       links: [
         ...task.linksFrom.map((l) => ({ id: l.toTask.id, title: l.toTask.title })),

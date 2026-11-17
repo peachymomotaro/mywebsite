@@ -356,7 +356,7 @@ export async function createProposal(input: ProposalInput, now = new Date()) {
     if (!pipeline || pipeline.deletedAt) throw new PopsNotFoundError("Pipeline");
     pipelineId = pipeline.id;
   }
-  if (data.taskId && !(await db.popsTask.findUnique({ where: { id: data.taskId }, select: { id: true } }))) {
+  if (data.taskId && !(await db.popsTask.findUnique({ where: { id: data.taskId, deletedAt: null }, select: { id: true } }))) {
     throw new PopsNotFoundError("Task");
   }
   const proposal = await db.popsProposal.create({

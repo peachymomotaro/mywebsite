@@ -469,6 +469,7 @@ model PopsTask {
   updatedAt             DateTime       @updatedAt
   completedAt           DateTime?
   archivedAt            DateTime?
+  deletedAt             DateTime?
 
   history   PopsHistoryEntry[]
   runs      PopsAgentRun[]
