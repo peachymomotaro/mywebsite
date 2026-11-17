@@ -9,7 +9,7 @@ import { createPipeline, deletePipeline, reviewProposal, savePipelineVersion, sa
 import { parsePastedReport } from "@/lib/pops/report-import";
 import { answerDecision, recordAgentRun, recordRunFeedback, withdrawDecision } from "@/lib/pops/runs";
 import { requireOwner } from "@/lib/pops/session";
-import { addTaskNote, createTask, keepTask, linkTasks, setTaskStatus, snoozeTask, updateTask } from "@/lib/pops/tasks";
+import { addTaskNote, createTask, deleteTask, keepTask, linkTasks, setTaskStatus, snoozeTask, updateTask } from "@/lib/pops/tasks";
 import { formatZodError } from "@/lib/pops/validation";
 import { ZodError } from "zod";
 
@@ -96,6 +96,20 @@ export async function updateTaskAction(formData: FormData) {
   }
   refresh(taskPath(id));
   redirect(taskPath(id));
+}
+
+export type DeleteTaskState = { status: "idle" | "error"; message: string };
+
+/** Only the signed-in owner can delete a task, never an agent. */
+export async function deleteTaskAction(_previous: DeleteTaskState, formData: FormData): Promise<DeleteTaskState> {
+  await requireOwner();
+  try {
+    await deleteTask(str(formData, "id"));
+  } catch (error) {
+    return { status: "error", message: error instanceof Error ? error.message : "Could not delete task." };
+  }
+  refresh("/pops");
+  redirect("/pops?deleted=1");
 }
 
 export async function setStatusAction(formData: FormData) {
