@@ -229,7 +229,7 @@ export async function addTaskNote(
   if (!body && !note.url) throw new Error("A note needs text or a link.");
   const db = getPopsDb();
   await db.$transaction(async (tx) => {
-    const task = await tx.popsTask.findUnique({ where: { id }, select: { id: true } });
+    const task = await tx.popsTask.findUnique({ where: { id }, select: { id: true, deletedAt: true } });
     if (!task || task.deletedAt) throw new PopsNotFoundError("Task");
     await appendHistory(tx, {
       taskId: id,
@@ -251,7 +251,7 @@ export async function linkTasks(fromTaskId: string, toTaskId: string, note = "",
       tx.popsTask.findUnique({ where: { id: fromTaskId } }),
       tx.popsTask.findUnique({ where: { id: toTaskId } }),
     ]);
-    if (!from || !to) throw new PopsNotFoundError("Task");
+    if (!from || !to || from.deletedAt || to.deletedAt) throw new PopsNotFoundError("Task");
     await tx.popsTaskLink.createMany({ data: [{ fromTaskId, toTaskId, note: note.slice(0, 300) }], skipDuplicates: true });
     await appendHistory(tx, {
       taskId: fromTaskId,
@@ -288,7 +288,7 @@ export async function listTasks(filter: TaskListFilter = {}) {
     include: {
       _count: {
         select: {
-          subtasks: { where: { status: { in: ["active", "paused"] } } },
+          subtasks: { where: { status: { in: ["active", "paused"] }, deletedAt: null } },
           decisions: { where: { status: "open" } },
           runs: true,
         },
@@ -344,7 +344,7 @@ export async function getResurfacingCandidates(now = new Date(), workspace?: Pop
 export async function snoozeTask(id: string, now = new Date(), days = SNOOZE_DAYS) {
   const db = getPopsDb();
   await db.$transaction(async (tx) => {
-    await tx.popsTask.update({ where: { id }, data: { resurfaceAfter: new Date(now.getTime() + days * DAY_MS) } });
+    await tx.popsTask.update({ where: { id, deletedAt: null }, data: { resurfaceAfter: new Date(now.getTime() + days * DAY_MS) } });
     await appendHistory(tx, {
       taskId: id,
       kind: "resurfacing",
@@ -358,6 +358,8 @@ export async function snoozeTask(id: string, now = new Date(), days = SNOOZE_DAY
 export async function keepTask(id: string, now = new Date()) {
   const db = getPopsDb();
   await db.$transaction(async (tx) => {
+    const task = await tx.popsTask.findFirst({ where: { id, deletedAt: null }, select: { id: true } });
+    if (!task) throw new PopsNotFoundError("Task");
     await touchHumanEngagement(tx, id, now);
     await appendHistory(tx, {
       taskId: id,
