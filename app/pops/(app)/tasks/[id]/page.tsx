@@ -103,7 +103,7 @@ export default async function TaskPage({
     <>
       <p className="pops-crumb">
         <Link href={workspace.path}>{workspace.label}</Link>
-        {task.parent ? (
+        {task.parent && !task.parent.deletedAt ? (
           <>
             {" / "}
             <Link href={`/pops/tasks/${task.parent.id}`}>{task.parent.title}</Link>
