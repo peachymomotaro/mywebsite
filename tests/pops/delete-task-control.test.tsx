@@ -28,7 +28,7 @@ describe("DeleteTaskControl", () => {
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     fireEvent.click(screen.getByRole("button", { name: "Delete task" }));
     await waitFor(() => expect(deletion).toHaveBeenCalledTimes(1));
-    const data = deletion.mock.calls[0][1] as FormData;
+    const data = (deletion.mock.calls[0] as unknown[])[1] as FormData;
     expect(data.get("id")).toBe("cmwiq0i9j000007jt5uklpshm");
     await waitFor(() => expect(screen.getByRole("alert").textContent).toContain("Deletion failed."));
   });
