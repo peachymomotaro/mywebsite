@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 const sql = readFileSync(path.join(__dirname, "../../prisma/migrations/20261106120000_pops_v1/migration.sql"), "utf8");
 const deletionSql = readFileSync(path.join(__dirname, "../../prisma/migrations/20261110220000_pops_pipeline_deletion/migration.sql"), "utf8");
+const supersessionSql = readFileSync(path.join(__dirname, "../../prisma/migrations/20261118190000_pops_proposal_supersession/migration.sql"), "utf8");
 
 describe("POps migration safety", () => {
   it("only creates or alters POps objects", () => {
@@ -24,6 +25,13 @@ describe("POps migration safety", () => {
     for (const table of ["PopsHistoryEntry", "PopsAgentRun", "PopsPipelineVersion", "PopsPlaybookVersion"]) {
       expect(sql).toContain(`BEFORE UPDATE OR DELETE ON "${table}"`);
     }
+  });
+
+  it("adds proposal supersession audit fields without rewriting any records", () => {
+    expect(supersessionSql).toContain("superseded");
+    expect(supersessionSql).toContain('"supersededById"');
+    expect(supersessionSql).toContain('"baseVersion"');
+    expect(supersessionSql).not.toMatch(/\\b(?:DROP|TRUNCATE|DELETE\\s+FROM|UPDATE)\\b/i);
   });
 
   it("adds only a nullable POps soft-delete timestamp without touching historical rows", () => {
