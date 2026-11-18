@@ -247,6 +247,9 @@ export async function savePipelineVersion(
     expectedEvidence: string;
     changeNote: string;
     proposalId?: string;
+    baseVersion?: number;
+    includedProposalIds?: string[];
+    supersededProposalIds?: string[];
   },
   author: PopsActor = "human",
   now = new Date(),
@@ -256,6 +259,21 @@ export async function savePipelineVersion(
   return db.$transaction(async (tx) => {
     const pipeline = await tx.popsPipeline.findUnique({ where: { slug } });
     if (!pipeline || pipeline.deletedAt) throw new PopsNotFoundError("Pipeline");
+    if (input.baseVersion !== undefined && pipeline.currentVersion !== input.baseVersion) {
+      throw new PopsConflictError("The pipeline changed since you opened it. Reload before applying proposals.");
+    }
+    const included = [...new Set([...(input.includedProposalIds ?? []), ...(input.proposalId ? [input.proposalId] : [])])];
+    const superseded = [...new Set(input.supersededProposalIds ?? [])];
+    if (included.some((id) => superseded.includes(id))) throw new Error("A proposal cannot be included and superseded.");
+    if (superseded.length && !included.length) throw new Error("Choose at least one included proposal before superseding others.");
+    if (included.length && input.instructions.trim() === (await tx.popsPipelineVersion.findUniqueOrThrow({ where: { pipelineId_version: { pipelineId: pipeline.id, version: pipeline.currentVersion } } })).instructions) {
+      throw new Error("Edit the instructions to incorporate the selected proposals before saving.");
+    }
+    const resolvedIds = [...included, ...superseded];
+    if (resolvedIds.length) {
+      const pending = await tx.popsProposal.findMany({ where: { id: { in: resolvedIds }, pipelineId: pipeline.id, kind: "pipeline_change", status: "pending" }, select: { id: true } });
+      if (pending.length !== resolvedIds.length) throw new PopsConflictError("A proposal was already reviewed or targets a different pipeline. Reload.");
+    }
     const nextVersion = pipeline.currentVersion + 1;
     await tx.popsPipelineVersion.create({
       data: {
@@ -279,7 +297,14 @@ export async function savePipelineVersion(
       },
     });
     if (advanced.count !== 1) throw new PopsConflictError("The pipeline changed while you were editing. Reload and try again.");
-    if (input.proposalId) await markProposal(tx, input.proposalId, "accepted", `Applied as version ${nextVersion}`, now);
+    if (included.length) await tx.popsProposal.updateMany({
+      where: { id: { in: included }, status: "pending" },
+      data: { status: "accepted", reviewNote: `Included in pipeline v${nextVersion}`, reviewedAt: now },
+    });
+    if (superseded.length) await tx.popsProposal.updateMany({
+      where: { id: { in: superseded }, status: "pending" },
+      data: { status: "superseded", supersededById: included[0], reviewNote: `Superseded by pipeline v${nextVersion}`, reviewedAt: now },
+    });
     return nextVersion;
   });
 }
@@ -341,6 +366,34 @@ async function markProposal(tx: Tx, id: string, status: "accepted" | "rejected",
  * Agents may only propose. A proposal never changes the playbook or a
  * pipeline until the owner applies it in the editor.
  */
+/**
+ * Explicit supersession is atomic: a replacement is created before the old
+ * suggestions are hidden. Unrelated targets can never be superseded.
+ */
+export async function supersedePendingProposals(
+  tx: Tx,
+  ids: string[],
+  target: { id: string; kind: "pipeline_change" | "playbook_change" },
+  replacementId: string,
+  now: Date,
+) {
+  const unique = [...new Set(ids)];
+  if (!unique.length) return;
+  const prior = await tx.popsProposal.findMany({ where: { id: { in: unique }, status: "pending", kind: target.kind } });
+  if (prior.length !== unique.length || prior.some((p) => (p.pipelineId ?? "") !== (target.kind === "pipeline_change" ? target.id : ""))) {
+    throw new PopsConflictError("Supersession must reference pending proposals for the same pipeline or playbook.");
+  }
+  const changed = await tx.popsProposal.updateMany({
+    where: { id: { in: unique }, status: "pending" },
+    data: { status: "superseded", supersededById: replacementId, reviewNote: `Superseded by ${replacementId}`, reviewedAt: now },
+  });
+  if (changed.count !== unique.length) throw new PopsConflictError("A proposal changed. Reload and retry.");
+}
+
+/**
+ * Agents may only propose. An explicit supersedes list can remove obsolete
+ * proposals from the active queue, but cannot apply any pipeline instructions.
+ */
 export async function createProposal(input: ProposalInput, now = new Date()) {
   const data = proposalSchema.parse(input);
   const db = getPopsDb();
@@ -350,28 +403,42 @@ export async function createProposal(input: ProposalInput, now = new Date()) {
     if (existing) return { proposal: existing, duplicate: true };
   }
   let pipelineId: string | undefined;
+  let baseVersion: number | undefined;
   if (data.kind === "pipeline_change") {
     if (!data.pipelineSlug) throw new Error("pipelineSlug is required for a pipeline_change proposal.");
     const pipeline = await db.popsPipeline.findUnique({ where: { slug: data.pipelineSlug } });
     if (!pipeline || pipeline.deletedAt) throw new PopsNotFoundError("Pipeline");
     pipelineId = pipeline.id;
+    baseVersion = pipeline.currentVersion;
+  }
+  if (data.supersedes.length && !["pipeline_change", "playbook_change"].includes(data.kind)) {
+    throw new Error("Only pipeline or playbook changes can supersede prior proposals.");
   }
   if (data.taskId && !(await db.popsTask.findUnique({ where: { id: data.taskId }, select: { id: true } }))) {
     throw new PopsNotFoundError("Task");
   }
-  const proposal = await db.popsProposal.create({
-    data: {
-      kind: data.kind,
-      pipelineId,
-      taskId: data.taskId,
-      title: data.title,
-      body: data.body,
-      rationale: data.rationale,
-      dedupeKey,
-      createdAt: now,
-    },
+  return db.$transaction(async (tx) => {
+    const proposal = await tx.popsProposal.create({
+      data: {
+        kind: data.kind,
+        pipelineId,
+        baseVersion,
+        taskId: data.taskId,
+        title: data.title,
+        body: data.body,
+        rationale: data.rationale,
+        dedupeKey,
+        createdAt: now,
+      },
+    });
+    if (data.supersedes.length) {
+      await supersedePendingProposals(tx, data.supersedes, {
+        id: pipelineId ?? "",
+        kind: data.kind as "pipeline_change" | "playbook_change",
+      }, proposal.id, now);
+    }
+    return { proposal, duplicate: false };
   });
-  return { proposal, duplicate: false };
 }
 
 export async function listProposals(status: "pending" | "accepted" | "rejected" = "pending") {
