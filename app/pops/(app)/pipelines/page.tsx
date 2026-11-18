@@ -36,6 +36,11 @@ export default async function PipelinesPage({ searchParams }: { searchParams: Pr
                   <span className="pops-meta">{group.proposals.length} {group.proposals.length === 1 ? "suggestion" : "suggestions"} · {group.targets.length || 1} {group.targets.length === 1 ? "target" : "targets"}</span>
                 </div>
                 <div className="pops-sub">
+                  <strong>Proposed:</strong>{" "}
+                  {group.proposals.slice(0, 2).map((p) => p.title).join("; ")}
+                  {group.proposals.length > 2 ? `; +${group.proposals.length - 2} more` : ""}
+                </div>
+                <div className="pops-sub">
                   {group.targets.length
                     ? <>Changes to: {group.targets.map((t) => t.name + ` (${t.slug})`).join(", ")}</>
                     : "Proposes creating a new pipeline"}
