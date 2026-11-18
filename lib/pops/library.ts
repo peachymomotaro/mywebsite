@@ -450,6 +450,16 @@ export async function listProposals(status: "pending" | "accepted" | "rejected" 
   });
 }
 
+/** History is read-only and hidden by default; retired suggestions never return to the active queue. */
+export async function listSupersededPipelineProposals(pipelineId: string) {
+  return getPopsDb().popsProposal.findMany({
+    where: { pipelineId, status: "superseded" },
+    orderBy: { reviewedAt: "desc" },
+    take: 100,
+    select: { id: true, title: true, supersededById: true, reviewNote: true },
+  });
+}
+
 export async function getProposal(id: string) {
   return getPopsDb().popsProposal.findUnique({
     where: { id },
