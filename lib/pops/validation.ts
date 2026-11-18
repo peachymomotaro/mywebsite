@@ -105,6 +105,8 @@ export const proposalSchema = z.object({
   title: required(200),
   body: required(12000),
   rationale: text(2000).default(""),
+  // Explicit references; agents cannot remove unrelated suggestions.
+  supersedes: z.array(z.string().trim().min(1).max(40)).max(20).default([]),
   idempotencyKey: idempotencyKeySchema.optional(),
 });
 export type ProposalInput = z.input<typeof proposalSchema>;
