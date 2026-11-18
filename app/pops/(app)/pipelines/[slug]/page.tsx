@@ -5,7 +5,7 @@ import { PipelineFields } from "@/components/pops/PipelineFields";
 import { DeletePipelineControl } from "@/components/pops/DeletePipelineControl";
 import { WORKSPACES } from "@/lib/pops/constants";
 import { formatDateTime } from "@/lib/pops/format";
-import { getPipeline, getPipelineStats, getProposal, isSystemPipeline } from "@/lib/pops/library";
+import { getPipeline, getPipelineStats, getProposal, isSystemPipeline, listSupersededPipelineProposals } from "@/lib/pops/library";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -24,6 +24,7 @@ export default async function PipelinePage({
   const pipeline = await getPipeline(slug);
   if (!pipeline) notFound();
   const current = pipeline.versions.find((v) => v.version === pipeline.currentVersion)!;
+  const retired = await listSupersededPipelineProposals(pipeline.id);
   const proposal = proposalId ? await getProposal(proposalId) : null;
   const applying = proposal && proposal.status === "pending" && proposal.pipelineId === pipeline.id ? proposal : null;
   const editing = edit === "1" || Boolean(applying);
@@ -63,6 +64,11 @@ export default async function PipelinePage({
                 <div key={p.id} style={{ marginBottom: 14 }}>
                   <label htmlFor={`resolution-${p.id}`}><strong>{p.title}</strong></label>
                   {p.rationale ? <p className="pops-small">{p.rationale.slice(0, 230)}{p.rationale.length > 230 ? "…" : ""}</p> : null}
+                  {retired.some((old) => old.supersededById === p.id) ? (
+                    <p className="pops-small pops-muted">
+                      Replaces: {retired.filter((old) => old.supersededById === p.id).map((old) => old.title).join("; ")}
+                    </p>
+                  ) : null}
                   {p.baseVersion && p.baseVersion !== pipeline.currentVersion
                     ? <p className="pops-small pops-error">Suggested against v{p.baseVersion}; compare with current v{pipeline.currentVersion} before applying.</p>
                     : null}
@@ -117,6 +123,20 @@ export default async function PipelinePage({
             ))}
           </details>
         </section>
+      ) : null}
+
+      {retired.length ? (
+        <details className="pops-more">
+          <summary>Superseded suggestions ({retired.length}) — history only</summary>
+          <ul className="pops-list">
+            {retired.map((p) => (
+              <li key={p.id}>
+                <strong>{p.title}</strong>
+                <p className="pops-small pops-muted">{p.reviewNote}{p.supersededById ? ` · Replacement: ${p.supersededById}` : ""}</p>
+              </li>
+            ))}
+          </ul>
+        </details>
       ) : null}
 
       <details className="pops-more" style={{ marginTop: 32 }}>
