@@ -377,6 +377,7 @@ enum PopsProposalStatus {
   pending
   accepted
   rejected
+  superseded
 }
 
 model PopsSession {
@@ -624,9 +625,12 @@ model PopsProposal {
   body         String
   rationale    String             @default("")
   reviewNote   String             @default("")
+  supersededById String?
+  baseVersion  Int?
   dedupeKey    String?            @unique
   createdAt    DateTime           @default(now())
   reviewedAt   DateTime?
 
   @@index([status, kind])
+  @@index([supersededById])
 }

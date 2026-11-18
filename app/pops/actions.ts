@@ -236,6 +236,13 @@ export async function savePipelineAction(formData: FormData) {
       expectedEvidence: String(formData.get("expectedEvidence") ?? ""),
       changeNote: str(formData, "changeNote"),
       proposalId: str(formData, "proposalId") || undefined,
+      baseVersion: str(formData, "baseVersion") ? Number(str(formData, "baseVersion")) : undefined,
+      includedProposalIds: [...formData.entries()]
+        .filter(([key, value]) => key.startsWith("proposalResolution:") && value === "include")
+        .map(([key]) => key.slice("proposalResolution:".length)),
+      supersededProposalIds: [...formData.entries()]
+        .filter(([key, value]) => key.startsWith("proposalResolution:") && value === "supersede")
+        .map(([key]) => key.slice("proposalResolution:".length)),
     });
   } catch (error) {
     withError(`${path}?edit=1`, error);

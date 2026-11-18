@@ -213,7 +213,7 @@ Rules:
 - Do not set or suggest a task status field — completion is Peter's call. Recommend it in \`nextActions\` if appropriate.
 - Prefer concise summaries and links to evidence. Omit empty arrays rather than inventing content.
 - Put each choice that needs Peter's judgement in \`decisions\`, with a recommendation only where the evidence justifies one.
-- To suggest a new pipeline or a playbook change, add a \`proposals\` entry: {"kind": "new_pipeline" | "pipeline_change" | "playbook_change" | "playbook_observation", "title", "body", "rationale"}. Proposals are reviewed by Peter before they take effect.
+- To improve a reusable method, add a \`proposals\` entry naming the EXACT target pipeline with \`pipelineSlug\` (or use \`playbook_change\` for global rules). Include a short concrete \`title\`, the proposed change in \`body\`, and \`rationale\`. If the new proposal directly replaces known pending suggestions, set \`supersedes: ["proposal-id"]\`; only suggestions for the same target can be superseded. Do not propose implementation tasks as pipelines. Proposals await Peter\u0027s approval and never apply themselves.
 
 \`\`\`pops-report
 ${JSON.stringify(template, null, 2)}

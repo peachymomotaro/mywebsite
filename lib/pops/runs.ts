@@ -1,3 +1,4 @@
+import { supersedePendingProposals } from "@/lib/pops/library";
 import { createHash } from "node:crypto";
 import { Prisma, type PopsActor, type PopsSubmissionChannel } from "@prisma/client";
 import { getPopsDb } from "@/lib/pops/db";
@@ -110,22 +111,28 @@ export async function recordAgentRun(taskId: string, input: AgentRunInput, optio
         const target = proposal.pipelineSlug
           ? await tx.popsPipeline.findUnique({ where: { slug: proposal.pipelineSlug } })
           : pipeline;
-        await tx.popsProposal.createMany({
-          data: [
-            {
-              kind: proposal.kind,
-              pipelineId: proposal.kind === "pipeline_change" ? target?.id : undefined,
-              taskId,
-              runId: run.id,
-              title: proposal.title,
-              body: proposal.body,
-              rationale: proposal.rationale,
-              dedupeKey: `${idempotencyKey}:proposal:${index}`,
-              createdAt: now,
-            },
-          ],
-          skipDuplicates: true,
+        if (proposal.kind === "pipeline_change" && !target) throw new Error("A pipeline_change requires a valid pipeline.");
+        const created = await tx.popsProposal.create({
+          data: {
+            kind: proposal.kind,
+            pipelineId: proposal.kind === "pipeline_change" ? target?.id : undefined,
+            baseVersion: proposal.kind === "pipeline_change" ? target?.currentVersion : undefined,
+            taskId,
+            runId: run.id,
+            title: proposal.title,
+            body: proposal.body,
+            rationale: proposal.rationale,
+            dedupeKey: `${idempotencyKey}:proposal:${index}`,
+            createdAt: now,
+          },
         });
+        if (proposal.supersedes.length) {
+          if (proposal.kind !== "pipeline_change" && proposal.kind !== "playbook_change") throw new Error("Only pipeline/playbook changes can supersede proposals.");
+          await supersedePendingProposals(tx, proposal.supersedes, {
+            id: proposal.kind === "pipeline_change" ? target!.id : "",
+            kind: proposal.kind,
+          }, created.id, now);
+        }
       }
 
       if (report.suggestedNextAction?.trim()) {
