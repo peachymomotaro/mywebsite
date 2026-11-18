@@ -236,6 +236,9 @@ export async function savePipelineAction(formData: FormData) {
       expectedEvidence: String(formData.get("expectedEvidence") ?? ""),
       changeNote: str(formData, "changeNote"),
       proposalId: str(formData, "proposalId") || undefined,
+      baseVersion: str(formData, "baseVersion") ? Number(str(formData, "baseVersion")) : undefined,
+      includedProposalIds: formData.getAll("includedProposalIds").map(String),
+      supersededProposalIds: formData.getAll("supersededProposalIds").map(String),
     });
   } catch (error) {
     withError(`${path}?edit=1`, error);
