@@ -237,8 +237,12 @@ export async function savePipelineAction(formData: FormData) {
       changeNote: str(formData, "changeNote"),
       proposalId: str(formData, "proposalId") || undefined,
       baseVersion: str(formData, "baseVersion") ? Number(str(formData, "baseVersion")) : undefined,
-      includedProposalIds: formData.getAll("includedProposalIds").map(String),
-      supersededProposalIds: formData.getAll("supersededProposalIds").map(String),
+      includedProposalIds: [...formData.entries()]
+        .filter(([key, value]) => key.startsWith("proposalResolution:") && value === "include")
+        .map(([key]) => key.slice("proposalResolution:".length)),
+      supersededProposalIds: [...formData.entries()]
+        .filter(([key, value]) => key.startsWith("proposalResolution:") && value === "supersede")
+        .map(([key]) => key.slice("proposalResolution:".length)),
     });
   } catch (error) {
     withError(`${path}?edit=1`, error);
