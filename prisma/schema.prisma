@@ -326,6 +326,11 @@ enum PopsTaskStatus {
   archived
 }
 
+enum PopsTaskMode {
+  agent
+  checklist
+}
+
 enum PopsActor {
   human
   agent
@@ -461,6 +466,8 @@ model PopsTask {
   subtasks              PopsTask[]     @relation("PopsSubtasks")
   recommendedPipelines  String[]       @default([])
   suggestedNextAction   String         @default("")
+  taskMode              PopsTaskMode   @default(agent)
+  checklist             Json           @default("[]")
   lastHumanEngagementAt DateTime       @default(now())
   resurfaceAfter        DateTime?
   createdBy             PopsActor      @default(human)

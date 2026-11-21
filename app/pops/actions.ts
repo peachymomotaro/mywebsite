@@ -1,6 +1,6 @@
 "use server";
 
-import type { PopsWorkspace } from "@prisma/client";
+import type { PopsTaskMode, PopsWorkspace } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createAgentCredential, revokeAgentCredential } from "@/lib/pops/agent-auth";
@@ -9,7 +9,7 @@ import { createPipeline, deletePipeline, reviewProposal, savePipelineVersion, sa
 import { parsePastedReport } from "@/lib/pops/report-import";
 import { answerDecision, recordAgentRun, recordRunFeedback, withdrawDecision } from "@/lib/pops/runs";
 import { requireOwner } from "@/lib/pops/session";
-import { addTaskNote, createTask, keepTask, linkTasks, setTaskStatus, snoozeTask, updateTask } from "@/lib/pops/tasks";
+import { addTaskNote, changeChecklist, createTask, keepTask, linkTasks, setTaskMode, setTaskStatus, snoozeTask, updateTask } from "@/lib/pops/tasks";
 import { formatZodError } from "@/lib/pops/validation";
 import { ZodError } from "zod";
 
@@ -51,6 +51,7 @@ export async function createTaskAction(formData: FormData) {
         workspace: isWorkspace(workspace) ? workspace : "learn",
         projectTags: tags(str(formData, "tags")),
         parentId: str(formData, "parentId") || undefined,
+        taskMode: str(formData, "taskMode") === "checklist" ? "checklist" : "agent",
       },
       "human",
     );
@@ -96,6 +97,35 @@ export async function updateTaskAction(formData: FormData) {
   }
   refresh(taskPath(id));
   redirect(taskPath(id));
+}
+
+export async function setTaskModeAction(formData: FormData) {
+  await requireOwner();
+  const id = str(formData, "id");
+  const mode = str(formData, "mode");
+  if (mode !== "agent" && mode !== "checklist") withError(taskPath(id), new Error("Unknown task mode."));
+  try {
+    await setTaskMode(id, mode as PopsTaskMode);
+  } catch (error) {
+    withError(taskPath(id), error);
+  }
+  refresh(taskPath(id));
+  redirect(taskPath(id));
+}
+
+export async function changeChecklistAction(formData: FormData) {
+  await requireOwner();
+  const id = str(formData, "id");
+  const kind = str(formData, "kind");
+  try {
+    if (kind === "add") await changeChecklist(id, { kind, title: str(formData, "title"), url: str(formData, "url") });
+    else if (kind === "toggle" || kind === "remove") await changeChecklist(id, { kind, itemId: str(formData, "itemId") });
+    else throw new Error("Unknown checklist action.");
+  } catch (error) {
+    withError(taskPath(id), error);
+  }
+  refresh(taskPath(id));
+  redirect(`${taskPath(id)}#pops-checklist`);
 }
 
 export async function setStatusAction(formData: FormData) {
