@@ -17,6 +17,10 @@ export function QuickAdd({ workspace, back }: { workspace?: PopsWorkspace; back:
           ))}
         </select>
       )}
+      <select name="taskMode" defaultValue="checklist" aria-label="How will you work on this?">
+        <option value="checklist">My checklist</option>
+        <option value="agent">Agent handoff</option>
+      </select>
       <button type="submit">Add</button>
     </form>
   );

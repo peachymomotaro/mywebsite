@@ -4,7 +4,10 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const sql = readFileSync(path.join(__dirname, "../../prisma/migrations/20261106120000_pops_v1/migration.sql"), "utf8");
+const taskDeletionSql = readFileSync(path.join(__dirname, "../../prisma/migrations/20261116040000_pops_task_deletion/migration.sql"), "utf8");
+const supersessionSql = readFileSync(path.join(__dirname, "../../prisma/migrations/20261118190000_pops_proposal_supersession/migration.sql"), "utf8");
 const deletionSql = readFileSync(path.join(__dirname, "../../prisma/migrations/20261110220000_pops_pipeline_deletion/migration.sql"), "utf8");
+const checklistSql = readFileSync(path.join(__dirname, "../../prisma/migrations/20261113150000_pops_personal_checklist/migration.sql"), "utf8");
 
 describe("POps migration safety", () => {
   it("only creates or alters POps objects", () => {
@@ -24,6 +27,26 @@ describe("POps migration safety", () => {
     for (const table of ["PopsHistoryEntry", "PopsAgentRun", "PopsPipelineVersion", "PopsPlaybookVersion"]) {
       expect(sql).toContain(`BEFORE UPDATE OR DELETE ON "${table}"`);
     }
+  });
+
+  it("only adds task-mode and checklist fields without altering previous task data", () => {
+    expect(checklistSql).toContain('CREATE TYPE "PopsTaskMode"');
+    expect(checklistSql).toContain('ALTER TABLE "PopsTask"');
+    expect(checklistSql).toContain('DEFAULT \'agent\'');
+    expect(checklistSql).toContain('DEFAULT \'[]\'::jsonb');
+    expect(checklistSql).not.toMatch(/\b(?:DROP|TRUNCATE|DELETE\s+FROM|UPDATE)\b/i);
+  });
+
+  it("adds a nullable deletion timestamp to tasks without rewriting append-only history", () => {
+    expect(taskDeletionSql).toContain('ALTER TABLE "PopsTask" ADD COLUMN "deletedAt" TIMESTAMP(3)');
+    expect(taskDeletionSql).not.toMatch(/\b(?:DROP|TRUNCATE|DELETE\s+FROM|UPDATE)\b/i);
+  });
+
+  it("adds proposal supersession audit fields without rewriting any records", () => {
+    expect(supersessionSql).toContain("superseded");
+    expect(supersessionSql).toContain('"supersededById"');
+    expect(supersessionSql).toContain('"baseVersion"');
+    expect(supersessionSql).not.toMatch(/\b(?:DROP|TRUNCATE|DELETE\s+FROM|UPDATE)\b/i);
   });
 
   it("adds only a nullable POps soft-delete timestamp without touching historical rows", () => {

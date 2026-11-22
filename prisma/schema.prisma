@@ -326,6 +326,11 @@ enum PopsTaskStatus {
   archived
 }
 
+enum PopsTaskMode {
+  agent
+  checklist
+}
+
 enum PopsActor {
   human
   agent
@@ -377,6 +382,7 @@ enum PopsProposalStatus {
   pending
   accepted
   rejected
+  superseded
 }
 
 model PopsSession {
@@ -461,6 +467,8 @@ model PopsTask {
   subtasks              PopsTask[]     @relation("PopsSubtasks")
   recommendedPipelines  String[]       @default([])
   suggestedNextAction   String         @default("")
+  taskMode              PopsTaskMode   @default(agent)
+  checklist             Json           @default("[]")
   lastHumanEngagementAt DateTime       @default(now())
   resurfaceAfter        DateTime?
   createdBy             PopsActor      @default(human)
@@ -469,6 +477,7 @@ model PopsTask {
   updatedAt             DateTime       @updatedAt
   completedAt           DateTime?
   archivedAt            DateTime?
+  deletedAt             DateTime?
 
   history   PopsHistoryEntry[]
   runs      PopsAgentRun[]
@@ -624,9 +633,12 @@ model PopsProposal {
   body         String
   rationale    String             @default("")
   reviewNote   String             @default("")
+  supersededById String?
+  baseVersion  Int?
   dedupeKey    String?            @unique
   createdAt    DateTime           @default(now())
   reviewedAt   DateTime?
 
   @@index([status, kind])
+  @@index([supersededById])
 }

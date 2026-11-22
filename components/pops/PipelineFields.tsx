@@ -1,9 +1,12 @@
+import { PipelineInstructionEditor } from "@/components/pops/PipelineInstructionEditor";
 import { WORKSPACE_KEYS, WORKSPACES } from "@/lib/pops/constants";
 
 export function PipelineFields({
   values,
+  currentInstructions,
 }: {
   values: { name: string; summary: string; workspace: string | null; instructions: string; expectedEvidence: string };
+  currentInstructions?: string;
 }) {
   return (
     <>
@@ -17,7 +20,7 @@ export function PipelineFields({
         {WORKSPACE_KEYS.map((key) => <option key={key} value={key}>{WORKSPACES[key].label}</option>)}
       </select>
       <label htmlFor="p-instr">Instructions</label>
-      <textarea id="p-instr" name="instructions" defaultValue={values.instructions} required className="pops-code" />
+      {currentInstructions === undefined ? <textarea id="p-instr" name="instructions" defaultValue={values.instructions} required className="pops-code" /> : <PipelineInstructionEditor current={currentInstructions} />}
       <label htmlFor="p-evidence">Expected evidence</label>
       <textarea id="p-evidence" name="expectedEvidence" defaultValue={values.expectedEvidence} style={{ minHeight: "4em" }} />
       <label htmlFor="p-note">Change note</label>

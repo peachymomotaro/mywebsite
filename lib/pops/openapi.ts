@@ -43,6 +43,7 @@ const proposal = {
     title: str,
     body: str,
     rationale: str,
+    supersedes: { type: "array", items: str, description: "Exact proposal IDs this suggestion replaces. Only the same target is allowed." },
     idempotencyKey: str,
   },
 };

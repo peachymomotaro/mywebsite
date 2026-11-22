@@ -5,7 +5,7 @@ import { PipelineFields } from "@/components/pops/PipelineFields";
 import { DeletePipelineControl } from "@/components/pops/DeletePipelineControl";
 import { WORKSPACES } from "@/lib/pops/constants";
 import { formatDateTime } from "@/lib/pops/format";
-import { getPipeline, getPipelineStats, getProposal, isSystemPipeline } from "@/lib/pops/library";
+import { getPipeline, getPipelineStats, getProposal, isSystemPipeline, listSupersededPipelineProposals } from "@/lib/pops/library";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -24,6 +24,7 @@ export default async function PipelinePage({
   const pipeline = await getPipeline(slug);
   if (!pipeline) notFound();
   const current = pipeline.versions.find((v) => v.version === pipeline.currentVersion)!;
+  const retired = await listSupersededPipelineProposals(pipeline.id);
   const proposal = proposalId ? await getProposal(proposalId) : null;
   const applying = proposal && proposal.status === "pending" && proposal.pipelineId === pipeline.id ? proposal : null;
   const editing = edit === "1" || Boolean(applying);
@@ -51,18 +52,42 @@ export default async function PipelinePage({
       {editing ? (
         <form action={savePipelineAction}>
           <input type="hidden" name="slug" value={slug} />
-          {applying ? (
-            <>
-              <input type="hidden" name="proposalId" value={applying.id} />
-              <div className="pops-proposal">
-                <h3>Applying proposal: {applying.title}</h3>
-                {applying.rationale ? <p className="pops-small">{applying.rationale}</p> : null}
-                <div className="pops-pre">{applying.body}</div>
-                <p className="pops-small pops-muted">Merge what you agree with into the instructions below. Nothing changes until you save.</p>
-              </div>
-            </>
+          <input type="hidden" name="baseVersion" value={pipeline.currentVersion} />
+          {pipeline.proposals.length ? (
+            <section className="pops-proposal" aria-labelledby="review-proposals">
+              <h2 id="review-proposals">Changes to {pipeline.name} ({pipeline.slug})</h2>
+              <p className="pops-small pops-muted">
+                Choose what this version includes. Obsolete suggestions can be marked replaced; other suggestions stay pending.
+                Nothing is applied until you edit the instructions and save.
+              </p>
+              {pipeline.proposals.map((p) => (
+                <div key={p.id} style={{ marginBottom: 14 }}>
+                  <label htmlFor={`resolution-${p.id}`}><strong>{p.title}</strong></label>
+                  {p.rationale ? <p className="pops-small">{p.rationale.slice(0, 230)}{p.rationale.length > 230 ? "…" : ""}</p> : null}
+                  {retired.some((old) => old.supersededById === p.id) ? (
+                    <p className="pops-small pops-muted">
+                      Replaces: {retired.filter((old) => old.supersededById === p.id).map((old) => old.title).join("; ")}
+                    </p>
+                  ) : null}
+                  {p.baseVersion && p.baseVersion !== pipeline.currentVersion
+                    ? <p className="pops-small pops-error">Suggested against v{p.baseVersion}; compare with current v{pipeline.currentVersion} before applying.</p>
+                    : null}
+                  <select
+                    id={`resolution-${p.id}`}
+                    name={`proposalResolution:${p.id}`}
+                    defaultValue={p.id === applying?.id ? "include" : "keep"}
+                    aria-label={`How to resolve: ${p.title}`}
+                  >
+                    <option value="keep">Keep for later</option>
+                    <option value="include">Include in this version</option>
+                    <option value="supersede">Replaced by this version</option>
+                  </select>
+                  <details className="pops-more"><summary>Read proposed change</summary><div className="pops-pre">{p.body}</div></details>
+                </div>
+              ))}
+            </section>
           ) : null}
-          <PipelineFields values={{ ...pipeline, instructions: current.instructions, expectedEvidence: current.expectedEvidence }} />
+          <PipelineFields values={{ ...pipeline, instructions: current.instructions, expectedEvidence: current.expectedEvidence }} currentInstructions={current.instructions} />
           <div className="pops-actions">
             <button type="submit">Save as v{pipeline.currentVersion + 1}</button>
             <Link href={back}>Cancel</Link>
@@ -75,25 +100,43 @@ export default async function PipelinePage({
         </>
       )}
 
-      {pipeline.proposals.length && !applying ? (
+      {pipeline.proposals.length && !editing ? (
         <section aria-labelledby="h-proposals">
-          <h2 id="h-proposals">Suggested changes</h2>
-          {pipeline.proposals.map((p) => (
-            <div key={p.id} className="pops-proposal">
-              <h3>{p.title}</h3>
-              {p.rationale ? <p className="pops-small">{p.rationale}</p> : null}
-              <div className="pops-actions">
-                <Link href={`${back}?proposal=${p.id}`}>Review and apply</Link>
-                <form action={reviewProposalAction}>
-                  <input type="hidden" name="proposalId" value={p.id} />
-                  <input type="hidden" name="decision" value="reject" />
-                  <input type="hidden" name="back" value={back} />
-                  <button type="submit" className="pops-link-button">Reject</button>
-                </form>
+          <h2 id="h-proposals">Suggested changes ({pipeline.proposals.length})</h2>
+          <p className="pops-small">Target: {pipeline.name} ({pipeline.slug}). Review them together, then save one new version.</p>
+          <Link href={`${back}?edit=1`}>Review suggestions</Link>
+          <details className="pops-more">
+            <summary>Individual suggestions</summary>
+            {pipeline.proposals.map((p) => (
+              <div key={p.id} className="pops-proposal">
+                <strong>{p.title}</strong>
+                <div className="pops-actions">
+                  <Link href={`${back}?proposal=${p.id}`}>Review this one</Link>
+                  <form action={reviewProposalAction}>
+                    <input type="hidden" name="proposalId" value={p.id} />
+                    <input type="hidden" name="decision" value="reject" />
+                    <input type="hidden" name="back" value={back} />
+                    <button type="submit" className="pops-link-button">Reject</button>
+                  </form>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </details>
         </section>
+      ) : null}
+
+      {retired.length ? (
+        <details className="pops-more">
+          <summary>Superseded suggestions ({retired.length}) — history only</summary>
+          <ul className="pops-list">
+            {retired.map((p) => (
+              <li key={p.id}>
+                <strong>{p.title}</strong>
+                <p className="pops-small pops-muted">{p.reviewNote}{p.supersededById ? ` · Replacement: ${p.supersededById}` : ""}</p>
+              </li>
+            ))}
+          </ul>
+        </details>
       ) : null}
 
       <details className="pops-more" style={{ marginTop: 32 }}>

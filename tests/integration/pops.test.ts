@@ -59,13 +59,16 @@ import type { AgentRunInput } from "@/lib/pops/validation";
 import { answerDecision, recordAgentRun, recordRunFeedback } from "@/lib/pops/runs";
 import {
   createTask,
+  deleteTask,
+  getTaskDetail,
+  listTasks,
   getResurfacingCandidates,
   keepTask,
   setTaskStatus,
   snoozeTask,
   updateTask,
 } from "@/lib/pops/tasks";
-import { createTaskAction, deletePipelineAction, importReportAction, setStatusAction } from "@/app/pops/actions";
+import { createTaskAction, deleteTaskAction, deletePipelineAction, importReportAction, setStatusAction } from "@/app/pops/actions";
 import * as tasksRoute from "@/app/api/pops/v1/tasks/route";
 import * as taskRoute from "@/app/api/pops/v1/tasks/[taskId]/route";
 import * as runsRoute from "@/app/api/pops/v1/tasks/[taskId]/runs/route";
@@ -228,6 +231,48 @@ describe.skipIf(!testUrl)("POps on isolated PostgreSQL", () => {
       const { task: sub } = await createTask({ title: "Draft scorecard", workspace: "work", parentId: task.id }, "human");
       expect(sub.parentId).toBe(task.id);
       await expect(createTask({ title: "Orphan", workspace: "work", parentId: "missing" }, "human")).rejects.toThrow("Parent task not found");
+    });
+  });
+
+  describe("confirmed task deletion", () => {
+    it("requires an owner session and never deletes without confirmation", async () => {
+      const { task } = await createTask({ title: "Disposable", workspace: "learn" }, "agent");
+      const initial = { status: "idle" as const, message: "" };
+      await expect(deleteTaskAction(initial, form({ id: task.id }))).rejects.toThrow("NEXT_REDIRECT /pops/login");
+      expect((await prisma.popsTask.findUniqueOrThrow({ where: { id: task.id } })).deletedAt).toBeNull();
+      cookieJar.value = await createPopsSession();
+      await expect(deleteTaskAction(initial, form({ id: task.id }))).rejects.toThrow(/NEXT_REDIRECT \/pops\?deleted=1/);
+      expect((await prisma.popsTask.findUniqueOrThrow({ where: { id: task.id } })).deletedAt).not.toBeNull();
+      expect(await getTaskDetail(task.id)).toBeNull();
+      expect((await listTasks({ statuses: ["active", "paused", "completed", "archived"] })).some((t) => t.id === task.id)).toBe(false);
+      expect((await tasksRoute.GET(api("/api/pops/v1/tasks"), undefined)).status).toBe(200);
+      expect((await taskRoute.GET(api(`/api/pops/v1/tasks/${task.id}`), params({ taskId: task.id }))).status).toBe(404);
+      await expect(deleteTaskAction(initial, form({ id: task.id }))).resolves.toMatchObject({ status: "error" });
+    });
+
+    it("preserves immutable runs and history, rejects future agent activity and idempotent re-creation", async () => {
+      const { task } = await createTask({ title: "No longer needed", workspace: "learn", idempotencyKey: "temporary-agent-task" }, "agent");
+      const existing = await recordAgentRun(task.id, report("task-delete-run-0001"), { channel: "api" });
+      await deleteTask(task.id);
+      expect(await prisma.popsAgentRun.findUnique({ where: { id: existing.run.id } })).not.toBeNull();
+      expect(await prisma.popsHistoryEntry.count({ where: { taskId: task.id } })).toBeGreaterThan(1);
+      await expect(recordAgentRun(task.id, report("task-delete-run-0002"), { channel: "api" })).rejects.toThrow("Task not found");
+      await expect(recordAgentRun(task.id, report("task-delete-run-0001"), { channel: "api" })).rejects.toThrow("Task not found");
+      await expect(createTask({ title: "Recreate", workspace: "learn", idempotencyKey: "temporary-agent-task" }, "agent")).rejects.toThrow("Task not found");
+      await expect(updateTask(task.id, { title: "Edited after deletion" })).rejects.toThrow("Task not found");
+      await expect(setTaskStatus(task.id, "active")).rejects.toThrow("Task not found");
+    });
+
+    it("protects subtasks and unrelated tasks from deletion", async () => {
+      const { task: parent } = await createTask({ title: "Parent", workspace: "work" }, "human");
+      const { task: child } = await createTask({ title: "Child", workspace: "work", parentId: parent.id }, "human");
+      const { task: other } = await createTask({ title: "Unrelated", workspace: "work" }, "human");
+      await expect(deleteTask(parent.id)).rejects.toThrow(/subtasks first/);
+      expect((await prisma.popsTask.findUniqueOrThrow({ where: { id: parent.id } })).deletedAt).toBeNull();
+      await deleteTask(child.id);
+      await deleteTask(parent.id);
+      expect((await prisma.popsTask.findUniqueOrThrow({ where: { id: other.id } })).deletedAt).toBeNull();
+      await expect(createTask({ title: "Forbidden subtask", workspace: "work", parentId: parent.id }, "human")).rejects.toThrow("Parent task not found");
     });
   });
 
