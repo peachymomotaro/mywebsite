@@ -32,6 +32,7 @@ export const tagListSchema = z
 export const workspaceSchema = z.enum(WORKSPACE_KEYS as [PopsWorkspace, ...PopsWorkspace[]]);
 
 export const createTaskSchema = z.object({
+  taskMode: z.enum(["agent", "checklist"]).default("agent"),
   title: required(200),
   description: text(8000).default(""),
   workspace: workspaceSchema,
@@ -105,6 +106,8 @@ export const proposalSchema = z.object({
   title: required(200),
   body: required(12000),
   rationale: text(2000).default(""),
+  // Explicit references; agents cannot remove unrelated suggestions.
+  supersedes: z.array(z.string().trim().min(1).max(40)).max(20).default([]),
   idempotencyKey: idempotencyKeySchema.optional(),
 });
 export type ProposalInput = z.input<typeof proposalSchema>;

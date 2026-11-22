@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import type { PopsDecision, PopsHistoryKind } from "@prisma/client";
 import {
   addNoteAction,
+  changeChecklistAction,
+  setTaskModeAction,
   addSubtaskAction,
   answerDecisionAction,
   linkTaskAction,
@@ -11,9 +13,12 @@ import {
   withdrawDecisionAction,
 } from "@/app/pops/actions";
 import { CopyButton } from "@/components/pops/CopyButton";
+import { DeleteTaskControl } from "@/components/pops/DeleteTaskControl";
 import { ImportReport } from "@/components/pops/ImportReport";
 import { RunDetail } from "@/components/pops/RunDetail";
 import { siteBaseUrl } from "@/lib/pops/agent-ops";
+import { readChecklist } from "@/lib/pops/checklist";
+import { PopsRichText } from "@/components/pops/PopsRichText";
 import { WORKSPACE_KEYS, WORKSPACES } from "@/lib/pops/constants";
 import { buildDecisionCopy } from "@/lib/pops/decision-copy";
 import { ago, formatDate } from "@/lib/pops/format";
@@ -60,18 +65,22 @@ export default async function TaskPage({
   if (!task) notFound();
 
   const now = new Date();
+  const checklist = readChecklist(task.checklist);
+  const completedChecklist = checklist.filter((item) => item.done).length;
+  const isChecklist = task.taskMode === "checklist";
   const editing = edit === "1";
   const [pipelines, stats] = await Promise.all([listPipelines(), getPipelineStats()]);
   const ranked = rankPipelinesForTask(task, pipelines, stats);
   const suggested = ranked.recommended.slice(0, 4);
   const others = [...ranked.recommended.slice(4), ...ranked.other];
-  const nextStep = nextStepForTask(task, ranked.recommended.concat(ranked.other));
+  const nextStep = isChecklist ? null : nextStepForTask(task, ranked.recommended.concat(ranked.other));
   const runsById = new Map(task.runs.map((run) => [run.id, run]));
   const pipelineNames = new Map(pipelines.map((p) => [p.slug, p.name]));
   const SUMMARY_CHARS = 140;
   const openDecisions = task.decisions.filter((d) => d.status === "open");
   const recentWork = task.runs.slice(-3).map((r) => `${formatDate(r.createdAt)}: ${r.accomplished.split("\n")[0]}`);
   const workspace = WORKSPACES[task.workspace];
+  const activeSubtasks = task.subtasks.length;
   const isOpen = task.status === "active" || task.status === "paused";
   const showAll = activity === "all";
   const history = showAll ? task.history : task.history.filter((h) => KEY_KINDS.includes(h.kind));
@@ -101,7 +110,7 @@ export default async function TaskPage({
     <>
       <p className="pops-crumb">
         <Link href={workspace.path}>{workspace.label}</Link>
-        {task.parent ? (
+        {task.parent && !task.parent.deletedAt ? (
           <>
             {" / "}
             <Link href={`/pops/tasks/${task.parent.id}`}>{task.parent.title}</Link>
@@ -118,7 +127,7 @@ export default async function TaskPage({
             ))}
           </span>
         </span>
-        <span className="pops-actions" style={{ marginTop: 0 }}>
+        <div className="pops-actions" style={{ marginTop: 0 }}>
           {isOpen ? (
             <>
               <StatusForm id={task.id} status="completed" label="Mark complete" primary />
@@ -129,9 +138,29 @@ export default async function TaskPage({
             <StatusForm id={task.id} status="active" label="Reopen" primary />
           )}
           {editing ? null : <Link href={`/pops/tasks/${task.id}?edit=1`} className="pops-small pops-muted">Edit</Link>}
-        </span>
+          <DeleteTaskControl id={task.id} name={task.title} activeSubtasks={activeSubtasks} />
+        </div>
       </div>
       {error ? <p className="pops-notice pops-error" role="alert">{error}</p> : null}
+      <section className="pops-task-mode" aria-label="Choose how to work on this task">
+        <div className="pops-mode-switch">
+          {([
+            ["checklist", "My checklist"],
+            ["agent", "Agent handoff"],
+          ] as const).map(([mode, label]) => (
+            <form action={setTaskModeAction} key={mode}>
+              <input type="hidden" name="id" value={task.id} />
+              <input type="hidden" name="mode" value={mode} />
+              <button type="submit" className={task.taskMode === mode ? "pops-mode-active" : ""} aria-pressed={task.taskMode === mode}>{label}</button>
+            </form>
+          ))}
+        </div>
+        <p className="pops-small pops-muted">
+          {isChecklist
+            ? "Work through your own actions. Your checklist is saved even if you switch to an agent."
+            : "Prepare a handoff or use an agent workflow. Switch back to your checklist at any time."}
+        </p>
+      </section>
 
       {editing ? (
         <form action={updateTaskAction}>
@@ -169,11 +198,66 @@ export default async function TaskPage({
         </form>
       ) : (
         <>
-          {isOpen && nextStep ? (
+          {isChecklist ? (
+            <section id="pops-checklist" className="pops-guided-next" aria-labelledby="pops-guided-title">
+              <p className="pops-small pops-muted pops-guided-eyebrow">Recommended next step</p>
+              <div className="pops-checklist-heading">
+                <h2 id="pops-guided-title">My checklist</h2>
+                <span className="pops-small pops-muted" aria-live="polite">{completedChecklist} of {checklist.length} complete</span>
+              </div>
+              {checklist.length > 0 ? (
+                <>
+                  <progress className="pops-checklist-progress" max={checklist.length} value={completedChecklist} aria-label="Checklist progress" />
+                  <ul className="pops-checklist-items">
+                    {checklist.map((item) => (
+                      <li key={item.id} className={item.done ? "pops-checklist-done" : undefined}>
+                        <form action={changeChecklistAction} className="pops-checklist-toggle">
+                          <input type="hidden" name="id" value={task.id} />
+                          <input type="hidden" name="kind" value="toggle" />
+                          <input type="hidden" name="itemId" value={item.id} />
+                          <button type="submit" className="pops-checklist-box" aria-label={`${item.done ? "Reopen" : "Complete"} ${item.title}`} aria-pressed={item.done} disabled={!isOpen}>
+                            {item.done ? "✓" : ""}
+                          </button>
+                        </form>
+                        <span className="pops-checklist-text">
+                          {item.url ? <a href={item.url} target="_blank" rel="noopener noreferrer nofollow">{item.title}</a> : item.title}
+                        </span>
+                        {isOpen ? (
+                          <form action={changeChecklistAction} className="pops-checklist-remove">
+                            <input type="hidden" name="id" value={task.id} />
+                            <input type="hidden" name="kind" value="remove" />
+                            <input type="hidden" name="itemId" value={item.id} />
+                            <button className="pops-link-button" type="submit" aria-label={`Remove ${item.title}`}>Remove</button>
+                          </form>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <>
+                  <p className="pops-small pops-muted">Add actions you can complete one by one. Links can open the reading directly.</p>
+                  {task.suggestedNextAction ? <div className="pops-guided-details"><PopsRichText content={task.suggestedNextAction}/></div> : null}
+                </>
+              )}
+              {isOpen ? (
+                <form action={changeChecklistAction} className="pops-checklist-add">
+                  <input type="hidden" name="id" value={task.id} />
+                  <input type="hidden" name="kind" value="add" />
+                  <input name="title" placeholder="Add an action…" required maxLength={300} aria-label="New checklist item" />
+                  <input type="url" name="url" placeholder="Optional link" aria-label="Link for checklist item" />
+                  <button type="submit" className="pops-secondary">Add</button>
+                </form>
+              ) : null}
+              {checklist.length > 0 && completedChecklist === checklist.length ? (
+                <p className="pops-small pops-muted">All actions checked off. The overall task remains open until you mark it complete.</p>
+              ) : null}
+            </section>
+          ) : isOpen && nextStep ? (
             <section className="pops-guided-next" aria-labelledby="pops-guided-title">
               <p className="pops-small pops-muted pops-guided-eyebrow">Recommended next step</p>
               <h2 id="pops-guided-title">{nextStep.title}</h2>
-              <p className="pops-description">{nextStep.description}</p>
+              <div className="pops-guided-details"><PopsRichText content={nextStep.description}/></div>
               <div className="pops-actions">
                 {nextStep.kind === "decision" ? (
                   <a className="pops-button" href="#decisions">{nextStep.label}</a>
@@ -187,7 +271,7 @@ export default async function TaskPage({
               </div>
             </section>
           ) : task.suggestedNextAction ? (
-            <p className="pops-nextaction"><strong>Next:</strong> {task.suggestedNextAction}</p>
+            <div className="pops-nextaction"><strong>Next:</strong> <PopsRichText content={task.suggestedNextAction}/></div>
           ) : null}
           {task.description ? <p className="pops-description">{task.description}</p> : null}
 
@@ -239,7 +323,7 @@ export default async function TaskPage({
             </section>
           ) : null}
 
-          {isOpen ? (
+          {isOpen && !isChecklist ? (
             <section aria-labelledby="h-next">
               <h2 id="h-next">Hand it to an agent</h2>
               <p className="pops-small pops-muted">Copy the task status and add your own instructions, or attach a reusable workflow below. The status includes history and decisions but no execution instructions.</p>

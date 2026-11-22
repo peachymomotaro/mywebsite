@@ -1,3 +1,4 @@
+import { supersedePendingProposals } from "@/lib/pops/library";
 import { createHash } from "node:crypto";
 import { Prisma, type PopsActor, type PopsSubmissionChannel } from "@prisma/client";
 import { getPopsDb } from "@/lib/pops/db";
@@ -58,12 +59,16 @@ export async function recordAgentRun(taskId: string, input: AgentRunInput, optio
   };
 
   const earlier = await replay();
-  if (earlier) return earlier;
+  if (earlier) {
+    const task = await db.popsTask.findUnique({ where: { id: taskId }, select: { deletedAt: true } });
+    if (!task || task.deletedAt) throw new PopsNotFoundError("Task");
+    return earlier;
+  }
 
   try {
     return await db.$transaction(async (tx) => {
       const task = await tx.popsTask.findUnique({ where: { id: taskId } });
-      if (!task) throw new PopsNotFoundError("Task");
+      if (!task || task.deletedAt) throw new PopsNotFoundError("Task");
 
       const pipeline = report.pipeline
         ? await tx.popsPipeline.findUnique({ where: { slug: report.pipeline } })
@@ -110,22 +115,28 @@ export async function recordAgentRun(taskId: string, input: AgentRunInput, optio
         const target = proposal.pipelineSlug
           ? await tx.popsPipeline.findUnique({ where: { slug: proposal.pipelineSlug } })
           : pipeline;
-        await tx.popsProposal.createMany({
-          data: [
-            {
-              kind: proposal.kind,
-              pipelineId: proposal.kind === "pipeline_change" ? target?.id : undefined,
-              taskId,
-              runId: run.id,
-              title: proposal.title,
-              body: proposal.body,
-              rationale: proposal.rationale,
-              dedupeKey: `${idempotencyKey}:proposal:${index}`,
-              createdAt: now,
-            },
-          ],
-          skipDuplicates: true,
+        if (proposal.kind === "pipeline_change" && !target) throw new Error("A pipeline_change requires a valid pipeline.");
+        const created = await tx.popsProposal.create({
+          data: {
+            kind: proposal.kind,
+            pipelineId: proposal.kind === "pipeline_change" ? target?.id : undefined,
+            baseVersion: proposal.kind === "pipeline_change" ? target?.currentVersion : undefined,
+            taskId,
+            runId: run.id,
+            title: proposal.title,
+            body: proposal.body,
+            rationale: proposal.rationale,
+            dedupeKey: `${idempotencyKey}:proposal:${index}`,
+            createdAt: now,
+          },
         });
+        if (proposal.supersedes.length) {
+          if (proposal.kind !== "pipeline_change" && proposal.kind !== "playbook_change") throw new Error("Only pipeline/playbook changes can supersede proposals.");
+          await supersedePendingProposals(tx, proposal.supersedes, {
+            id: proposal.kind === "pipeline_change" ? target!.id : "",
+            kind: proposal.kind,
+          }, created.id, now);
+        }
       }
 
       if (report.suggestedNextAction?.trim()) {
@@ -138,7 +149,11 @@ export async function recordAgentRun(taskId: string, input: AgentRunInput, optio
   } catch (error) {
     if (isUniqueViolation(error)) {
       const raced = await replay();
-      if (raced) return raced;
+      if (raced) {
+        const task = await db.popsTask.findFirst({ where: { id: taskId, deletedAt: null }, select: { id: true } });
+        if (!task) throw new PopsNotFoundError("Task");
+        return raced;
+      }
     }
     throw error;
   }
@@ -189,8 +204,8 @@ export async function createDecision(taskId: string, input: CreateDecisionInput,
   const db = getPopsDb();
   try {
     return await db.$transaction(async (tx) => {
-      const task = await tx.popsTask.findUnique({ where: { id: taskId }, select: { id: true } });
-      if (!task) throw new PopsNotFoundError("Task");
+      const task = await tx.popsTask.findUnique({ where: { id: taskId }, select: { id: true, deletedAt: true } });
+      if (!task || task.deletedAt) throw new PopsNotFoundError("Task");
       const dedupeKey = parsed.idempotencyKey ? `decision:${parsed.idempotencyKey}` : undefined;
       const result = await insertDecision(tx, taskId, parsed, actor, now, dedupeKey);
       if (result.duplicate && result.decision.taskId !== taskId) {
@@ -219,7 +234,7 @@ export async function answerDecision(
   const db = getPopsDb();
   return db.$transaction(async (tx) => {
     const decision = await tx.popsDecision.findUnique({ where: { id: decisionId } });
-    if (!decision) throw new PopsNotFoundError("Decision");
+    if (!decision || !(await tx.popsTask.findFirst({ where: { id: decision.taskId, deletedAt: null }, select: { id: true } }))) throw new PopsNotFoundError("Decision");
     if (decision.status !== "open") throw new PopsConflictError("This decision has already been closed.");
     const updated = await tx.popsDecision.update({
       where: { id: decisionId },
@@ -245,6 +260,7 @@ export async function withdrawDecision(decisionId: string, now = new Date()) {
   await db.$transaction(async (tx) => {
     const decision = await tx.popsDecision.findUnique({ where: { id: decisionId } });
     if (!decision || decision.status !== "open") return;
+    if (!(await tx.popsTask.findFirst({ where: { id: decision.taskId, deletedAt: null }, select: { id: true } }))) throw new PopsNotFoundError("Decision");
     await tx.popsDecision.update({ where: { id: decisionId }, data: { status: "withdrawn", answeredAt: now } });
     await appendHistory(tx, {
       taskId: decision.taskId,
@@ -268,7 +284,7 @@ export async function recordRunFeedback(
   const db = getPopsDb();
   return db.$transaction(async (tx) => {
     const run = await tx.popsAgentRun.findUnique({ where: { id: runId } });
-    if (!run) throw new PopsNotFoundError("Run");
+    if (!run || !(await tx.popsTask.findFirst({ where: { id: run.taskId, deletedAt: null }, select: { id: true } }))) throw new PopsNotFoundError("Run");
     const feedback = await tx.popsRunFeedback.upsert({
       where: { runId },
       create: { runId, ...data, relayed: Boolean(options.relayed) },
