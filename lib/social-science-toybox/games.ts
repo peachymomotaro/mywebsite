@@ -1,3 +1,5 @@
+import { conflictExperiment } from "./conflict";
+
 export const TOYBOX_PATH = "/experiments/social-science-toybox";
 export const NEWSLETTER_URL = "https://kingcnut.substack.com";
 
@@ -16,7 +18,7 @@ export function money(amount: number): string {
   return dollar.format(amount);
 }
 
-export const experiments = [
+export const decisionGames = [
   {
     id: "dictator",
     title: "Dictator Game",
@@ -79,8 +81,10 @@ export const experiments = [
   },
 ] as const;
 
-export type Experiment = (typeof experiments)[number];
-export type ExperimentId = Experiment["id"];
+export const experiments = [...decisionGames, conflictExperiment] as const;
+
+export type DecisionGame = (typeof decisionGames)[number];
+export type DecisionGameId = DecisionGame["id"];
 export type Choice = { value: number; label: string };
 
 export const colours = [{ value: 1, label: "Orange" }, { value: 0, label: "Purple" }];
@@ -90,14 +94,14 @@ export const powerRatings = [
   "Somewhat powerful", "Powerful", "Extremely powerful",
 ];
 
-export const fixedChoices: Partial<Record<ExperimentId, Choice[]>> = {
+export const fixedChoices: Partial<Record<DecisionGameId, Choice[]>> = {
   "trust-sender": choiceRange(7, 0.5).map((value) => ({ value, label: money(value) })),
   "trust-returner": choiceRange(11, 10).map((value) => ({ value, label: `${value}%` })),
   "prisoners-dilemma": colours,
   "power-and-trust": offers,
 };
 
-export function responseFromInput(id: ExperimentId, raw: string): number | null {
+export function responseFromInput(id: DecisionGameId, raw: string): number | null {
   if (raw.trim() === "") return null;
 
   const value = Number(raw);

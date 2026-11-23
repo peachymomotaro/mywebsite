@@ -5,12 +5,13 @@ import Link from "next/link";
 import {
   colours, dilemmaPayoff, dictatorPayoff, fixedChoices, money, powerRatings,
   publicGoodsPayoffs, responseFromInput, TOYBOX_PATH, trustPayoff,
-  type Choice, type Experiment,
+  type Choice, type DecisionGame,
 } from "@/lib/social-science-toybox/games";
 import {
-  assignPowerCondition, gameComparison, PARK_AGGREGATES, PARK_PAPER,
-  powerComparison, powerConditions, type Benchmark, type Comparison, type PowerCondition,
+  assignPowerCondition, gameComparison,
+  powerComparison, powerConditions, type PowerCondition,
 } from "@/lib/social-science-toybox/results";
+import { Benchmarks, StudyNotes } from "./study-results";
 import styles from "../toybox.module.css";
 
 type PayoffRow = { label: string; amounts: number[] };
@@ -33,7 +34,7 @@ function PayoffTable({ title, counterpart, rows }: {
   );
 }
 
-function Payoffs({ id, response }: { id: Experiment["id"]; response: number | null }) {
+function Payoffs({ id, response }: { id: DecisionGame["id"]; response: number | null }) {
   if (id === "prisoners-dilemma") {
     const yourChoices = response === null ? colours : colours.filter(({ value }) => value === response);
     return (
@@ -105,58 +106,10 @@ function RadioChoices({ choices, selected, onSelect, name }: {
   );
 }
 
-function BenchmarkRow({ label, benchmark, scale, format, detail, series }: {
-  label: string;
-  benchmark: Benchmark | null;
-  scale: number;
-  format: (value: number) => string;
-  detail: string;
-  series: "you" | "human" | "ai";
-}) {
-  return (
-    <div className={styles.benchmarkRow}>
-      <div className={styles.benchmarkText}>
-        <strong>{label}</strong>
-        <span>{benchmark ? format(benchmark.value) : "Unavailable"}</span>
-      </div>
-      <p>
-        {benchmark
-          ? `${detail}${series === "you" ? "" : ` · n = ${benchmark.n.toLocaleString("en-US")}`}`
-          : "The public release does not give a comparable result for this question and condition."}
-      </p>
-      {benchmark && (
-        <div className={styles.track} aria-hidden="true">
-          <div className={styles[series]} style={{ width: `${100 * benchmark.value / scale}%` }} />
-        </div>
-      )}
-    </div>
-  );
-}
-
 const percentage = (value: number) => `${Number(value.toFixed(1))}%`;
 
-function Benchmarks({ comparison, scale, format, response }: {
-  comparison: Comparison;
-  scale: number;
-  format: (value: number) => string;
-  response?: number;
-}) {
-  return (
-    <>
-      {response !== undefined && (
-        <BenchmarkRow label="Your response" benchmark={{ value: response, n: 1 }} scale={scale}
-          format={format} detail="Your choice" series="you" />
-      )}
-      <BenchmarkRow label="Human responses" benchmark={comparison.human} scale={scale}
-        format={format} detail="Park et al. participants, wave 1" series="human" />
-      <BenchmarkRow label="AI responses" benchmark={comparison.ai} scale={scale}
-        format={format} detail="Claude Opus 5.5, survey and interview" series="ai" />
-    </>
-  );
-}
-
 function Results({ experiment, response, condition }: {
-  experiment: Experiment;
+  experiment: DecisionGame;
   response: number;
   condition: PowerCondition | null;
 }) {
@@ -215,54 +168,37 @@ function offersLabel(response: number): string {
   return response === 1 ? "Offer a free sample" : "Save the time";
 }
 
-function Methods({ experiment }: { experiment: Experiment }) {
+function Methods({ experiment }: { experiment: DecisionGame }) {
   const { id, original } = experiment;
   const power = id === "power-and-trust";
+  const detail = power
+    ? "Each simulation saw the same scenario as the person it represented."
+    : id === "public-goods"
+      ? "The analysis excluded two pairs because the human answers were outside the valid range."
+      : undefined;
 
   return (
-    <div className={styles.notes}>
-      <details>
-        <summary>Study and sources</summary>
+    <StudyNotes original={original} comparisonDetail={detail}>
+      {power ? (
         <p>
-          The human results come from the first wave of Park et al.’s study of U.S. adults.
-          The AI results come from the study’s Claude Opus 5.5 simulations, which used each participant’s
-          survey answers and interview to predict their choices. Target answers were held out.
-          {power && " Each simulation saw the same scenario as the person it represented."}
-          {id === "public-goods" && " The analysis excluded two pairs because the human answers were outside the valid range."}
+          Each play randomly gives you one of the two scenarios with equal odds. The study also assigned
+          one scenario per participant. Both the power rating and the free-sample choice are included here.
+          The comparison uses the choice, the study’s main outcome. Schilke et al.’s earlier
+          experiment also varied the client’s bargaining power. Park’s version varies the typist’s power.
         </p>
-        <ul>
-          <li><a href={PARK_PAPER}>Park et al. (November 2026), paper and supplement</a></li>
-          <li><a href={PARK_AGGREGATES}>Instruments and aggregate results on OSF</a></li>
-          <li><a href={original.url}>{original.name}, earlier research</a></li>
-        </ul>
-      </details>
-      <details>
-        <summary>How this differs from the original experiment</summary>
+      ) : (
         <p>
-          Park et al. recruited a U.S. adult sample for a larger study. Anyone can play this
-          standalone version and replay it. The instructions are paraphrased and the controls replace the study survey.
+          The original games involved real participants and a potential cash bonus. Here, the dollars
+          are hypothetical. No one is matched or paid.
+          {id === "dictator" && " The instrument gives a dollar range without a fixed increment. This version accepts cents."}
+          {id !== "dictator" && id !== "prisoners-dilemma" && " The study gave payoff examples before the choice. Here they appear with the results."}
         </p>
-        {power ? (
-          <p>
-            Each play randomly gives you one of the two scenarios with equal odds. The study also assigned
-            one scenario per participant. Both the power rating and the free-sample choice are included here.
-            The comparison uses the choice, the study’s main outcome. Schilke et al.’s earlier
-            experiment also varied the client’s bargaining power. Park’s version varies the typist’s power.
-          </p>
-        ) : (
-          <p>
-            The original games involved real participants and a potential cash bonus. Here, the dollars
-            are hypothetical. No one is matched or paid.
-            {id === "dictator" && " The instrument gives a dollar range without a fixed increment. This version accepts cents."}
-            {id !== "dictator" && id !== "prisoners-dilemma" && " The study gave payoff examples before the choice. Here they appear with the results."}
-          </p>
-        )}
-      </details>
-    </div>
+      )}
+    </StudyNotes>
   );
 }
 
-export function ExperimentGame({ experiment }: { experiment: Experiment }) {
+export function ExperimentGame({ experiment }: { experiment: DecisionGame }) {
   const { id, title, intro, question } = experiment;
   const [raw, setRaw] = useState("");
   const [response, setResponse] = useState<number | null>(null);

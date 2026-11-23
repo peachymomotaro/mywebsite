@@ -140,6 +140,14 @@
 
 .catalogue li { min-width: 0; }
 
+@media (min-width: 761px) {
+  .catalogue li:nth-child(3n + 1):last-child { grid-column: 1 / -1; }
+}
+
+@media (min-width: 481px) and (max-width: 760px) {
+  .catalogue li:nth-child(2n + 1):last-child { grid-column: 1 / -1; }
+}
+
 .experimentLink {
   position: relative;
   display: grid;
@@ -211,6 +219,20 @@
   font: inherit;
   font-variant-numeric: tabular-nums;
 }
+.responseField { display: grid; gap: 0.35rem; }
+.responseField label { font-size: 0.95rem; font-weight: 650; }
+.responseField select, .responseField textarea {
+  width: 100%;
+  min-height: 2.8rem;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid #7a7669;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+}
+.responseField textarea { resize: vertical; }
+.fieldHint { font-size: 0.875rem; color: var(--muted-ink); }
+
 .amountEntry input[aria-invalid="true"] { border-color: #a14022; }
 .amountEntry p { font-size: 0.875rem; color: var(--muted-ink); }
 

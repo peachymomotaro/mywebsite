@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { NEWSLETTER_URL, TOYBOX_PATH } from "@/lib/social-science-toybox/games";
+import { experiments, NEWSLETTER_URL, TOYBOX_PATH } from "@/lib/social-science-toybox/games";
 import styles from "./toybox.module.css";
 
 export const metadata: Metadata = {
   title: "Social Science Toybox · Peter Curry",
-  description: "Try six experiments and compare your choices with people and AI agents from a published study.",
+  description: `Try ${experiments.length} experiments and compare your choices with people and AI agents from a published study.`,
 };
 
 export default function ToyboxLayout({ children }: { children: ReactNode }) {

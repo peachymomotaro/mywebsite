@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ExperimentGame } from "@/app/experiments/social-science-toybox/_components/experiment-game";
 import ToyboxPage from "@/app/experiments/social-science-toybox/page";
-import { experiments, TOYBOX_PATH, type ExperimentId } from "@/lib/social-science-toybox/games";
+import { decisionGames, experiments, TOYBOX_PATH, type DecisionGameId } from "@/lib/social-science-toybox/games";
 import * as results from "@/lib/social-science-toybox/results";
 
 afterEach(() => {
@@ -10,8 +10,8 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function play(id: ExperimentId) {
-  render(<ExperimentGame experiment={experiments.find((experiment) => experiment.id === id)!} />);
+function play(id: DecisionGameId) {
+  render(<ExperimentGame experiment={decisionGames.find((experiment) => experiment.id === id)!} />);
 }
 
 function compare() {
