@@ -74,6 +74,14 @@ If you'd like to read more:
     postUrl: "https://kingcnut.substack.com/p/levels-on-levels-on-levels",
     updates: [
       {
+        date: "2026-11-22",
+        note: `Kim Stanley Robinson describes the changing character of the group in *Red Mars*:
+
+> People were arguing again, there in the shallows of the lap pool. Ann, tall and angular, leaning down to snap something at Sax Russell, short and soft. As usual, he didn't appear to be listening. She would hit him one day if he didn't watch out. It was strange how the group was changing again, how the feel of it was changing. She could never get a fix on it; the real nature of the group was a thing apart, with a life of its own, somehow distinct from the characters of the individuals that constituted it. It must make Michel's job as their shrink almost impossible. Not that one could tell with Michel; he was the quietest and most unobtrusive psychiatrist she had ever met. No doubt an asset, in this crowd of shrink-atheists.
+
+— Kim Stanley Robinson, *Red Mars*`
+      },
+      {
         date: "2026-08-30",
         note: `I found an additional example of emergence in Thomas Nagel's [review](https://openyls.law.yale.edu/server/api/core/bitstreams/056e791f-4cfe-4061-a3ea-95a1dd37dfa1/content) of Robert Nozick's book *Anarchy, State and Utopia*:
 
