@@ -15,7 +15,10 @@ const nextConfig: NextConfig = {
     ];
   },
   async redirects() {
-    return [{ source: "/escape-from-max", destination: "/max-danger", permanent: true }];
+    return [
+      { source: "/escape-from-max", destination: "/max-danger", permanent: true },
+      { source: "/ladder", destination: "/summit", permanent: false },
+    ];
   },
   async headers() {
     return [{
@@ -33,9 +36,9 @@ const nextConfig: NextConfig = {
       headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
     }];
   },
-  // The Ladder API reads its puzzles from disk at request time.
+  // The Summit API reads its puzzles from disk at request time.
   outputFileTracingIncludes: {
-    "/api/ladder": ["./data/ladder/**/*"],
+    "/api/summit": ["./data/summit/**/*"],
   },
   turbopack: {
     root: __dirname,
