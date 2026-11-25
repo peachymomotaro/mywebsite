@@ -1,6 +1,6 @@
 import { CSSProperties, FormEvent, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Climb, CampQuestion } from "@/lib/summit/daily";
-import { localDate } from "@/lib/summit/daily";
+import { isIsoDate, localDate } from "@/lib/summit/daily";
 import { judge } from "@/lib/summit/marking";
 import { CAMPS, formatAltitude, skyAt } from "@/lib/summit/mountain";
 import SummitView from "@/components/summit/SummitView";
@@ -210,7 +210,11 @@ export default function SummitGame() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/summit?date=${localDate()}`)
+    // ?date=YYYY-MM-DD pins a past day's climb (handy for trials and sharing);
+    // the API still refuses any day that hasn't arrived yet.
+    const pinned = new URLSearchParams(window.location.search).get("date");
+    const date = isIsoDate(pinned) && pinned <= localDate() ? pinned : localDate();
+    fetch(`/api/summit?date=${date}`)
       .then(async (r) => {
         const body = await r.json();
         if (!r.ok) throw new Error(body.error ?? "Couldn't load today's mountain.");
