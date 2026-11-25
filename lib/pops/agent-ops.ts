@@ -7,8 +7,8 @@ import { loadPromptContext, loadPromptPipeline } from "@/lib/pops/context";
 import { createProposal, getCurrentPlaybook, getPipelineStats, listPipelines, rankPipelinesForTask } from "@/lib/pops/library";
 import { buildPipelinePrompt, buildTaskBrief, newIdempotencyKey } from "@/lib/pops/prompt";
 import { createDecision, recordAgentRun, recordRunFeedback } from "@/lib/pops/runs";
-import { createTask, listTasks, PopsConflictError, PopsNotFoundError, updateTask } from "@/lib/pops/tasks";
-import { agentTaskPatchSchema, formatZodError, type AgentTaskPatchInput, type AgentRunInput, type CreateDecisionInput, type CreateTaskInput, type ProposalInput } from "@/lib/pops/validation";
+import { createTask, listTasks, PopsConflictError, PopsNotFoundError, setTaskStatus, updateTask } from "@/lib/pops/tasks";
+import { agentTaskStatusSchema, agentTaskPatchSchema, formatZodError, type AgentTaskPatchInput, type AgentRunInput, type CreateDecisionInput, type CreateTaskInput, type ProposalInput } from "@/lib/pops/validation";
 import { getPopsDb } from "@/lib/pops/db";
 
 export class PopsForbiddenError extends Error {
@@ -130,6 +130,16 @@ export const agentOps = {
     const task = await updateTask(taskId, patch, new Date(), "agent", new Date(expectedUpdatedAt));
     return {
       task: { id: task.id, title: task.title, description: task.description, projectTags: task.projectTags, workspace: task.workspace, status: task.status, updatedAt: task.updatedAt.toISOString() },
+      url: `${siteBaseUrl()}/pops/tasks/${task.id}`,
+    };
+  },
+
+  async setTaskStatus(principal: AgentPrincipal, input: unknown) {
+    requireScope(principal, "tasks:status");
+    const { taskId, status, expectedUpdatedAt } = agentTaskStatusSchema.parse(input);
+    const task = await setTaskStatus(taskId, status, new Date(), { credentialId: principal.id, expectedUpdatedAt: new Date(expectedUpdatedAt) });
+    return {
+      task: { id: task.id, title: task.title, description: task.description, workspace: task.workspace, projectTags: task.projectTags, status: task.status, updatedAt: task.updatedAt.toISOString() },
       url: `${siteBaseUrl()}/pops/tasks/${task.id}`,
     };
   },
