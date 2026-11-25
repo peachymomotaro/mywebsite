@@ -56,7 +56,8 @@ describe("quiz marking", () => {
   });
 
   it("migration only creates new POps quiz objects", () => {
-    expect(migration).not.toMatch(/\b(?:DROP|TRUNCATE|DELETE\s+FROM|UPDATE)\b/i);
+    // "ON UPDATE CASCADE" in the foreign key is fine; an UPDATE statement is not.
+    expect(migration).not.toMatch(/\b(?:DROP|TRUNCATE|DELETE\s+FROM)\b|^\s*UPDATE\b/im);
     const statements = migration.split(";").map((s) => s.replace(/^--.*$/gm, "").trim()).filter(Boolean);
     for (const statement of statements) expect(statement).toMatch(/"PopsQuiz/);
   });
