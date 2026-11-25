@@ -19,6 +19,8 @@ const ENDPOINTS = [
   ["POST", "/api/pops/v1/proposals", "Suggest a pipeline or playbook change"],
   ["GET", "/api/pops/v1/pipelines", "Pipeline templates"],
   ["GET", "/api/pops/v1/playbook", "Current playbook"],
+  ["POST", "/api/pops/v1/quiz/papers", "Upload parsed quiz papers for marking (quiz:write)"],
+  ["GET", "/api/pops/v1/quiz/marks?since=ISO", "Quiz marks changed since a time (quiz:read)"],
 ];
 
 export default async function ConnectPage() {
