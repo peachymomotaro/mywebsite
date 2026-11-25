@@ -70,7 +70,8 @@ describe("quiz marking", () => {
   });
 
   it("second migration only adds the two new marks", () => {
-    const statements = moreMarks.split(";").map((s) => s.replace(/^--.*$/gm, "").trim()).filter(Boolean);
+    // Remove comments before splitting: the header comment itself contains a semicolon.
+    const statements = moreMarks.replace(/^--.*$/gm, "").split(";").map((s) => s.trim()).filter(Boolean);
     expect(statements).toHaveLength(2);
     for (const statement of statements) expect(statement).toMatch(/^ALTER TYPE "PopsQuizMark" ADD VALUE IF NOT EXISTS '(close|confidently_wrong)'/);
   });
