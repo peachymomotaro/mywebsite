@@ -247,30 +247,33 @@ export async function changeChecklist(id: string, change: { kind: "add"; title: 
   });
 }
 
-/** Status changes are human-only. Agent runs never call this. */
-export async function setTaskStatus(id: string, status: PopsTaskStatus, now = new Date()) {
+/** Explicit status changes only; agent runs never call this. */
+export async function setTaskStatus(id: string, status: PopsTaskStatus, now = new Date(), agent?: { credentialId: string; expectedUpdatedAt: Date }) {
   const db = getPopsDb();
   return db.$transaction(async (tx) => {
     const task = await tx.popsTask.findUnique({ where: { id } });
     if (!task || task.deletedAt) throw new PopsNotFoundError("Task");
+    if (agent && task.updatedAt.getTime() !== agent.expectedUpdatedAt.getTime()) throw new PopsConflictError("Task changed. Read it again before changing status.");
     if (task.status === status) return task;
 
-    const updated = await tx.popsTask.update({
-      where: { id },
+    const applied = await tx.popsTask.updateMany({
+      where: { id, deletedAt: null, updatedAt: task.updatedAt },
       data: {
         status,
         completedAt: status === "completed" ? now : null,
         archivedAt: status === "archived" ? now : null,
-        lastHumanEngagementAt: now,
-        resurfaceAfter: null,
+        updatedAt: new Date(Math.max(now.getTime(), task.updatedAt.getTime() + 1)),
+        ...(agent ? {} : { lastHumanEngagementAt: now, resurfaceAfter: null }),
       },
     });
+    if (applied.count !== 1) throw new PopsConflictError("Task changed. Read it again before changing status.");
+    const updated = await tx.popsTask.findUniqueOrThrow({ where: { id } });
     await appendHistory(tx, {
       taskId: id,
       kind: "status_changed",
-      actor: "human",
+      actor: agent ? "agent" : "human",
       summary: `Status: ${task.status} → ${status}`,
-      detail: { from: task.status, to: status },
+      detail: { from: task.status, to: status, ...(agent ? { credentialId: agent.credentialId, userConfirmationAttested: true } : {}) },
       createdAt: now,
     });
     return updated;
