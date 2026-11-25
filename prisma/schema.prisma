@@ -651,6 +651,8 @@ model PopsProposal {
 enum PopsQuizMark {
   knew
   guessed
+  confidently_wrong
+  close
   tip_of_tongue
   no_idea
   skipped
