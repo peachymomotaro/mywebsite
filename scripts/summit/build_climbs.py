@@ -39,6 +39,14 @@ START_DATE = "2026-11-25"   # Ladder #1
 DAYS = 365
 SEED = 20261126
 RUNGS = 10
+# Where each rung sits on the hardness scale: the percentile of a question's
+# hardness among every usable History bonus part. Calibrated so a well-read
+# person clears 8 or 9 most days and only a serious quizzer tops out.
+TARGET_PCT = [0.02, 0.05, 0.09, 0.14, 0.20, 0.27, 0.35, 0.45, 0.62, 0.86]
+# Hardness = mostly how obscure the answer is (Wikipedia pageviews), partly
+# how hard the clues are (QB Reader tournament level).
+OBSCURITY_WEIGHT = 0.72
+# Old tournament-level targets, kept for reference.
 # Target effective difficulty per rung (QB Reader scale: 1 middle school,
 # 2-5 high school, 6-9 college, 10 open).
 TARGETS = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
@@ -199,6 +207,10 @@ def main() -> None:
     ap.add_argument("--out", default="data/summit")
     ap.add_argument("--days", type=int, default=DAYS)
     ap.add_argument("--start", default=START_DATE)
+    ap.add_argument("--dump-answers", default=None,
+                    help="write every candidate answer to this file and stop")
+    ap.add_argument("--fame", default="scripts/summit/answer_fame.json",
+                    help="answer -> Wikipedia pageviews cache (answer_fame.py)")
     ap.add_argument("--preview", type=int, default=0,
                     help="print this many ladders instead of writing files")
     args = ap.parse_args()
@@ -361,7 +373,44 @@ def main() -> None:
     print(f"{len(candidates):,} usable bonus parts; rejected {dict(rejected)}",
           file=sys.stderr)
 
+    if args.dump_answers:
+        names = sorted({n for c in candidates for n in (c["answer"], c["required"]) if n})
+        Path(args.dump_answers).write_text("\n".join(names), encoding="utf-8")
+        print(f"wrote {len(names):,} answer names to {args.dump_answers}", file=sys.stderr)
+        return
+
     # --- pools per topic ----------------------------------------------------
+    # --- hardness: answer fame (Wikipedia) + clue difficulty (level) ----------
+    fame_cache = {}
+    if Path(args.fame).exists():
+        fame_cache = json.loads(Path(args.fame).read_text(encoding="utf-8"))
+    else:
+        print(f"  no fame cache at {args.fame}: run answer_fame.py first", file=sys.stderr)
+
+    def views_of(c: dict) -> float | None:
+        best = None
+        for name in (c["answer"], c["required"]):
+            hit = fame_cache.get(name)
+            if hit and hit["title"] and not hit["disambig"]:
+                best = max(best or 0.0, hit["views"])
+        return best
+
+    known = sorted(math.log10(v + 1) for c in candidates if (v := views_of(c)) is not None)
+    import bisect
+    for c in candidates:
+        v = views_of(c)
+        c["views"] = v
+        if v is None or not known:
+            fame_pct = 0.15          # unknown to Wikipedia: treat as fairly obscure
+        else:
+            fame_pct = bisect.bisect_left(known, math.log10(v + 1)) / len(known)
+        level = min(1.0, max(0.0, (c["effective"] - 1) / 9))
+        c["hardness"] = OBSCURITY_WEIGHT * (1 - fame_pct) + (1 - OBSCURITY_WEIGHT) * level
+    ordered = sorted(c["hardness"] for c in candidates)
+    for c in candidates:
+        c["hard_pct"] = bisect.bisect_left(ordered, c["hardness"]) / len(ordered)
+    print(f"  fame known for {len(known):,} of {len(candidates):,} parts", file=sys.stderr)
+
     pools: dict[str, list[dict]] = {}
     for prefix, label in TOPICS.items():
         parts = prefix.split("/")
@@ -431,6 +480,7 @@ def main() -> None:
             "letters": letters_hint(c["required"]),
             "clue": pick_clue(c),
             "difficulty": c["difficulty"],
+            "hardness": round(c["hard_pct"], 3),
             "set": c["set"],
             "year": c["year"],
         }
@@ -440,19 +490,16 @@ def main() -> None:
         used_bonus: set[str] = set()
         used_sub: dict[str, int] = defaultdict(int)
         rungs = []
-        for target in TARGETS:
+        for target in TARGET_PCT:
             best = []
             for c in pool:
                 if c["canon"] in used_canon or c["bonus"] in used_bonus:
                     continue
-                gap = abs(c["effective"] - target)
-                if gap > 1.6:
+                gap = abs(c["hard_pct"] - target)
+                if gap > 0.1:
                     continue
                 sub = "/".join(c["path"][:len(topic.split("/")) + 1])
-                # Easy rungs lean on famous answers, hard rungs on obscure ones.
-                fame = math.log1p(c["importance"]) / 8.0
-                fame_term = -fame if target <= 5 else fame * 0.5
-                cost = gap + 0.45 * used_sub[sub] + 0.35 * fame_term + rng.random() * 0.5
+                cost = gap * 10 + 0.45 * used_sub[sub] + rng.random() * 0.5
                 best.append((cost, sub, c))
             if len(best) < 2:
                 break
@@ -468,10 +515,9 @@ def main() -> None:
                 break
             used_canon.add(swap["canon"])
             used_bonus.add(swap["bonus"])
-            level = max(1, min(10, round(target)))
             rungs.append({
                 "rung": len(rungs) + 1,
-                "level": DIFFICULTY_LABELS[level],
+                "level": DIFFICULTY_LABELS[max(1, min(10, main_q["difficulty"]))],
                 "question": public(main_q),
                 "swap": public(swap),
             })
@@ -524,7 +570,7 @@ def main() -> None:
             print(f"\n#{n} {day} — {TOPICS[topic]}")
             for r in rungs:
                 q = r["question"]
-                print(f"  {r['rung']:>2}. [{r['level']}, d{q['difficulty']}] "
+                print(f"  {r['rung']:>2}. [h{q['hardness']:.2f}, d{q['difficulty']}] "
                       f"{(q['leadin'] + ' ') if q['leadin'] else ''}{q['text']}")
                 print(f"      -> {q['answer']}   ({q['set']})")
         else:
