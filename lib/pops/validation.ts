@@ -53,6 +53,13 @@ export const agentTaskPatchSchema = z.object({
 }).strict().refine((patch) => patch.title !== undefined || patch.description !== undefined || patch.projectTags !== undefined || patch.workspace !== undefined, "Supply at least one task detail to change.");
 export type AgentTaskPatchInput = z.input<typeof agentTaskPatchSchema>;
 
+export const agentTaskStatusSchema = z.object({
+  taskId: required(40),
+  status: z.enum(["active", "paused", "completed", "archived"]),
+  expectedUpdatedAt: z.iso.datetime(),
+  userConfirmed: z.literal(true),
+}).strict();
+
 export const sourceSchema = z.object({
   title: required(300),
   url: httpUrl.optional(),
