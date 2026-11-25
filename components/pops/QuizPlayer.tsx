@@ -5,7 +5,7 @@ import Link from "next/link";
 import { markQuizQuestionAction } from "@/app/pops/quiz-actions";
 import { nextUnmarked } from "@/lib/pops/quiz-player";
 
-type Mark = "knew" | "guessed" | "tip_of_tongue" | "no_idea" | "skipped";
+type Mark = "knew" | "guessed" | "confidently_wrong" | "close" | "tip_of_tongue" | "no_idea" | "skipped";
 
 export type QuizPlayerQuestion = {
   id: string;
@@ -17,16 +17,21 @@ export type QuizPlayerQuestion = {
   mark: Mark | null;
 };
 
+// Each mark's meaning, shown beside its button. Read top to bottom: the first that fits is the one.
 const BUTTONS: { mark: Mark; label: string; key: string; hint: string }[] = [
-  { mark: "knew", label: "Knew it", key: "1", hint: "Got it without doubt" },
-  { mark: "guessed", label: "Guessed", key: "2", hint: "Right, but not sure why" },
-  { mark: "tip_of_tongue", label: "Tip of my tongue", key: "3", hint: "Knew it, couldn't bring it up" },
-  { mark: "no_idea", label: "No idea", key: "4", hint: "Never really knew it" },
+  { mark: "knew", label: "Knew it", key: "1", hint: "Right, and you'd have said it straight away and been sure." },
+  { mark: "guessed", label: "Guessed", key: "2", hint: "Right, but by deduction, elimination or a hunch rather than knowing." },
+  { mark: "confidently_wrong", label: "Confidently wrong", key: "3", hint: "Wrong, and you were sure of a different answer: something you believed needs correcting." },
+  { mark: "close", label: "Close", key: "4", hint: "Wrong, but the answer was one of your candidates, or you had part of it (e.g. surname but wrong forename)." },
+  { mark: "tip_of_tongue", label: "Tip of my tongue", key: "5", hint: "Wrong, but it's familiar now you see it: you knew it once and couldn't bring it up." },
+  { mark: "no_idea", label: "No idea", key: "6", hint: "Wrong, and the answer doesn't ring a bell, or only faintly." },
 ];
 
 const LABELS: Record<Mark, string> = {
   knew: "Knew it",
   guessed: "Guessed",
+  confidently_wrong: "Confidently wrong",
+  close: "Close",
   tip_of_tongue: "Tip of my tongue",
   no_idea: "No idea",
   skipped: "Skipped",
@@ -140,15 +145,17 @@ export function QuizPlayer({ questions: initial, paperTitle }: { questions: Quiz
           <p className="pops-quiz-answer"><span className="pops-meta">Answer</span><br />{question.answer}</p>
           <div className="pops-quiz-marks" role="group" aria-label="How well did you know it?">
             {BUTTONS.map((b) => (
-              <button
-                key={b.mark}
-                type="button"
-                className={question.mark === b.mark ? "pops-quiz-mark pops-mode-active" : "pops-quiz-mark pops-secondary"}
-                onClick={() => mark(b.mark)}
-                title={b.hint}
-              >
-                <span className="pops-quiz-key" aria-hidden="true">{b.key}</span> {b.label}
-              </button>
+              <div key={b.mark} className="pops-quiz-mark-row">
+                <button
+                  type="button"
+                  className={question.mark === b.mark ? "pops-quiz-mark pops-mode-active" : "pops-quiz-mark pops-secondary"}
+                  onClick={() => mark(b.mark)}
+                  aria-describedby={`quiz-hint-${b.mark}`}
+                >
+                  <span className="pops-quiz-key" aria-hidden="true">{b.key}</span> {b.label}
+                </button>
+                <span id={`quiz-hint-${b.mark}`} className="pops-quiz-hint">{b.hint}</span>
+              </div>
             ))}
           </div>
         </>

@@ -11,6 +11,11 @@ const migration = readFileSync(
   "utf8",
 );
 
+const moreMarks = readFileSync(
+  path.join(__dirname, "../../prisma/migrations/20261125180000_pops_quiz_more_marks/migration.sql"),
+  "utf8",
+);
+
 const paper = {
   id: "qll-2026-20261124M",
   circuit: "QLL League",
@@ -38,6 +43,8 @@ describe("quiz marking", () => {
 
   it("knows its marks and summarises them", () => {
     expect(isQuizMark("tip_of_tongue")).toBe(true);
+    expect(isQuizMark("close")).toBe(true);
+    expect(isQuizMark("confidently_wrong")).toBe(true);
     expect(isQuizMark("wrong")).toBe(false);
     expect(summariseMarks([{ mark: "knew" }, { mark: null }, { mark: "knew" }])).toMatchObject({ knew: 2, unmarked: 1 });
   });
@@ -60,5 +67,12 @@ describe("quiz marking", () => {
     expect(migration).not.toMatch(/\b(?:DROP|TRUNCATE|DELETE\s+FROM)\b|^\s*UPDATE\b/im);
     const statements = migration.split(";").map((s) => s.replace(/^--.*$/gm, "").trim()).filter(Boolean);
     for (const statement of statements) expect(statement).toMatch(/"PopsQuiz/);
+  });
+
+  it("second migration only adds the two new marks", () => {
+    // Remove comments before splitting: the header comment itself contains a semicolon.
+    const statements = moreMarks.replace(/^--.*$/gm, "").split(";").map((s) => s.trim()).filter(Boolean);
+    expect(statements).toHaveLength(2);
+    for (const statement of statements) expect(statement).toMatch(/^ALTER TYPE "PopsQuizMark" ADD VALUE IF NOT EXISTS '(close|confidently_wrong)'/);
   });
 });

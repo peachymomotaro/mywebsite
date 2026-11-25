@@ -8,11 +8,13 @@ import { getPopsDb } from "@/lib/pops/db";
  * marks back. Re-uploading a paper updates its wording but never its marks.
  */
 
-export const QUIZ_MARKS = ["knew", "guessed", "tip_of_tongue", "no_idea", "skipped"] as const satisfies readonly PopsQuizMark[];
+export const QUIZ_MARKS = ["knew", "guessed", "confidently_wrong", "close", "tip_of_tongue", "no_idea", "skipped"] as const satisfies readonly PopsQuizMark[];
 
 export const QUIZ_MARK_LABELS: Record<PopsQuizMark, string> = {
   knew: "Knew it",
   guessed: "Guessed",
+  confidently_wrong: "Confidently wrong",
+  close: "Close",
   tip_of_tongue: "Tip of my tongue",
   no_idea: "No idea",
   skipped: "Skip",
@@ -140,6 +142,8 @@ export function summariseMarks(questions: { mark: PopsQuizMark | null }[]) {
   const summary: Record<PopsQuizMark | "unmarked", number> = {
     knew: 0,
     guessed: 0,
+    confidently_wrong: 0,
+    close: 0,
     tip_of_tongue: 0,
     no_idea: 0,
     skipped: 0,
