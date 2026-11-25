@@ -3,6 +3,7 @@ import type { Climb, CampQuestion } from "@/lib/summit/daily";
 import { localDate } from "@/lib/summit/daily";
 import { judge } from "@/lib/summit/marking";
 import { CAMPS, formatAltitude, skyAt } from "@/lib/summit/mountain";
+import SummitView from "@/components/summit/SummitView";
 import styles from "@/styles/summit.module.css";
 
 type Kit = "reroute" | "guide" | "map";
@@ -365,11 +366,17 @@ export default function SummitGame() {
         <p className={styles.number}>No. {climb.number}</p>
       </header>
 
-      <div className={styles.layout}>
-        <div className={styles.mountainWrap}>
-          <Mountain reached={reached} current={state.camp} failed={failed} done={over}
-            won={won} fog={sky.fog} />
-        </div>
+      {won && (
+        <SummitView answers={camps.map((r, i) => (state.used.reroute === i ? r.swap : r.question).answer)} />
+      )}
+
+      <div className={won ? styles.layoutSolo : styles.layout}>
+        {!won && (
+          <div className={styles.mountainWrap}>
+            <Mountain reached={reached} current={state.camp} failed={failed} done={over}
+              won={won} fog={sky.fog} />
+          </div>
+        )}
 
         <section className={styles.card} aria-live="polite">
           <h2 className={styles.topic}>{climb.topic}</h2>

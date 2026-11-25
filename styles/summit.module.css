@@ -231,6 +231,70 @@
   to { opacity: 1; }
 }
 
+/* ---- the view from the top ------------------------------------------- */
+
+.layoutSolo {
+  max-width: 640px;
+  margin: -40px auto 0;
+  position: relative;
+}
+
+.view {
+  position: relative;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-top: -8px;
+  height: min(66vh, 620px);
+  min-height: 320px;
+  animation: viewOpen 2.2s ease both;
+  /* The panorama melts into the sky above and the fog below. */
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 16%, #000 82%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0, #000 16%, #000 82%, transparent 100%);
+}
+
+@keyframes viewOpen {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+
+.viewSvg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.viewCamp {
+  animation: rise 1.6s ease both;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.viewLabel {
+  font-family: var(--display);
+  fill: #2a231d;
+}
+
+.viewAnswer {
+  font-style: italic;
+  font-weight: 600;
+}
+
+.viewCampName {
+  font-size: 0.72em;
+  fill: #6d6156;
+}
+
+.viewDrift {
+  animation: drift 28s ease-in-out infinite alternate;
+}
+
+.viewFigure {
+  animation: arrive 2s ease both 0.3s;
+}
+
 /* ---- card ------------------------------------------------------------- */
 
 .card {
@@ -628,6 +692,10 @@
     display: none;
   }
 
+  .view {
+    height: 58vh;
+  }
+
   .campLabelCurrent {
     display: inline;
     font-size: 18px;
@@ -654,7 +722,11 @@
 
   .seaOfFog span,
   .pulse,
-  .summitFigure {
+  .summitFigure,
+  .view,
+  .viewCamp,
+  .viewDrift,
+  .viewFigure {
     animation: none;
   }
 }
