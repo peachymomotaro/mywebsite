@@ -32,8 +32,28 @@ function tokens(text: string): string[] {
   return fold(text).split(" ").filter(Boolean);
 }
 
+const ROMAN_VALUE: Record<string, number> = { i: 1, v: 5, x: 10, l: 50, c: 100, d: 500, m: 1000 };
+
+function romanToNumber(word: string): number {
+  let total = 0;
+  for (let i = 0; i < word.length; i++) {
+    const v = ROMAN_VALUE[word[i]];
+    const next = ROMAN_VALUE[word[i + 1]] ?? 0;
+    total += v < next ? -v : v;
+  }
+  return total;
+}
+
+/** Regnal and other numbers in an answer, as digits: "XI" and "11" both read "11".
+ *  A lone "i" counts only as the last word of several ("Leo I"), not as a pronoun. */
 function numerals(words: string[]): string {
-  return words.filter((w) => /^\d+$/.test(w) || (w.length <= 5 && ROMAN.test(w) && w !== "i"))
+  return words
+    .map((w, i) => {
+      if (/^\d+$/.test(w)) return String(Number(w));
+      const isRoman = w.length <= 5 && ROMAN.test(w) && (w !== "i" || (i === words.length - 1 && i > 0));
+      return isRoman ? String(romanToNumber(w)) : null;
+    })
+    .filter((n): n is string => n !== null)
     .sort()
     .join(" ");
 }
@@ -101,6 +121,13 @@ export function answerForms(answerHtml: string): { accept: string[]; reject: str
 export function judge(answerHtml: string, guess: string): Verdict {
   const given = guess.trim();
   if (!given) return "reject";
+  // A different regnal number is simply wrong, not "be more specific":
+  // QB Reader's checker prompts "Gregory XIII" against "Gregory XI".
+  const guessNumbers = numerals(tokens(given));
+  if (guessNumbers) {
+    const numbered = answerForms(answerHtml).accept.map((f) => numerals(tokens(f))).filter(Boolean);
+    if (numbered.length && !numbered.includes(guessNumbers)) return "reject";
+  }
   const official = checkAnswer(answerHtml, given).directive as Verdict;
   if (official === "accept" || official === "prompt") return official;
 
