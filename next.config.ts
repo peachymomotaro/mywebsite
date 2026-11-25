@@ -33,6 +33,10 @@ const nextConfig: NextConfig = {
       headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
     }];
   },
+  // The Ladder API reads its puzzles from disk at request time.
+  outputFileTracingIncludes: {
+    "/api/ladder": ["./data/ladder/**/*"],
+  },
   turbopack: {
     root: __dirname,
   },
