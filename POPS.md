@@ -18,7 +18,7 @@ Deploy the additive `20261113150000_pops_personal_checklist` migration with `npx
 
 ## Quiz marking
 
-`/pops/quiz` lists quiz papers that Quiz Trainer's weekly job has uploaded. Each paper opens one question at a time: show the answer (space), then mark it **Knew it** (1), **Guessed** (2), **Tip of my tongue** (3) or **No idea** (4), or skip it (s). Marks save as you go, so you can stop part-way and carry on from your phone or laptop. Arrow keys move between questions; changing an earlier mark is fine.
+`/pops/quiz` lists quiz papers that Quiz Trainer's weekly job has uploaded. Each paper opens one question at a time: show the answer (space), then mark it **Knew it** (1), **Guessed** (2), **Tip of my tongue** (3) or **No idea** (4), or skip it (s). Each button has a one-line definition beside it; the first that fits is the right one. Marks save as you go, so you can stop part-way and carry on from your phone or laptop. Arrow keys move between questions; changing an earlier mark is fine.
 
 Quiz Trainer talks to two agent endpoints with a bearer credential from `/pops/connect` that has the `quiz:read` and `quiz:write` scopes:
 
