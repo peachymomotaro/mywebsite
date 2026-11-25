@@ -8,7 +8,7 @@ describe("robots", () => {
       rules: expect.arrayContaining([
         {
           userAgent: "*",
-          disallow: ["/pops", "/api/pops", "/qb", "/api/qb", "/max-danger", "/escape-from-max", "/complexity-lab"],
+          disallow: ["/pops", "/api/pops", "/qb", "/api/qb", "/max-danger", "/escape-from-max", "/complexity-lab", "/summit", "/ladder", "/api/summit"],
         },
       ]),
     });

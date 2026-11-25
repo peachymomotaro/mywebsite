@@ -15,7 +15,10 @@ const nextConfig: NextConfig = {
     ];
   },
   async redirects() {
-    return [{ source: "/escape-from-max", destination: "/max-danger", permanent: true }];
+    return [
+      { source: "/escape-from-max", destination: "/max-danger", permanent: true },
+      { source: "/ladder", destination: "/summit", permanent: false },
+    ];
   },
   async headers() {
     return [{
@@ -31,7 +34,18 @@ const nextConfig: NextConfig = {
     }, {
       source: "/complexity-lab",
       headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
+    }, {
+      // Summit is in trial: reachable by link, kept out of search.
+      source: "/summit",
+      headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
+    }, {
+      source: "/api/summit",
+      headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
     }];
+  },
+  // The Summit API reads its puzzles from disk at request time.
+  outputFileTracingIncludes: {
+    "/api/summit": ["./data/summit/**/*"],
   },
   turbopack: {
     root: __dirname,
