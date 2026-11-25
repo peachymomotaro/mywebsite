@@ -19,11 +19,23 @@ type Saved = {
 
 type Stats = { climbs: number; best: number; summits: number; streak: number; lastDate: string | null };
 
-const KIT: { id: Kit; label: string; icon: string; help: string }[] = [
-  { id: "reroute", label: "Reroute", icon: "🔀", help: "Swap this question for another at the same altitude" },
-  { id: "guide", label: "Guide", icon: "🧭", help: "Your guide offers one more clue about the answer" },
-  { id: "map", label: "Trail map", icon: "🗺️", help: "Shows the answer's first letters and length" },
+const KIT: { id: Kit; label: string; share: string; help: string }[] = [
+  { id: "reroute", label: "Reroute", share: "🔀", help: "Swap this question for another at the same altitude" },
+  { id: "guide", label: "Guide", share: "🧭", help: "One more clue about the answer" },
+  { id: "map", label: "Trail map", share: "🗺️", help: "The answer's first letters and length" },
 ];
+
+function KitIcon({ kit }: { kit: Kit }) {
+  const common = { width: 16, height: 16, viewBox: "0 0 16 16", fill: "none", stroke: "currentColor",
+    strokeWidth: 1.4, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
+  if (kit === "reroute") {
+    return <svg {...common}><path d="M2 5h9l-2.5-2.5M14 11H5l2.5 2.5" /></svg>;
+  }
+  if (kit === "guide") {
+    return <svg {...common}><circle cx="8" cy="8" r="6" /><path d="M10.5 5.5 9 9l-3.5 1.5L7 7z" /></svg>;
+  }
+  return <svg {...common}><path d="M1.5 3.5 5.5 2l5 1.5 4-1.5v10.5l-4 1.5-5-1.5-4 1.5zM5.5 2v10.5M10.5 3.5V14" /></svg>;
+}
 
 const fresh = (): Saved => ({ phase: "ready", camp: 0, outcomes: [], used: {}, lastGuess: "" });
 
@@ -52,17 +64,6 @@ function untilMidnight(): string {
   return `${Math.floor(mins / 60)}h ${String(mins % 60).padStart(2, "0")}m`;
 }
 
-/** Deterministic star field, so server and client render the same sky. */
-function stars(count: number) {
-  let seed = 7;
-  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  return Array.from({ length: count }, () => ({
-    left: `${rand() * 100}%`, top: `${rand() * 55}%`, size: rand() < 0.15 ? 3 : rand() < 0.5 ? 2 : 1,
-    delay: `${(rand() * 4).toFixed(2)}s`,
-  }));
-}
-const STARS = stars(70);
-
 function Question({ q }: { q: CampQuestion }) {
   return (
     <div className={styles.question}>
@@ -72,72 +73,124 @@ function Question({ q }: { q: CampQuestion }) {
   );
 }
 
-function Mountain({ reached, current, failed, done }: {
-  reached: number; current: number; failed: number | null; done: boolean;
+/** The Wanderer, seen from behind: frock coat, hair in the wind, a stick. */
+function Wanderer({ scale = 1 }: { scale?: number }) {
+  return (
+    <g transform={`scale(${scale})`} className={styles.wanderer}>
+      <path d="M-1.2 -19.5c-2.6 0-3.6 2-3.2 4 .2 1.1.8 1.9 1.6 2.3-2.6.9-3.9 3-4.2 6.2L-8 2.6c0 .6.5.9 1.1.8l1.5-.3.3 7.4h2.6l.9-6.8.9 6.8h2.6l.3-7.4 1.4.3c.6.1 1.1-.2 1.1-.8l-.9-9.6c-.3-3.1-1.6-5.3-4.1-6.2.8-.4 1.5-1.3 1.6-2.4.3-2-.8-3.9-3.5-3.9z" />
+      <path d="M5.6 -3.5 9 10.5" stroke="currentColor" strokeWidth="0.9" />
+      <path d="M-4.6 -16.8c-1.6-.4-3.2.1-4.2 1.2 1.4-.2 2.6.2 3.6.9z" opacity="0.85" />
+    </g>
+  );
+}
+
+function Mountain({ reached, current, failed, done, won, fog }: {
+  reached: number; current: number; failed: number | null; done: boolean; won: boolean; fog: number;
 }) {
   const climber = CAMPS[Math.min(current, CAMPS.length - 1)];
   const route = CAMPS.map((c) => `${c.x},${c.y}`).join(" ");
-  const climbed = CAMPS.slice(0, Math.max(1, reached + (done && failed === null ? 0 : 1)))
-    .map((c) => `${c.x},${c.y}`).join(" ");
+  const climbed = CAMPS.slice(0, Math.max(1, reached + (won ? 0 : 1))).map((c) => `${c.x},${c.y}`).join(" ");
+  // Where the top of the fog bank sits on the mountain (SVG y).
+  const fogTop = 240 + (1 - fog) * 360;
   return (
     <svg className={styles.mountain} viewBox="0 0 400 620" role="img"
       aria-label={`Climb progress: ${reached} of ${CAMPS.length} camps reached`}>
       <defs>
-        <linearGradient id="rock" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#3a4566" />
-          <stop offset="1" stopColor="#1b2138" />
+        <linearGradient id="crag" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0" stopColor="#4a4038" />
+          <stop offset="0.55" stopColor="#2d2722" />
+          <stop offset="1" stopColor="#1d1916" />
         </linearGradient>
-        <linearGradient id="rockLight" x1="1" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#56628a" />
-          <stop offset="1" stopColor="#2a3150" />
+        <linearGradient id="cragLit" x1="1" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#7a6a58" />
+          <stop offset="1" stopColor="#3b332c" stopOpacity="0" />
         </linearGradient>
+        <linearGradient id="fogFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#e4e7e3" stopOpacity="0" />
+          <stop offset="0.12" stopColor="#e4e7e3" stopOpacity="0.55" />
+          <stop offset="0.35" stopColor="#e4e7e3" stopOpacity="0.78" />
+          <stop offset="1" stopColor="#e4e7e3" stopOpacity="0.85" />
+        </linearGradient>
+        <linearGradient id="footFog" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#e6e8e3" stopOpacity="0" />
+          <stop offset="0.7" stopColor="#e6e8e3" stopOpacity="0.95" />
+          <stop offset="1" stopColor="#e6e8e3" />
+        </linearGradient>
+        <filter id="labelShadow" x="-10%" y="-60%" width="120%" height="220%">
+          <feDropShadow dx="0" dy="0.6" stdDeviation="1.6" floodColor="#140f0b" floodOpacity="0.85" />
+        </filter>
+        <filter id="mist" x="-50%" y="-80%" width="200%" height="260%">
+          <feGaussianBlur stdDeviation="9" />
+        </filter>
       </defs>
-      {/* far ridge */}
-      <path d="M-20 620 L40 380 L95 430 L150 300 L190 350 L230 250 L300 330 L345 270 L420 420 L420 620 Z"
-        fill="#ffffff" opacity="0.08" />
-      {/* main peak: shadow face and lit face */}
-      <path d="M0 620 L70 470 L110 500 L160 330 L210 60 L250 200 L290 260 L330 380 L370 430 L400 620 Z"
-        fill="url(#rock)" />
-      <path d="M210 60 L250 200 L290 260 L330 380 L370 430 L400 620 L250 620 L230 420 L240 300 Z"
-        fill="url(#rockLight)" opacity="0.55" />
-      {/* snow */}
-      <path d="M210 60 L232 140 L218 128 L204 152 L192 132 L180 160 L188 108 Z" fill="#f4f7ff" />
-      <path d="M210 60 L232 140 L246 185 L236 178 L226 196 L222 150 Z" fill="#dfe6f7" />
+
+      {/* distant ranges, slate blue through the haze */}
+      <path d="M-30 620 L20 410 L70 450 L120 330 L170 380 L215 300 L270 360 L320 300 L370 380 L430 340 L430 620 Z"
+        fill="#7d8c94" opacity="0.55" />
+      <path d="M-30 620 L40 470 L100 500 L160 430 L240 470 L300 420 L360 470 L430 440 L430 620 Z"
+        fill="#66757d" opacity="0.5" />
+
+      {/* the crag: a jagged, Friedrich-dark spine of rock */}
+      <path d="M0 620 L22 566 L50 552 L72 508 L98 494 L118 448 L136 436 L146 392 L160 366 L164 330
+               L178 304 L182 262 L194 232 L196 188 L204 150 L202 116 L210 84 L214 60 L219 72 L224 68
+               L230 100 L238 116 L242 148 L254 172 L258 206 L274 228 L280 262 L296 286 L302 324
+               L322 350 L330 386 L348 412 L360 452 L378 476 L390 528 L400 620 Z" fill="url(#crag)" />
+      <path d="M214 60 L219 72 L224 68 L230 100 L238 116 L242 148 L254 172 L258 206 L274 228 L280 262
+               L296 286 L302 324 L322 350 L330 386 L348 412 L360 452 L378 476 L390 528 L400 620
+               L310 620 L296 520 L280 430 L262 340 L246 260 L232 170 L222 110 Z"
+        fill="url(#cragLit)" opacity="0.75" />
+      {/* facets and ledges */}
+      <path d="M118 448 L162 458 M146 392 L188 400 M164 330 L204 338 M182 262 L222 272 M196 188 L226 196
+               M232 170 L214 230 L222 300 M262 340 L240 410 L252 480"
+        stroke="#5e5144" strokeWidth="1.1" fill="none" opacity="0.55" />
+      {/* foreground rocks, as in the painting */}
+      <path d="M-10 620 L-10 572 L26 556 L52 584 L84 570 L118 602 L140 620 Z" fill="#171310" />
+      <path d="M290 620 L318 590 L346 600 L372 576 L410 590 L410 620 Z" fill="#1b1713" />
+
       {/* route */}
-      <polyline points={route} fill="none" stroke="#ffffff" strokeOpacity="0.35"
-        strokeWidth="2" strokeDasharray="4 6" />
-      <polyline points={climbed} fill="none" stroke="var(--signal)" strokeWidth="3"
-        strokeLinecap="round" strokeLinejoin="round" className={styles.routeDone} />
+      <polyline points={route} fill="none" stroke="#f3ecdc" strokeOpacity="0.5"
+        strokeWidth="1.4" strokeDasharray="2 5" />
+      <polyline points={climbed} fill="none" stroke="var(--ochre)" strokeWidth="2.4"
+        strokeLinecap="round" strokeLinejoin="round" />
+
       {CAMPS.map((c, i) => {
         const isDone = i < reached;
         const isFailed = failed === i;
         const isCurrent = i === current && !done;
         return (
-          <g key={c.name} className={styles.camp}>
-            {isCurrent && <circle cx={c.x} cy={c.y} r="13" className={styles.pulse} />}
-            <circle cx={c.x} cy={c.y} r={i === CAMPS.length - 1 ? 7 : 5.5}
-              fill={isFailed ? "var(--danger)" : isDone ? "var(--signal)" : "#0d1430"}
-              stroke={isFailed ? "var(--danger)" : "#ffffff"} strokeWidth="2" />
-            <text x={c.labelSide === "right" ? c.x + 16 : c.x - 16} y={c.y + 4}
-              textAnchor={c.labelSide === "right" ? "start" : "end"}
+          <g key={c.name}>
+            {isCurrent && <circle cx={c.x} cy={c.y} r="11" className={styles.pulse} />}
+            <circle cx={c.x} cy={c.y} r={i === CAMPS.length - 1 ? 5.5 : 4.2}
+              fill={isFailed ? "var(--crimson)" : isDone ? "var(--ochre)" : "#efe8d8"}
+              stroke="#1d1916" strokeWidth="1.4" />
+            <text x={c.x + 15} y={c.y + 4} filter="url(#labelShadow)"
               className={[styles.campLabel, isCurrent ? styles.campLabelCurrent : "",
                 isDone ? styles.campLabelDone : ""].join(" ")}>
-              {formatAltitude(c.altitude)}
-              <tspan className={styles.campName} dx="6">{c.name}</tspan>
+              {c.name}
+              <tspan className={styles.campAltitude} dx="6">{formatAltitude(c.altitude)}</tspan>
             </text>
           </g>
         );
       })}
-      {/* summit flag, planted once you get there */}
-      <g className={[styles.flag, reached === CAMPS.length ? styles.flagUp : ""].join(" ")}>
-        <line x1="210" y1="60" x2="210" y2="28" stroke="#ffffff" strokeWidth="2" />
-        <path d="M210 28 L234 35 L210 42 Z" fill="var(--signal)" />
+
+      {/* the sea of fog, sinking below you as you climb */}
+      <g className={styles.fogBank} style={{ transform: `translateY(${fogTop}px)` }} filter="url(#mist)">
+        <ellipse cx="60" cy="10" rx="120" ry="26" fill="#eef0ec" opacity="0.8" />
+        <ellipse cx="250" cy="0" rx="150" ry="30" fill="#e6e9e5" opacity="0.75" />
+        <ellipse cx="400" cy="18" rx="110" ry="24" fill="#eef0ec" opacity="0.8" />
+        <rect x="-300" y="-30" width="1000" height="470" fill="url(#fogFill)" />
       </g>
-      {/* climber */}
-      {!done && (
-        <g className={styles.climber} style={{ transform: `translate(${climber.x}px, ${climber.y}px)` }}>
-          <circle r="4.5" fill="#ffffff" />
-          <circle r="2" fill="var(--signal)" />
+      {/* the mountain's foot always dissolves into fog */}
+      <rect x="-300" y="540" width="1000" height="100" fill="url(#footFog)" />
+
+      {/* the Wanderer: climbing, then standing on the summit */}
+      {won ? (
+        <g className={styles.summitFigure} transform="translate(214 49)">
+          <Wanderer scale={1.15} />
+        </g>
+      ) : !done && (
+        <g className={styles.climber} style={{ transform: `translate(${climber.x}px, ${climber.y - 12}px)` }}>
+          <Wanderer scale={0.62} />
         </g>
       )}
     </svg>
@@ -203,30 +256,25 @@ export default function SummitGame() {
 
   const reached = state.outcomes.filter((o) => o === "correct").length;
   const over = state.phase === "lost" || state.phase === "won";
+  const won = state.phase === "won";
   const failed = state.phase === "lost" ? state.camp : null;
-  // The sky follows the climber: the camp you're on, or the highest one reached.
-  const height = state.phase === "ready" ? 0 : Math.min(state.camp + (state.phase === "correct" ? 1 : 0), 9) / 9;
-  const sky = useMemo(() => skyAt(state.phase === "won" ? 1 : height), [height, state.phase]);
+  // The light follows the climber: the camp you're on, or the highest reached.
+  const height = won ? 1
+    : state.phase === "ready" ? 0
+      : Math.min(state.camp + (state.phase === "correct" ? 1 : 0), 9) / 9;
+  const sky = useMemo(() => skyAt(height), [height]);
 
   const skyStyle = {
     "--sky-top": sky.top, "--sky-mid": sky.mid, "--sky-bottom": sky.bottom,
-    "--star-opacity": sky.stars, "--ridge-shift": `${height * 90}px`,
+    "--fog-height": `${Math.round(18 + sky.fog * 52)}vh`,
+    "--glow-opacity": (1 - sky.fog).toFixed(2),
   } as CSSProperties;
 
   const page = (body: ReactNode) => (
     <div className={styles.sky} style={skyStyle}>
-      <div className={styles.stars} aria-hidden>
-        {STARS.map((s, i) => (
-          <span key={i} style={{ left: s.left, top: s.top, width: s.size, height: s.size, animationDelay: s.delay }} />
-        ))}
-      </div>
-      <div className={styles.ridges} aria-hidden>
-        <svg viewBox="0 0 1200 220" preserveAspectRatio="none" className={styles.ridgeBack}>
-          <path d="M0 220 L0 140 L120 80 L230 130 L360 60 L470 120 L600 40 L720 110 L850 70 L980 130 L1100 60 L1200 100 L1200 220 Z" />
-        </svg>
-        <svg viewBox="0 0 1200 220" preserveAspectRatio="none" className={styles.ridgeFront}>
-          <path d="M0 220 L0 170 L150 120 L280 165 L420 110 L560 170 L700 125 L830 175 L990 115 L1120 160 L1200 140 L1200 220 Z" />
-        </svg>
+      <div className={styles.glow} aria-hidden />
+      <div className={styles.seaOfFog} aria-hidden>
+        <span /><span /><span />
       </div>
       {body}
     </div>
@@ -235,7 +283,7 @@ export default function SummitGame() {
   if (error || !climb) {
     return page(
       <div className={styles.loading}>
-        <p>{error ?? "Checking the weather on the mountain…"}</p>
+        <p>{error ?? "The fog is lifting…"}</p>
       </div>,
     );
   }
@@ -246,7 +294,7 @@ export default function SummitGame() {
   const camp = CAMPS[Math.min(state.camp, CAMPS.length - 1)];
   const question = state.used.reroute === state.camp ? current.swap : current.question;
   const usedKit = KIT.filter((k) => state.used[k.id] !== undefined);
-  const freeSolo = state.phase === "won" && usedKit.length === 0;
+  const freeSolo = won && usedKit.length === 0;
   const topAltitude = reached > 0 ? CAMPS[reached - 1].altitude : 0;
 
   function takeKit(k: Kit) {
@@ -264,7 +312,7 @@ export default function SummitGame() {
     if (state.phase !== "asking" || !guess.trim()) return;
     const verdict = judge(question.answerHtml, guess);
     if (verdict === "prompt") {
-      setFeedback("Narrower… you're on the right track.");
+      setFeedback("Narrower — you're on the right path.");
       return;
     }
     setFeedback(null);
@@ -286,11 +334,11 @@ export default function SummitGame() {
   function shareText() {
     const squares = camps.map((_, i) =>
       state.outcomes[i] === "correct" ? "🟧" : state.outcomes[i] === "wrong" ? "🟥" : "⬜").join("");
-    const line = state.phase === "won"
+    const line = won
       ? `🚩 Summited · ${formatAltitude(CAMPS[CAMPS.length - 1].altitude)}`
       : `🧗 Reached ${formatAltitude(topAltitude)} · ${reached}/${total}`;
-    const kit = freeSolo ? "Free solo 🧗" : usedKit.length ? `Kit: ${usedKit.map((k) => k.icon).join(" ")}` : "No kit used";
-    return [`⛰️ Summit #${climb!.number} · ${climb!.topic}`, line, squares, kit, "petercurry.org/summit"].join("\n");
+    const kit = freeSolo ? "Free solo 🧗" : usedKit.length ? `Kit: ${usedKit.map((k) => k.share).join(" ")}` : "No kit used";
+    return [`⛰️ Summit No. ${climb!.number} · ${climb!.topic}`, line, squares, kit, "petercurry.org/summit"].join("\n");
   }
 
   async function share() {
@@ -313,33 +361,35 @@ export default function SummitGame() {
   return page(
     <div className={styles.stage}>
       <header className={styles.header}>
-        <a href="/" className={styles.home}>petercurry.org</a>
         <h1 className={styles.wordmark}>Summit</h1>
-        <p className={styles.number}>#{climb.number}</p>
+        <p className={styles.number}>No. {climb.number}</p>
       </header>
 
       <div className={styles.layout}>
         <div className={styles.mountainWrap}>
-          <Mountain reached={reached} current={state.camp} failed={failed} done={over} />
+          <Mountain reached={reached} current={state.camp} failed={failed} done={over}
+            won={won} fog={sky.fog} />
         </div>
 
         <section className={styles.card} aria-live="polite">
-          <p className={styles.eyebrow}>Today&rsquo;s mountain</p>
           <h2 className={styles.topic}>{climb.topic}</h2>
 
           {state.phase === "ready" && (
             <div className={styles.intro}>
-              <p>
-                Ten questions, one subject. Start at the trailhead with middle-school
-                quizbowl and climb to the summit, where the open-tournament questions live.
+              <p className={styles.lede}>
+                Ten questions on one subject, rising from the easy foothills to questions
+                only the best quizbowl players know.
               </p>
-              <p>One wrong answer and you fall. Spelling doesn&rsquo;t need to be perfect.</p>
+              <p>Answer in your own words; spelling can wander. One wrong answer and you fall.</p>
               <ul className={styles.kitList}>
                 {KIT.map((k) => (
-                  <li key={k.id}><span aria-hidden>{k.icon}</span> <strong>{k.label}</strong> {k.help.toLowerCase()}.</li>
+                  <li key={k.id}>
+                    <KitIcon kit={k.id} />
+                    <span><strong>{k.label}.</strong> {k.help}.</span>
+                  </li>
                 ))}
               </ul>
-              <p className={styles.small}>Each piece of kit works once. Reach the top without any for a free solo.</p>
+              <p className={styles.quiet}>Each works once. Reach the top without them for a free solo.</p>
               <button className={styles.primary} onClick={() => update({ ...state, phase: "asking" })}>
                 Begin the ascent
               </button>
@@ -348,18 +398,17 @@ export default function SummitGame() {
 
           {(state.phase === "asking" || state.phase === "correct") && (
             <>
-              <div className={styles.altimeter}>
+              <div className={styles.altimeter} title={current.level}>
                 <span className={styles.altitude}>{formatAltitude(camp.altitude)}</span>
                 <span className={styles.campTitle}>{camp.name}</span>
-                <span className={styles.level}>{current.level}</span>
               </div>
               <Question q={question} />
 
               {showGuide && question.clue && (
-                <p className={styles.hint}><span>🧭 Your guide says</span>{question.clue}</p>
+                <p className={styles.hint}><KitIcon kit="guide" /> <span>{question.clue}</span></p>
               )}
               {showMap && (
-                <p className={styles.hint}><span>🗺️ Trail map</span><code>{question.letters}</code></p>
+                <p className={styles.hint}><KitIcon kit="map" /> <span className={styles.letters}>{question.letters}</span></p>
               )}
 
               {state.phase === "asking" ? (
@@ -394,8 +443,7 @@ export default function SummitGame() {
                           disabled={used || unavailable}
                           title={unavailable ? "No guide on this stretch" : k.help}
                         >
-                          <span aria-hidden>{k.icon}</span> {k.label}
-                          {used && <span className={styles.usedTag}>used</span>}
+                          <KitIcon kit={k.id} /> {k.label}
                         </button>
                       );
                     })}
@@ -403,10 +451,10 @@ export default function SummitGame() {
                 </>
               ) : (
                 <div className={styles.result}>
-                  <p className={styles.correct}>✓ {question.answer}</p>
-                  <p className={styles.small}>{camp.name} reached · from {question.set || "QB Reader"}</p>
+                  <p className={styles.correct}>{question.answer}</p>
+                  <p className={styles.quiet}>{camp.name} reached. From {question.set || "QB Reader"}.</p>
                   <button className={styles.primary} onClick={climbOn} autoFocus>
-                    Climb to {formatAltitude(CAMPS[state.camp + 1].altitude)} →
+                    Climb to {formatAltitude(CAMPS[state.camp + 1].altitude)}
                   </button>
                 </div>
               )}
@@ -415,41 +463,39 @@ export default function SummitGame() {
 
           {over && (
             <div className={styles.result}>
-              {state.phase === "won" ? (
+              {won ? (
                 <>
-                  <p className={styles.headline}>You summited.</p>
-                  {freeSolo && <p className={styles.badge}>🧗 Free solo</p>}
+                  <p className={styles.headline}>Above the fog.</p>
+                  <p className={styles.lede}>You reached the summit{freeSolo ? ", free solo" : ""}.</p>
                 </>
               ) : (
                 <>
-                  <p className={styles.headline}>
-                    You fell at {formatAltitude(camp.altitude)}.
-                  </p>
+                  <p className={styles.headline}>You fell at {formatAltitude(camp.altitude)}.</p>
                   <Question q={question} />
                   <p>
                     You said &ldquo;{state.lastGuess}&rdquo;. The answer was <strong>{question.answer}</strong>.
                   </p>
-                  <p className={styles.small}>From {question.set || "QB Reader"}</p>
+                  <p className={styles.quiet}>From {question.set || "QB Reader"}.</p>
                 </>
               )}
               <pre className={styles.share}>{shareText()}</pre>
-              <button className={styles.primary} onClick={share}>{copied ? "Copied!" : "Share your climb"}</button>
-              <p className={styles.small}>
-                New mountain in {untilMidnight()} · Climbs {stats.climbs} · Summits {stats.summits} ·
-                {" "}Best {stats.best ? formatAltitude(CAMPS[stats.best - 1].altitude) : "—"} · Streak {stats.streak}
-              </p>
+              <button className={styles.primary} onClick={share}>{copied ? "Copied" : "Share your climb"}</button>
+              <dl className={styles.stats}>
+                <div><dt>Next mountain</dt><dd>{untilMidnight()}</dd></div>
+                <div><dt>Summits</dt><dd>{stats.summits}/{stats.climbs}</dd></div>
+                <div><dt>Highest</dt><dd>{stats.best ? formatAltitude(CAMPS[stats.best - 1].altitude) : "—"}</dd></div>
+                <div><dt>Streak</dt><dd>{stats.streak}</dd></div>
+              </dl>
               <details className={styles.review}>
-                <summary>See the whole route</summary>
+                <summary>The whole route</summary>
                 <ol>
                   {camps.map((r, i) => {
                     const q = state.used.reroute === i ? r.swap : r.question;
                     return (
                       <li key={r.rung}>
-                        <p className={styles.reviewAltitude}>
-                          {formatAltitude(CAMPS[i].altitude)} · {CAMPS[i].name} · {r.level}
-                        </p>
+                        <p className={styles.reviewCamp}>{CAMPS[i].name}, {formatAltitude(CAMPS[i].altitude)}</p>
                         <Question q={q} />
-                        <p><strong>{q.answer}</strong> <span className={styles.small}>· {q.set || "QB Reader"}</span></p>
+                        <p><strong>{q.answer}</strong> <span className={styles.quiet}>· {q.set || "QB Reader"}</span></p>
                       </li>
                     );
                   })}
@@ -461,10 +507,8 @@ export default function SummitGame() {
       </div>
 
       <footer className={styles.credits}>
-        Questions from <a href="https://www.qbreader.org">QB Reader</a>, written for real quizbowl
-        tournaments and credited by set; altitude is QB Reader&rsquo;s difficulty level. Subjects come
-        from Matthew Spry&rsquo;s QB-curricula model, which files every history answer by period and
-        ranks how well known it is.
+        Questions from <a href="https://www.qbreader.org">QB Reader</a>, written for quizbowl
+        tournaments; altitude follows their difficulty. Subjects from Matthew Spry&rsquo;s QB-curricula.
       </footer>
     </div>,
   );

@@ -24,14 +24,16 @@ export function formatAltitude(metres: number): string {
   return `${metres.toLocaleString("en-GB")} m`;
 }
 
-type Sky = { top: string; mid: string; bottom: string; stars: number };
+// After Friedrich's "Wanderer above the Sea of Fog": you start inside a grey
+// overcast, and climb out into pale, warm light above a sea of fog.
+// `fog` is how high the sea of fog reaches (1 = fills the view, 0 = far below).
+type Sky = { top: string; mid: string; bottom: string; fog: number };
 
-// Dawn in the valley, bright day, dusk on the high ridges, night at the top.
 const STOPS: [number, Sky][] = [
-  [0, { top: "#7fb3d8", mid: "#c9dbe0", bottom: "#f4cf9a", stars: 0 }],
-  [0.35, { top: "#3f86c8", mid: "#86bde3", bottom: "#d4ecf5", stars: 0 }],
-  [0.7, { top: "#25285f", mid: "#7a4f7f", bottom: "#ec8a5c", stars: 0.35 }],
-  [1, { top: "#04071a", mid: "#141a46", bottom: "#33306b", stars: 1 }],
+  [0, { top: "#8f9a9e", mid: "#adb4b3", bottom: "#c2c5bf", fog: 1 }],
+  [0.4, { top: "#9fadb4", mid: "#c6cbc4", bottom: "#ddd6c4", fog: 0.62 }],
+  [0.75, { top: "#a9b8c0", mid: "#d6d3c3", bottom: "#e9dcbc", fog: 0.34 }],
+  [1, { top: "#9fb2bd", mid: "#dcd5bf", bottom: "#efd8a6", fog: 0.12 }],
 ];
 
 function mix(a: string, b: string, t: number): string {
@@ -52,7 +54,7 @@ export function skyAt(height: number): Sky {
         top: mix(s0.top, s1.top, t),
         mid: mix(s0.mid, s1.mid, t),
         bottom: mix(s0.bottom, s1.bottom, t),
-        stars: s0.stars + (s1.stars - s0.stars) * t,
+        fog: s0.fog + (s1.fog - s0.fog) * t,
       };
     }
   }

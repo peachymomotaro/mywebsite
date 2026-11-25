@@ -1,30 +1,29 @@
 import Head from "next/head";
-import { Big_Shoulders, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { Cormorant_Garamond, EB_Garamond } from "next/font/google";
 import SummitGame from "@/components/summit/SummitGame";
 import styles from "@/styles/summit.module.css";
 
-const display = Big_Shoulders({
-  subsets: ["latin"], weight: ["700", "800", "900"], variable: "--font-display", display: "swap",
+const display = Cormorant_Garamond({
+  subsets: ["latin"], weight: ["500", "600"], style: ["normal", "italic"],
+  variable: "--font-cormorant", display: "swap",
 });
-const plex = IBM_Plex_Sans({
-  subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-plex", display: "swap",
-});
-const plexMono = IBM_Plex_Mono({
-  subsets: ["latin"], weight: ["400", "600"], variable: "--font-plex-mono", display: "swap",
+const body = EB_Garamond({
+  subsets: ["latin"], weight: ["400", "500"], style: ["normal", "italic"],
+  variable: "--font-garamond", display: "swap",
 });
 
 function SummitPage() {
   return (
     <>
       <Head>
-        <title>Summit - a daily quiz climb</title>
+        <title>Summit</title>
         <meta
           name="description"
-          content="One subject a day. Ten questions from the trailhead to the summit. One wrong answer and you fall."
+          content="One subject a day. Ten questions from the foothills to the summit. One wrong answer and you fall."
         />
-        <meta name="theme-color" content="#0b1230" />
+        <meta name="theme-color" content="#adb4b3" />
       </Head>
-      <main className={`${styles.root} ${display.variable} ${plex.variable} ${plexMono.variable}`}>
+      <main className={`${styles.root} ${display.variable} ${body.variable}`}>
         <SummitGame />
       </main>
     </>
