@@ -1,0 +1,289 @@
+{
+ "number": 1,
+ "date": "2026-11-25",
+ "topic": "The papacy",
+ "path": "European/Papacy",
+ "curated": true,
+ "rungs": [
+  {
+   "rung": 1,
+   "level": "Anyone",
+   "question": {
+    "id": "62f08076bbf8fdbdf07e9d14:2",
+    "leadin": "",
+    "text": "Three members of the Medici family went on to hold which office in Rome, taking the names Leo X, Clement VII and Leo XI?",
+    "answerHtml": "<b><u>Pope</u></b> [or “the <b><u>papacy</u></b>;” or Supreme <b><u>Pontiff</u></b>; or <b><u>Pontifex</u></b> Maximus; or <b><u>Bishop of Rome</u></b>]",
+    "answer": "Pope",
+    "letters": "P _ _ _",
+    "clue": "The last Englishman to hold it was Nicholas Breakspear.",
+    "difficulty": 1,
+    "set": "2018 MVS RAMS",
+    "year": 2018
+   },
+   "swap": {
+    "id": "63e1c0eb32d1b824539f07e3:0",
+    "leadin": "",
+    "text": "Which Catholic religious order, founded by Ignatius Loyola and nicknamed “God’s Marines”, counted the missionary Francis Xavier among its members?",
+    "answerHtml": "<b><u>Jesuits</u></b> [or <b><u>Society of Jesus</u></b>]",
+    "answer": "Jesuits",
+    "letters": "J _ _ _ _ _ _",
+    "clue": "Two of its members prepared the translation of the Treaty of Nerchinsk.",
+    "difficulty": 2,
+    "set": "2012 Fall Kickoff Tournament (FKT)",
+    "year": 2012
+   }
+  },
+  {
+   "rung": 2,
+   "level": "Well known",
+   "question": {
+    "id": "6727fb3b0a73c65be67f758d:0",
+    "leadin": "",
+    "text": "Which pope founded World Youth Day in 1985? His visit to his home country helped inspire the Solidarity movement, which went on to end communist rule there.",
+    "answerHtml": "Pope <b><u>John Paul II</u></b> [prompt on <u>John Paul</u>]",
+    "answer": "Pope John Paul II",
+    "letters": "J _ _ _   P _ _ _   I _",
+    "clue": "He visited Mehmet Ali Agca in prison to forgive him for trying to kill him.",
+    "difficulty": 4,
+    "set": "2023 CREEK",
+    "year": 2023
+   },
+   "swap": {
+    "id": "63ade128794bda10f6ded7f2:0",
+    "leadin": "",
+    "text": "In 2013, which pope became the first since 1294 to resign?",
+    "answerHtml": "Pope <b><u>Benedict XVI</u></b> [prompt on <b><u>Benedict</u></b>; or Joseph Aloisius <b><u>Ratzinger</u></b>]",
+    "answer": "Pope Benedict XVI",
+    "letters": "B _ _ _ _ _ _ _   X _ _",
+    "clue": "Critics called him “the pope of aesthetics” for his lavish dress, and he had been conscripted into Germany’s military in the Second World War.",
+    "difficulty": 6,
+    "set": "2013 Collegiate Novice",
+    "year": 2013
+   }
+  },
+  {
+   "rung": 3,
+   "level": "Well known",
+   "question": {
+    "id": "62e35effc080082733afc3ed:1",
+    "leadin": "",
+    "text": "What name is given to the meeting in which the College of Cardinals is shut away in the Vatican to choose a pope, its name referring to being locked in “with a key”?",
+    "answerHtml": "papal <b><u>conclave</u></b>",
+    "answer": "papal conclave",
+    "letters": "C _ _ _ _ _ _ _",
+    "clue": "Since 1996 the cardinals taking part have stayed in Saint Martha’s House rather than on rented cots behind cloth partitions.",
+    "difficulty": 10,
+    "set": "2012 Chicago Open",
+    "year": 2012
+   },
+   "swap": {
+    "id": "62fe9e9bd9499606df43a305:2",
+    "leadin": "",
+    "text": "Which order of knights first based itself at the Al-Aqsa Mosque in Jerusalem, and was dissolved by the pope in the early 14th century after Philip IV of France accused it of fraud and heresy?",
+    "answerHtml": "Knights <b><u>Templar</u></b> [or <b><u>Templar</u></b>s; or <b><u>Templiers</u></b>; or <b><u>Poor</u></b> Fellow-<b><u>Soldiers of Christ and</u></b> of <b><u>the Temple</u></b> of Solomon; or <b><u>Pauperes</u></b> co<b><u>mmilitones Christi Templique</u></b> Salomonici; or <b><u>Order of the Temple</u></b>; or <b><u>Ordre du</u></b> <b><u>Temple</u></b>]",
+    "answer": "Knights Templar",
+    "letters": "T _ _ _ _ _ _",
+    "clue": "After winning the Battle of Hattin, Saladin bought and executed its members en masse.",
+    "difficulty": 3,
+    "set": "2014 BELLOCO",
+    "year": 2014
+   }
+  },
+  {
+   "rung": 4,
+   "level": "General knowledge",
+   "question": {
+    "id": "62fe9e9bd9499606df43a901:1",
+    "leadin": "",
+    "text": "Which pope launched the First Crusade at the Council of Clermont, offering remission of sins to those who joined and supposedly declaring “Deus vult” – “God wills it”?",
+    "answerHtml": "Pope <u>Urban II</u> [prompt on \"Urban\"]",
+    "answer": "Pope Urban II",
+    "letters": "U _ _ _ _   I _",
+    "clue": "He allied himself with Roger I of Sicily and was heavily influenced by a delegation from Alexios I Komnenos.",
+    "difficulty": 3,
+    "set": "2013 JAMES",
+    "year": 2013
+   },
+   "swap": {
+    "id": "652ebb718051389c667bd068:2",
+    "leadin": "",
+    "text": "During the 14th century a series of popes lived in which city in the south of modern-day France?",
+    "answerHtml": "<b><u>Avignon</u></b> [or <b><u>Avenio</u></b>]",
+    "answer": "Avignon",
+    "letters": "A _ _ _ _ _ _",
+    "clue": "Six papal elections were held in its Palais des Papes.",
+    "difficulty": 6,
+    "set": "2023 ACF Fall",
+    "year": 2023
+   }
+  },
+  {
+   "rung": 5,
+   "level": "General knowledge",
+   "question": {
+    "id": "62fb178450f2aac87106c718:2",
+    "leadin": "",
+    "text": "Which pope, who led the Church during the Second World War, has been called “Hitler’s Pope” for not doing enough to stop the Holocaust?",
+    "answerHtml": "Pope <b><u>Pius XII</u></b> [prompt on Pope <b><u>Pius</u></b>]",
+    "answer": "Pope Pius XII",
+    "letters": "P _ _ _   X _ _",
+    "clue": "At his trial, Karl Wolff testified that he had been ordered to kidnap this pope.",
+    "difficulty": 1,
+    "set": "2016 PLATO",
+    "year": 2016
+   },
+   "swap": {
+    "id": "6435fb863c24c106a98420a2:0",
+    "leadin": "",
+    "text": "Which order of crusading knights captured the island of Rhodes from the Byzantines and made it their base, and still exists today?",
+    "answerHtml": "<b><u>Knights Hospitaller</u></b>s [or <b><u>Hospitaller</u></b>s; or Knights of <b><u>St John</u></b>; or Order of <b><u>St John</u></b>; or Knights of <b><u>Malta</u></b>]",
+    "answer": "Knights Hospitallers",
+    "letters": "K _ _ _ _ _ _   H _ _ _ _ _ _ _ _ _ _",
+    "clue": "Founded by the Blessed Gerard, it held the fortresses of Margat and Krak des Chevaliers before being forced from the Holy Land.",
+    "difficulty": 5,
+    "set": "2003 PACE NSC",
+    "year": 2003
+   }
+  },
+  {
+   "rung": 6,
+   "level": "Keen",
+   "question": {
+    "id": "63e31d9ebc8f282ed3d43840:0",
+    "leadin": "",
+    "text": "The period when the popes lived at Avignon is sometimes called by what name, borrowed from the exile of the Jews from Judah begun by Nebuchadnezzar and ended by Cyrus the Great?",
+    "answerHtml": "<b><u>Babylonian Captivity</u></b>",
+    "answer": "Babylonian Captivity",
+    "letters": "B _ _ _ _ _ _ _ _ _   C _ _ _ _ _ _ _ _",
+    "clue": "The name refers to a period of exile in the Old Testament.",
+    "difficulty": 2,
+    "set": "2009 Fall Novice Tournament",
+    "year": 2009
+   },
+   "swap": {
+    "id": "6435fb863c24c106a9841e15:0",
+    "leadin": "",
+    "text": "Born Ugo Buoncompagni, which pope called for Queen Elizabeth I to be deposed, but is better remembered for the calendar named after him?",
+    "answerHtml": "<b><u>Gregory XIII</u></b> [prompt on <b><u>Gregory</u></b>]",
+    "answer": "Gregory XIII",
+    "letters": "G _ _ _ _ _ _   X _ _ _",
+    "clue": "He had Aloysius Lilius and Christopher Clavius design the system, and brought it in with the bull Inter gravissimas.",
+    "difficulty": 5,
+    "set": "2002 PACE NSC",
+    "year": 2002
+   }
+  },
+  {
+   "rung": 7,
+   "level": "Keen",
+   "question": {
+    "id": "63bba672874e0ef7dd7b1c47:0",
+    "leadin": "",
+    "text": "Which church council elected Pope Martin V, ending the Western Schism, and had the theologian Jan Hus burned at the stake?",
+    "answerHtml": "Council of <b><u>Constance</u></b>",
+    "answer": "Council of Constance",
+    "letters": "C _ _ _ _ _ _ _ _",
+    "clue": "It was called by Emperor Sigismund, and it canonized St Bridget of Sweden.",
+    "difficulty": 4,
+    "set": "2012 Prison Bowl",
+    "year": 2012
+   },
+   "swap": {
+    "id": "62f32f19679b6464bbdf74dc:1",
+    "leadin": "",
+    "text": "Which pope moved the papacy to Avignon and suppressed the Knights Templar at the Council of Vienne?",
+    "answerHtml": "<b><u>Clement</u></b> V [or <b><u>Clemens</u></b> V]",
+    "answer": "Clement V",
+    "letters": "C _ _ _ _ _ _",
+    "clue": "He rescinded an earlier papal bull which proclaimed that there is no salvation outside the Church.",
+    "difficulty": 7,
+    "set": "2016 Terrapin",
+    "year": 2016
+   }
+  },
+  {
+   "rung": 8,
+   "level": "History buff",
+   "question": {
+    "id": "6361e01fec1ecd3e795a4162:1",
+    "leadin": "",
+    "text": "Persuaded by St Catherine of Siena, which pope moved the papacy back to Rome?",
+    "answerHtml": "Pope <u>Gregory XI</u> [or Pierre-Roger de <u>Beaufort</u>; prompt on “<u>Gregory</u>”]",
+    "answer": "Pope Gregory XI",
+    "letters": "G _ _ _ _ _ _   X _",
+    "clue": "He hired John Hawkwood to fight on his behalf in the War of the Eight Saints.",
+    "difficulty": 9,
+    "set": "2018 ACF Nationals",
+    "year": 2018
+   },
+   "swap": {
+    "id": "635b6428d8a170d88c9e69a4:2",
+    "leadin": "",
+    "text": "Which church council of 1409 tried and failed to end the Western Schism, and was superseded by a later council?",
+    "answerHtml": "Council of <b><u>Pisa</u></b>",
+    "answer": "Council of Pisa",
+    "letters": "P _ _ _",
+    "clue": "It elected Philargi as Alexander V, but both rival popes refused to recognise it.",
+    "difficulty": 8,
+    "set": "2010 ACF Regionals",
+    "year": 2010
+   }
+  },
+  {
+   "rung": 9,
+   "level": "Specialist",
+   "question": {
+    "id": "62e05b9cf7cf60c9cba96766:0",
+    "leadin": "",
+    "text": "Which 14th-century pope, opposed by the antipope Clement VII during the Western Schism, once complained that he couldn’t hear enough screaming while rebellious cardinals were being tortured?",
+    "answerHtml": "<b><u>Urban VI</u></b> [prompt on Urban]",
+    "answer": "Urban VI",
+    "letters": "U _ _ _ _   V _",
+    "clue": "He probably died of injuries from a painful fall from his mule at Narni.",
+    "difficulty": 8,
+    "set": "2016 Oxford Open",
+    "year": 2016
+   },
+   "swap": {
+    "id": "6361e01fec1ecd3e795a43f1:0",
+    "leadin": "",
+    "text": "What grim name is given to the event at which Pope Stephen VI put the rotting corpse of his predecessor Formosus on trial, then had it thrown into the Tiber?",
+    "answerHtml": "<u>Cadaver Synod</u> [or the <u>Synodus Horrenda</u>]",
+    "answer": "Cadaver Synod",
+    "letters": "C _ _ _ _ _ _   S _ _ _ _",
+    "clue": "Held in 897, it grew out of tension between Spoletan and Roman factions over whether Arnulf or Lambert should be Holy Roman Emperor.",
+    "difficulty": 9,
+    "set": "2018 ACF Nationals",
+    "year": 2018
+   }
+  },
+  {
+   "rung": 10,
+   "level": "Serious quizzer",
+   "question": {
+    "id": "6361f475f6f73d137db4630f:0",
+    "leadin": "",
+    "text": "Which pope, introduced to Arabic numerals while studying at a Catalonian monastery, is credited with reintroducing the abacus and the armillary sphere to Europe?",
+    "answerHtml": "<b><u>Sylvester II</u></b> (“the-second”) [or <b><u>Gerbert</u></b> of Aurillac; prompt on <u>Sylvester</u>]",
+    "answer": "Sylvester II",
+    "letters": "S _ _ _ _ _ _ _ _   I _",
+    "clue": "The first French pope, he took his name from the pope said by the forged Donation of Constantine to have been given power over the Western Roman Empire.",
+    "difficulty": 9,
+    "set": "2019 Fall Open",
+    "year": 2019
+   },
+   "swap": {
+    "id": "676f8304c626ea977c7a3902:2",
+    "leadin": "",
+    "text": "Which pope, elected after an 18-month vacancy following Celestine IV, called the Council of Lyons that excommunicated Holy Roman Emperor Frederick II?",
+    "answerHtml": "Pope <b><u>Innocent IV</u></b> [or Sinibaldo <b><u>Fieschi</u></b>]",
+    "answer": "Pope Innocent IV",
+    "letters": "I _ _ _ _ _ _ _   I _",
+    "clue": "He enticed Henry III to take the throne of Sicily.",
+    "difficulty": 10,
+    "set": "2009 Illinois Open",
+    "year": 2009
+   }
+  }
+ ]
+}

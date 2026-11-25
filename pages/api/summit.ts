@@ -36,8 +36,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(404).json({ error: `Summit starts on ${index.start}.`, start: index.start });
   }
 
-  const climb = JSON.parse(
-    await fs.readFile(path.join(DATA_DIR, "days", `${slot.file}.json`), "utf8"));
+  // A hand-curated climb (data/summit/curated/<n>.json) replaces the generated one.
+  const curated = path.join(DATA_DIR, "curated", `${slot.number}.json`);
+  const generated = path.join(DATA_DIR, "days", `${slot.file}.json`);
+  const file = await fs.access(curated).then(() => curated, () => generated);
+  const climb = JSON.parse(await fs.readFile(file, "utf8"));
   climb.number = slot.number;
   climb.date = date;
 
