@@ -34,6 +34,13 @@ const nextConfig: NextConfig = {
     }, {
       source: "/complexity-lab",
       headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
+    }, {
+      // Summit is in trial: reachable by link, kept out of search.
+      source: "/summit",
+      headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
+    }, {
+      source: "/api/summit",
+      headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
     }];
   },
   // The Summit API reads its puzzles from disk at request time.
