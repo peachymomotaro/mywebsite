@@ -642,3 +642,48 @@ model PopsProposal {
   @@index([status, kind])
   @@index([supersededById])
 }
+
+// ---------------------------------------------------------------------------
+// Quiz marking (/pops/quiz). Quiz Trainer's weekly job uploads parsed quiz
+// papers; Peter marks each question; the job reads the marks back.
+// ---------------------------------------------------------------------------
+
+enum PopsQuizMark {
+  knew
+  guessed
+  tip_of_tongue
+  no_idea
+  skipped
+}
+
+model PopsQuizPaper {
+  id         String            @id
+  circuit    String
+  title      String
+  setBy      String            @default("")
+  editedBy   String            @default("")
+  playedOn   DateTime?         @db.Date
+  sourceUrl  String            @default("")
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  archivedAt DateTime?
+  questions  PopsQuizQuestion[]
+
+  @@index([archivedAt, playedOn])
+}
+
+model PopsQuizQuestion {
+  id       String        @id @default(cuid())
+  paperId  String
+  paper    PopsQuizPaper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  position Int
+  section  String        @default("")
+  label    String        @default("")
+  text     String
+  answer   String
+  mark     PopsQuizMark?
+  markedAt DateTime?
+
+  @@unique([paperId, position])
+  @@index([markedAt])
+}

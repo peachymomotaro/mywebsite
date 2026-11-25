@@ -16,6 +16,17 @@ The Quick Add form defaults to **My checklist** but offers **Agent handoff**; AP
 
 Deploy the additive `20261113150000_pops_personal_checklist` migration with `npx prisma migrate deploy` before using the new code.
 
+## Quiz marking
+
+`/pops/quiz` lists quiz papers that Quiz Trainer's weekly job has uploaded. Each paper opens one question at a time: show the answer (space), then mark it **Knew it** (1), **Guessed** (2), **Tip of my tongue** (3) or **No idea** (4), or skip it (s). Marks save as you go, so you can stop part-way and carry on from your phone or laptop. Arrow keys move between questions; changing an earlier mark is fine.
+
+Quiz Trainer talks to two agent endpoints with a bearer credential from `/pops/connect` that has the `quiz:read` and `quiz:write` scopes:
+
+- `POST /api/pops/v1/quiz/papers` with `{ "papers": [...] }` creates or updates papers. Re-uploading a paper updates question wording but never touches marks.
+- `GET /api/pops/v1/quiz/marks?since=ISO` returns marks changed after `since`, oldest first; follow `next` to page. A cleared mark comes back with `mark: null`.
+
+Code: `lib/pops/quiz.ts`, `app/pops/(app)/quiz/`, `components/pops/QuizPlayer.tsx`, `app/pops/quiz-actions.ts`. Deploy the additive `20261125160000_pops_quiz_marking` migration with `npx prisma migrate deploy` before using it. It only creates the `PopsQuizPaper` and `PopsQuizQuestion` tables and the `PopsQuizMark` enum.
+
 ## Workflow
 
 1. Create a task in POps, or ask an agent to create one (API/MCP). Agents can also edit task titles, descriptions, and tags when asked.

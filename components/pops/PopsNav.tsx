@@ -14,6 +14,7 @@ const PRIMARY = [
 ];
 
 const SECONDARY = [
+  { href: "/pops/quiz", label: "Quiz" },
   { href: "/pops/pipelines", label: "Pipelines" },
   { href: "/pops/playbook", label: "Playbook" },
   { href: "/pops/connect", label: "Connect" },

@@ -91,6 +91,8 @@ export const AGENT_SCOPES = [
   "decisions:write",
   "feedback:write",
   "proposals:write",
+  "quiz:read",
+  "quiz:write",
 ] as const;
 
 export type AgentScope = (typeof AGENT_SCOPES)[number];
