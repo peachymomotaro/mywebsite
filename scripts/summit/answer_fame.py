@@ -8,11 +8,14 @@ often quizbowl asks about something, which is low for things too famous to
 bother asking ("papal conclave"). Average daily Wikipedia pageviews track
 general fame well, so that is the signal here.
 
-Input: a text file of answer strings, one per line (build_climbs.py
---dump-answers writes it). Output: a JSON cache, answer -> {title, views,
+Input: a text file of answer strings, one per line. scripts/summit/answer_names.txt
+is committed (build_climbs.py --dump-answers regenerates it from QB-curricula). Output: a JSON cache, answer -> {title, views,
 disambig}. Already-cached answers are skipped, so re-runs are cheap.
 
-  python3 scripts/summit/answer_fame.py answers.txt scripts/summit/answer_fame.json
+  python3 scripts/summit/answer_fame.py scripts/summit/answer_names.txt scripts/summit/answer_fame.json
+
+Needs only Python 3 (standard library). Takes ~20 minutes; it can be stopped
+and re-run, and picks up where it left off.
 """
 
 from __future__ import annotations
@@ -26,7 +29,8 @@ import urllib.request
 from pathlib import Path
 
 API = "https://en.wikipedia.org/w/api.php"
-HEADERS = {"User-Agent": "SummitDailyQuiz/0.1 (answer-fame lookup; batch, cached)"}
+HEADERS = {"User-Agent": "SummitDailyQuiz/0.1 (answer-fame lookup; batch, cached)",
+           "Accept": "application/json"}
 BATCH = 50          # the API's title limit per request
 PAUSE = 2.0         # seconds between requests: Wikimedia throttles shared addresses
 
