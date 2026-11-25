@@ -810,6 +810,61 @@ describe.skipIf(!testUrl)("POps on isolated PostgreSQL", () => {
       expect(JSON.parse(invalid.result.content[0].text).error).toBe("validation_failed");
     });
 
+    it("allows explicit owner-directed MCP status changes with a separate scope and optimistic locking", async () => {
+      const { exchange } = await authorization("tasks:read tasks:status");
+      const tokens = await exchangeOAuthToken(exchange);
+      const { exchange: ordinaryExchange } = await authorization("tasks:read tasks:write");
+      const ordinary = await exchangeOAuthToken(ordinaryExchange);
+      const { task } = await createTask({ title: "Status change", workspace: "work", description: "Preserve me" }, "human");
+      const { task: child } = await createTask({ title: "Child", workspace: "work", parentId: task.id }, "human");
+      const tools = await (await mcpRoute.POST(api("/api/pops/mcp", { auth: tokens.access_token, body: { jsonrpc: "2.0", id: 1, method: "tools/list" } }))).json();
+      const spec = tools.result.tools.find((t: { name: string }) => t.name === "pops_set_task_status");
+      expect(spec.inputSchema.required).toEqual(["taskId", "status", "expectedUpdatedAt", "userConfirmed"]);
+      const args = { taskId: task.id, status: "completed", expectedUpdatedAt: task.updatedAt.toISOString(), userConfirmed: true };
+      const call = async (input: unknown, token = tokens.access_token) => (await (await rpc(token, "pops_set_task_status", input)).json()).result;
+      const denied = await call(args, ordinary.access_token);
+      expect(JSON.parse(denied.content[0].text).error).toBe("forbidden");
+      for (const invalid of [
+        { ...args, userConfirmed: false },
+        { ...args, userConfirmed: undefined },
+        { ...args, status: "deleted" },
+        { ...args, expectedUpdatedAt: undefined },
+        { ...args, extra: true },
+      ]) {
+        const result = await call(invalid);
+        expect(result.isError).toBe(true);
+        expect(JSON.parse(result.content[0].text).error).toBe("validation_failed");
+      }
+      expect((await prisma.popsTask.findUniqueOrThrow({ where: { id: task.id } })).status).toBe("active");
+      const completed = await call(args);
+      expect(completed.isError).toBe(false);
+      expect(completed.structuredContent.task).toMatchObject({ id: task.id, status: "completed", description: "Preserve me" });
+      const stored = await prisma.popsTask.findUniqueOrThrow({ where: { id: task.id } });
+      expect(stored.completedAt).not.toBeNull();
+      expect(stored.lastHumanEngagementAt).toEqual(task.lastHumanEngagementAt);
+      expect((await prisma.popsTask.findUniqueOrThrow({ where: { id: child.id } })).status).toBe("active");
+      const replay = await call(args);
+      expect(JSON.parse(replay.content[0].text).error).toBe("conflict");
+      const noOp = await call({ ...args, expectedUpdatedAt: stored.updatedAt.toISOString() });
+      expect(noOp.isError).toBe(false);
+      expect(await prisma.popsHistoryEntry.count({ where: { taskId: task.id, kind: "status_changed", actor: "agent" } })).toBe(1);
+      const current = { ...args, expectedUpdatedAt: stored.updatedAt.toISOString() };
+      const concurrent = await Promise.all([call({ ...current, status: "paused" }), call({ ...current, status: "archived" })]);
+      expect(concurrent.filter((r) => !r.isError)).toHaveLength(1);
+      expect(concurrent.filter((r) => r.isError).map((r) => JSON.parse(r.content[0].text).error)).toEqual(["conflict"]);
+      for (const status of ["archived", "paused", "active"]) {
+        const before = await prisma.popsTask.findUniqueOrThrow({ where: { id: task.id } });
+        const result = await call({ ...args, status, expectedUpdatedAt: before.updatedAt.toISOString() });
+        expect(result.isError).toBe(false);
+        const after = await prisma.popsTask.findUniqueOrThrow({ where: { id: task.id } });
+        expect(after.status).toBe(status);
+        expect(after.completedAt).toBeNull();
+        expect(after.archivedAt !== null).toBe(status === "archived");
+      }
+      const missing = await call({ ...args, taskId: "missing-task" });
+      expect(JSON.parse(missing.content[0].text).error).toBe("not_found");
+    });
+
     it("supports Personal as a first-class workspace for task creation, listing and moves", async () => {
       const { exchange } = await authorization();
       const tokens = await exchangeOAuthToken(exchange);
