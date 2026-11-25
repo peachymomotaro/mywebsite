@@ -93,9 +93,9 @@ export function buildOpenApiDocument() {
     openapi: "3.1.0",
     info: {
       title: "POps agent API",
-      version: "1.1.0",
+      version: "1.2.0",
       description:
-        "Private API for agents working on Peter Curry's POps tasks. Requires a POps agent credential as a bearer token. Agents cannot change task status, edit the playbook or edit pipelines directly.",
+        "Private API for agents working on Peter Curry's POps tasks. Requires a POps agent credential as a bearer token. Agents can change task status (with expectedUpdatedAt) but cannot edit the playbook or pipelines directly.",
     },
     servers: [{ url: `${siteBaseUrl()}/api/pops/v1` }],
     components: { securitySchemes: { bearer: { type: "http", scheme: "bearer" } } },
@@ -147,6 +147,31 @@ export function buildOpenApiDocument() {
           parameters: taskIdParam,
           requestBody: { required: true, content: { "application/json": { schema: taskPatch } } },
           responses: { ...ok, "409": { description: "Task changed since it was read; fetch it again before editing" } },
+        },
+      },
+      "/tasks/{taskId}/status": {
+        post: {
+          operationId: "setTaskStatus",
+          summary: "Complete, pause, archive or reopen a task; read the current task first",
+          parameters: taskIdParam,
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["status", "expectedUpdatedAt"],
+                  properties: {
+                    status: { type: "string", enum: ["active", "paused", "completed", "archived"], description: "completed when the work is done; active reopens a task." },
+                    note: { type: "string", maxLength: 1000, description: "Why the status changed, e.g. what finished the task." },
+                    expectedUpdatedAt: { type: "string", format: "date-time", description: "Copy task.updatedAt from getTask. If it changed, read the task again first." },
+                  },
+                },
+              },
+            },
+          },
+          responses: { ...ok, "409": { description: "Task changed since it was read; fetch it again first" } },
         },
       },
       "/tasks/{taskId}/prompt": {

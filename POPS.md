@@ -36,7 +36,7 @@ Code: `lib/pops/quiz.ts`, `app/pops/(app)/quiz/`, `components/pops/QuizPlayer.ts
 5. POps shows the run in the task history, opens any decisions, and updates the suggested next action.
 6. You answer decisions, give feedback on runs, and launch the next pipeline. The next prompt carries everything forward.
 
-Agent runs **never** change a task's status. Only you complete or archive tasks.
+Recording a run never changes a task's status by itself. Agents can complete, pause, archive or reopen a task with `pops_set_task_status` (or `POST /api/pops/v1/tasks/{taskId}/status`), after reading the task. The change appears in the history marked as an agent change, with the agent's note.
 
 ## Where things are
 
@@ -114,6 +114,7 @@ All routes require `Authorization: Bearer pops_…` and return JSON with `Cache-
 | GET | `/api/pops/v1/tasks?workspace=&status=&tag=` | `tasks:read` |
 | POST | `/api/pops/v1/tasks` | `tasks:write` — `idempotencyKey` optional |
 | PATCH | `/api/pops/v1/tasks/{id}` | `tasks:write` — title, description, tags, workspace; requires `expectedUpdatedAt` |
+| POST | `/api/pops/v1/tasks/{id}/status` | `tasks:write` — `status` (active, paused, completed, archived), optional `note`; requires `expectedUpdatedAt` |
 | GET | `/api/pops/v1/tasks/{id}` | `tasks:read` — full context for the next agent |
 | GET | `/api/pops/v1/tasks/{id}/prompt` (optional `?pipeline=`) | `tasks:read` |
 | POST | `/api/pops/v1/tasks/{id}/runs` | `runs:write` — idempotent; 409 if a key is reused with different content |
@@ -131,7 +132,7 @@ All routes require `Authorization: Bearer pops_…` and return JSON with `Cache-
 - **Agent credentials.** Created at `/pops/connect` or through explicit OAuth consent, scoped, revocable, with `lastUsedAt`. Bearer credentials are shown once; OAuth access and refresh tokens are stored only as SHA-256 hashes. A browser session cookie does not authorise the API. OAuth routes use database-backed per-IP rate limits; consent uses Next server actions with origin checks.
 - **Agent writes are validated** with Zod (`lib/pops/validation.ts`): size limits, enumerations, `http(s)`/`obsidian` URLs only, Anki id format, 256 KB body cap.
 - **Idempotency.** Runs are keyed by `idempotencyKey` (unique) plus a content hash; history entries carry unique `dedupeKey`s inserted with `ON CONFLICT DO NOTHING`. Concurrent replays are tested.
-- **Completion is human-only.** The run schema has no status field; unknown fields are stripped. Agent activity never updates `lastHumanEngagementAt`.
+- **Status changes are explicit.** The run schema has no status field; unknown fields are stripped. Agents change status only through the dedicated status endpoint/tool, which needs `tasks:write`, requires `expectedUpdatedAt` (stale reads get 409), and records an agent-attributed `status_changed` history entry. Agent activity never updates `lastHumanEngagementAt`.
 - **Instruction integrity.** Foundational permission boundaries live in code (`FOUNDATIONAL_BOUNDARIES`), are shown read-only on the playbook page, and are placed *after* the playbook in every prompt. Agents can only create proposals; the playbook and pipelines change only when the owner saves a new version, and accepted proposals are linked from the version that applied them.
 - **No public task data.** `/pops` and `/api/pops` are `noindex` and disallowed in robots. The OpenAPI schema and OAuth discovery/registration endpoints are public; none expose tasks or grant access without owner approval.
 - **Links** from agents render with `rel="noopener noreferrer nofollow"`; `javascript:` and other schemes are rejected at validation and again at render.
