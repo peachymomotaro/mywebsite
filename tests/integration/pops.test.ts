@@ -71,6 +71,7 @@ import {
 import { createTaskAction, deleteTaskAction, deletePipelineAction, importReportAction, setStatusAction } from "@/app/pops/actions";
 import * as tasksRoute from "@/app/api/pops/v1/tasks/route";
 import * as taskRoute from "@/app/api/pops/v1/tasks/[taskId]/route";
+import * as taskStatusRoute from "@/app/api/pops/v1/tasks/[taskId]/status/route";
 import * as runsRoute from "@/app/api/pops/v1/tasks/[taskId]/runs/route";
 import * as decisionsRoute from "@/app/api/pops/v1/tasks/[taskId]/decisions/route";
 import * as feedbackRoute from "@/app/api/pops/v1/runs/[runId]/feedback/route";
@@ -363,6 +364,35 @@ describe.skipIf(!testUrl)("POps on isolated PostgreSQL", () => {
 
       await recordAgentRun(task.id, report("separation-002", { suggestedNextAction: "Run the pilot" }), { channel: "api" });
       expect((await prisma.popsTask.findUniqueOrThrow({ where: { id: task.id } })).suggestedNextAction).toBe("Run the pilot");
+    });
+
+    it("lets agents change status through REST with optimistic locking, scopes and agent attribution", async () => {
+      const created = new Date(Date.now() - 20 * DAY);
+      const { task } = await createTask({ title: "Agent finishes this", workspace: "work" }, "human", created);
+      const readOnly = (await createAgentCredential("reader", ["tasks:read"])).token;
+      const url = `/api/pops/v1/tasks/${task.id}/status`;
+      const body = { status: "completed", note: "Draft published", expectedUpdatedAt: task.updatedAt.toISOString() };
+      expect((await taskStatusRoute.POST(api(url, { method: "POST", body, auth: readOnly }), params({ taskId: task.id }))).status).toBe(403);
+      expect((await taskStatusRoute.POST(api(url, { method: "POST", body: { ...body, status: "done" } }), params({ taskId: task.id }))).status).toBe(400);
+
+      const done = await taskStatusRoute.POST(api(url, { method: "POST", body }), params({ taskId: task.id }));
+      expect(done.status).toBe(200);
+      const result = await done.json();
+      expect(result.task).toMatchObject({ id: task.id, status: "completed" });
+      const stored = await prisma.popsTask.findUniqueOrThrow({ where: { id: task.id } });
+      expect(stored.completedAt).not.toBeNull();
+      expect(stored.lastHumanEngagementAt.getTime()).toBe(created.getTime());
+      const history = await prisma.popsHistoryEntry.findMany({ where: { taskId: task.id, kind: "status_changed" } });
+      expect(history).toHaveLength(1);
+      expect(history[0]).toMatchObject({ actor: "agent", detail: { from: "active", to: "completed", note: "Draft published" } });
+
+      const stale = await taskStatusRoute.POST(api(url, { method: "POST", body: { ...body, status: "active" } }), params({ taskId: task.id }));
+      expect(stale.status).toBe(409);
+      const reopened = await taskStatusRoute.POST(api(url, { method: "POST", body: { status: "active", expectedUpdatedAt: result.task.updatedAt } }), params({ taskId: task.id }));
+      expect(reopened.status).toBe(200);
+      const after = await prisma.popsTask.findUniqueOrThrow({ where: { id: task.id } });
+      expect(after.status).toBe("active");
+      expect(after.completedAt).toBeNull();
     });
 
     it("lets only the owner complete a task", async () => {
@@ -744,6 +774,28 @@ describe.skipIf(!testUrl)("POps on isolated PostgreSQL", () => {
       const forbidden = await (await rpc(tokens.access_token, "pops_update_task", { taskId: task.id, patch: { expectedUpdatedAt: stored.updatedAt.toISOString(), title: "Sneaky", status: "completed" } })).json();
       expect(forbidden.result.isError).toBe(true);
       expect((await prisma.popsTask.findUniqueOrThrow({ where: { id: task.id } })).title).toBe(patch.title);
+    });
+
+    it("exposes pops_set_task_status so agents can complete tasks with a fresh read", async () => {
+      const { exchange } = await authorization();
+      const tokens = await exchangeOAuthToken(exchange);
+      const { task } = await createTask({ title: "Write up the post", workspace: "writing" }, "human");
+      const tools = await (await mcpRoute.POST(api("/api/pops/mcp", { auth: tokens.access_token, body: { jsonrpc: "2.0", id: 1, method: "tools/list" } }))).json();
+      const spec = tools.result.tools.find((t: { name: string }) => t.name === "pops_set_task_status");
+      expect(spec.inputSchema.required).toEqual(["taskId", "status", "expectedUpdatedAt"]);
+      expect(spec.inputSchema.properties.status.enum).toEqual(["active", "paused", "completed", "archived"]);
+
+      const read = await (await rpc(tokens.access_token, "pops_get_task", { taskId: task.id })).json();
+      const args = { taskId: task.id, status: "completed", note: "Published on Substack", expectedUpdatedAt: read.result.structuredContent.task.updatedAt };
+      const done = await (await rpc(tokens.access_token, "pops_set_task_status", args)).json();
+      expect(done.result.isError).toBe(false);
+      expect(done.result.structuredContent.task).toMatchObject({ id: task.id, status: "completed" });
+      expect(await prisma.popsHistoryEntry.count({ where: { taskId: task.id, kind: "status_changed", actor: "agent" } })).toBe(1);
+
+      const stale = await (await rpc(tokens.access_token, "pops_set_task_status", { ...args, status: "archived" })).json();
+      expect(stale.result.isError).toBe(true);
+      expect(JSON.parse(stale.result.content[0].text).error).toBe("conflict");
+      expect((await prisma.popsTask.findUniqueOrThrow({ where: { id: task.id } })).status).toBe("completed");
     });
 
     it("moves existing tasks between workspaces through MCP without losing identity or history", async () => {

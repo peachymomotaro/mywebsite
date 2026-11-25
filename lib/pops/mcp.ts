@@ -63,7 +63,7 @@ export const MCP_TOOLS = [
   },
   {
     name: "pops_update_task",
-    description: "Edit only the title, description, tags, or workspace Peter asks you to change. Read pops_get_task first and copy task.updatedAt into patch.expectedUpdatedAt. Omitted fields stay unchanged; projectTags replaces all tags. If the task changed, read it again before editing. Cannot change task status.",
+    description: "Edit only the title, description, tags, or workspace Peter asks you to change. Read pops_get_task first and copy task.updatedAt into patch.expectedUpdatedAt. Omitted fields stay unchanged; projectTags replaces all tags. If the task changed, read it again before editing. To complete, pause, archive or reopen a task, use pops_set_task_status.",
     inputSchema: { type: "object", required: ["taskId", "patch"], properties: { ...taskId, patch: bodySchema("/tasks/{taskId}", "patch") } },
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
   },
@@ -82,8 +82,15 @@ export const MCP_TOOLS = [
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
   },
   {
+    name: "pops_set_task_status",
+    description:
+      "Change a task's status: completed when its work is done, paused, archived, or active to reopen it. Read pops_get_task first and copy task.updatedAt into expectedUpdatedAt; if stale, read again. Add a short note saying why, e.g. what finished it. Recorded in the task history as an agent change.",
+    inputSchema: { type: "object", required: ["taskId", "status", "expectedUpdatedAt"], properties: { ...taskId, ...(bodySchema("/tasks/{taskId}/status") as { properties: object }).properties } },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
+  },
+  {
     name: "pops_record_agent_run",
-    description: "Record the result of your work on a task, exactly once, using the idempotencyKey from the prompt. Never changes task status.",
+    description: "Record the result of your work on a task, exactly once, using the idempotencyKey from the prompt. Does not change task status; use pops_set_task_status for that.",
     inputSchema: { type: "object", required: ["taskId", "report"], properties: { ...taskId, report: bodySchema("/tasks/{taskId}/runs") } },
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
   },
@@ -132,6 +139,8 @@ async function callTool(principal: AgentPrincipal, name: string, args: Record<st
       return agentOps.updateTask(principal, s("taskId"), args.patch as never);
     case "pops_move_task":
       return agentOps.updateTask(principal, s("taskId"), { workspace: s("workspace") as never, expectedUpdatedAt: s("expectedUpdatedAt") });
+    case "pops_set_task_status":
+      return agentOps.setTaskStatus(principal, s("taskId"), { status: s("status") as never, note: s("note") || undefined, expectedUpdatedAt: s("expectedUpdatedAt") });
     case "pops_record_agent_run":
       return agentOps.recordRun(principal, s("taskId"), args.report as never, "mcp");
     case "pops_create_decision":
@@ -165,9 +174,9 @@ export async function handleMcpMessage(principal: AgentPrincipal, message: JsonR
       return rpcResult(message.id, {
         protocolVersion: SUPPORTED_VERSIONS.includes(requested) ? requested : SUPPORTED_VERSIONS[0],
         capabilities: { tools: { listChanged: false } },
-        serverInfo: { name: "pops", version: "1.2.0" },
+        serverInfo: { name: "pops", version: "1.3.0" },
         instructions:
-          "POps is Peter Curry's personal task system. Read a task with pops_get_task before working on it. Record results once with pops_record_agent_run. Never change task status; the permission boundaries in each prompt are absolute.",
+          "POps is Peter Curry's personal task system. Read a task with pops_get_task before working on it. Record results once with pops_record_agent_run. When a task's work is done, mark it completed with pops_set_task_status. The permission boundaries in each prompt are absolute.",
       });
     }
     case "ping":

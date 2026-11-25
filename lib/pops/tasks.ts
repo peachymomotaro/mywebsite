@@ -247,30 +247,48 @@ export async function changeChecklist(id: string, change: { kind: "add"; title: 
   });
 }
 
-/** Status changes are human-only. Agent runs never call this. */
-export async function setTaskStatus(id: string, status: PopsTaskStatus, now = new Date()) {
+/**
+ * Change a task's status. Peter does this from the UI; agents do it through
+ * the API/MCP with expectedUpdatedAt so they never act on a stale read. Agent
+ * changes are recorded as agent history and do not count as human engagement.
+ * Agent runs (recordAgentRun) still never change status on their own.
+ */
+export async function setTaskStatus(
+  id: string,
+  status: PopsTaskStatus,
+  now = new Date(),
+  options: { actor?: "human" | "agent"; expectedUpdatedAt?: Date; note?: string } = {},
+) {
+  const actor = options.actor ?? "human";
+  const { expectedUpdatedAt } = options;
+  const note = options.note?.trim().slice(0, 1000) ?? "";
   const db = getPopsDb();
   return db.$transaction(async (tx) => {
     const task = await tx.popsTask.findUnique({ where: { id } });
     if (!task || task.deletedAt) throw new PopsNotFoundError("Task");
+    if (expectedUpdatedAt && task.updatedAt.getTime() !== expectedUpdatedAt.getTime()) {
+      throw new PopsConflictError("Task changed. Read it again before changing its status.");
+    }
     if (task.status === status) return task;
 
-    const updated = await tx.popsTask.update({
-      where: { id },
+    const applied = await tx.popsTask.updateMany({
+      where: { id, deletedAt: null, updatedAt: task.updatedAt },
       data: {
         status,
         completedAt: status === "completed" ? now : null,
         archivedAt: status === "archived" ? now : null,
-        lastHumanEngagementAt: now,
-        resurfaceAfter: null,
+        updatedAt: new Date(Math.max(now.getTime(), task.updatedAt.getTime() + 1)),
+        ...(actor === "human" ? { lastHumanEngagementAt: now, resurfaceAfter: null } : {}),
       },
     });
+    if (applied.count !== 1) throw new PopsConflictError("Task changed. Read it again before changing its status.");
+    const updated = await tx.popsTask.findUniqueOrThrow({ where: { id } });
     await appendHistory(tx, {
       taskId: id,
       kind: "status_changed",
-      actor: "human",
-      summary: `Status: ${task.status} → ${status}`,
-      detail: { from: task.status, to: status },
+      actor,
+      summary: `Status: ${task.status} → ${status}${note ? ` (${note.split("\n")[0]})` : ""}`,
+      detail: { from: task.status, to: status, ...(note ? { note } : {}) },
       createdAt: now,
     });
     return updated;
