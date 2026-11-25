@@ -24,6 +24,15 @@ describe("Ladder marking", () => {
     ["<b><u>Iran</u></b>", "Iraq", "reject"],
     ["<b><u>Mali</u></b> Empire", "bali", "reject"],
     ["<b><u>Battle of Sedan</u></b>", "", "reject"],
+    // Part of the answer earns a prompt, not a fall.
+    ["<b><u>Babylonian Captivity</u></b>", "captivity", "prompt"],
+    ["<b><u>Babylonian Captivity</u></b>", "babylonian", "prompt"],
+    ["<b><u>Babylonian Captivity</u></b>", "babylonain captivity", "accept"],
+    ["<b><u>Charles II</u></b>", "charles", "prompt"],
+    ["<b><u>Charles II</u></b>", "charles iii", "reject"],
+    ["<b><u>Compromise of 1850</u></b>", "compromise", "prompt"],
+    ["<b><u>Battle of Dien Bien Phu</u></b>", "battle", "reject"],
+    ["<b><u>Battle of Dien Bien Phu</u></b>", "phu", "prompt"],
   ];
 
   it.each(cases)("%s / %s -> %s", (answer, guess, verdict) => {

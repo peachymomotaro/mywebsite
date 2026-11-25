@@ -116,5 +116,28 @@ export function judge(answerHtml: string, guess: string): Verdict {
     if (numerals(t) && numerals(t) !== numerals(g)) continue;
     if (close(gFull, t.join(" ")) || close(gCore, core(t))) return "accept";
   }
-  return "reject";
+  return isPartial(g, accept) ? "prompt" : "reject";
+}
+
+function wordMatches(guessWord: string, answerWord: string): boolean {
+  if (guessWord === answerWord) return true;
+  return guessWord.length >= 5 && close(guessWord, answerWord);
+}
+
+/** "captivity" for "Babylonian captivity", "Charles" for "Charles II": every
+ *  meaningful word the player typed is in the answer, but not enough of it. */
+function isPartial(guessWords: string[], forms: string[]): boolean {
+  const meaningful = guessWords.filter((w) => !GENERIC.has(w));
+  if (!meaningful.length) return false;
+  if (meaningful.join("").length < 3) return false;
+  for (const form of forms) {
+    const t = tokens(form);
+    const formNums = numerals(t);
+    const guessNums = numerals(guessWords);
+    if (guessNums && guessNums !== formNums) continue;
+    const formCore = t.filter((w) => !GENERIC.has(w));
+    if (meaningful.length >= formCore.length) continue;
+    if (meaningful.every((w) => formCore.some((a) => wordMatches(w, a)))) return true;
+  }
+  return false;
 }
