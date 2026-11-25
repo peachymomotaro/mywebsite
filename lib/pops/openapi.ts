@@ -95,7 +95,7 @@ export function buildOpenApiDocument() {
       title: "POps agent API",
       version: "1.1.0",
       description:
-        "Private API for agents working on Peter Curry's POps tasks. Requires a POps agent credential as a bearer token. Agents cannot change task status, edit the playbook or edit pipelines directly.",
+        "Private API for agents working on Peter Curry's POps tasks. Requires a POps agent credential as a bearer token. REST agents cannot change task status, edit the playbook or edit pipelines directly. Explicitly authorised status changes are available through the separately scoped MCP tool only.",
     },
     servers: [{ url: `${siteBaseUrl()}/api/pops/v1` }],
     components: { securitySchemes: { bearer: { type: "http", scheme: "bearer" } } },
