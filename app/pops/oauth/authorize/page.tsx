@@ -8,7 +8,8 @@ export const metadata = { title: "Connect to POps", robots: { index: false, foll
 
 const PERMISSIONS: Record<string, string> = {
   "tasks:read": "Read tasks, context, pipelines, and the playbook",
-  "tasks:write": "Create tasks and edit their titles, descriptions, and tags",
+  "tasks:write": "Create tasks and edit their titles, descriptions, tags, and workspaces",
+  "tasks:status": "Complete, pause, reopen or archive tasks when you explicitly ask in chat (the agent attests to your instruction)",
   "runs:write": "Add results and suggested next steps to tasks",
   "decisions:write": "Ask you to make a decision",
   "feedback:write": "Record feedback you give in chat",
@@ -35,7 +36,7 @@ export default async function AuthorizePage({ searchParams }: { searchParams: Pr
       <p className="pops-muted">Approve only if you just started this connection in your agent. The client supplies its own name.</p>
       <p>Return address: <code style={{ overflowWrap: "anywhere" }}>{request.redirectUri}</code></p>
       <ul>{request.scopes.map((scope) => <li key={scope}>{PERMISSIONS[scope]}</li>)}</ul>
-      <p className="pops-muted">You control task completion and approve playbook changes. You can revoke this connection at any time from Connect.</p>
+      <p className="pops-muted">You control task completion, including explicit instructions to a connected agent, and approve playbook changes. You can revoke this connection at any time from Connect.</p>
       <form action={consentAction.bind(null, query)}>
         <button className="pops-button" name="consent" value="approve" type="submit">Allow connection</button>{" "}
         <button className="pops-button pops-button--secondary" name="consent" value="deny" type="submit">Cancel</button>

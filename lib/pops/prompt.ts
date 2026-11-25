@@ -210,7 +210,7 @@ When you have finished, record the result exactly once.
 
 Rules:
 - Keep \`idempotencyKey\` exactly as given (\`${idempotencyKey}\`); it prevents duplicate records.
-- Do not set or suggest a task status field — completion is Peter's call. Recommend it in \`nextActions\` if appropriate.
+- Do not set or suggest a task status field — completion is Peter's call. Recommend it in \`nextActions\` if appropriate. A separate \`pops_set_task_status\` call is permitted only on Peter's explicit instruction in the current conversation, never as a consequence of a report.
 - Prefer concise summaries and links to evidence. Omit empty arrays rather than inventing content.
 - Put each choice that needs Peter's judgement in \`decisions\`, with a recommendation only where the evidence justifies one.
 - To improve a reusable method, add a \`proposals\` entry naming the EXACT target pipeline with \`pipelineSlug\` (or use \`playbook_change\` for global rules). Include a short concrete \`title\`, the proposed change in \`body\`, and \`rationale\`. If the new proposal directly replaces known pending suggestions, set \`supersedes: ["proposal-id"]\`; only suggestions for the same target can be superseded. Do not propose implementation tasks as pipelines. Proposals await Peter\u0027s approval and never apply themselves.
